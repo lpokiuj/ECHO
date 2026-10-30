@@ -105,7 +105,7 @@ Views
 | Layout | API in `apps/api` together with CLAUDE.md and PLAN.md. Compose, `docker/`, and env files at the repo root. | Docs are backend-only; frontend gets its own plan later |
 | Test runner / linter | Vitest and oxlint (NestJS 12 scaffold defaults), ESM. `GET /health` is a plain controller running `SELECT 1` (200, or 503 if the DB is down). | Keep scaffold defaults; no extra dependency for health |
 | Schema changes | Migrations only (details in CLAUDE.md) | Reproducible, reviewable |
-| Auth | JWT carries the user id only. The auth guard loads the user from the DB on every request and checks `is_active`, `role`, and `must_change_password`. Lifetime from env `JWT_EXPIRES_IN`, default `1d`. No refresh tokens in v1. | Role, deactivation, and leadership changes take effect immediately |
+| Auth | JWT carries the user id only. The auth guard loads the user from the DB on every request and checks `is_active`, `role`, and `must_change_password`. Lifetime from env `JWT_EXPIRES_IN`, default `15m`, renewed on every request via the `X-Access-Token` response header (sliding idle timeout). No refresh tokens in v1. | Role, deactivation, and leadership changes take effect immediately |
 | Passwords | Hashed (bcrypt). Minimum 8 characters. Admin creates accounts with a temp password, `must_change_password = true`. Admin resets. | No email service in v1 |
 | IDs | uuid | No guessable ids |
 | Databases | Two databases on one Postgres container: `echo_dev` and `echo_test` (rules in CLAUDE.md) | Tests wipe data, which must never touch dev data |
@@ -155,6 +155,32 @@ starts. If a feature has none, ask the user for them before implementing.
    - Make sure the seed throws no error and would accomodate for testing  
 3. Auth: login, JWT guard that loads the user per request, roles guard, `GET /me`,
    change-password, `must_change_password` and `is_active` enforcement
+   - Decisions: `@nestjs/jwt` only (no Passport); global default-deny guard with
+     `@Public()` opt-out; 401 = not authenticated, 403 = authenticated but not allowed.
+   - Login and token
+     - `POST /auth/login` returns 200 `{ accessToken }`
+     - Payload is `sub` (user id), `iat`, `exp` only: no role, email, or hash
+     - Wrong password, unknown email, and inactive user all give the same 401
+   - Access control
+     - Only `/health` and `/auth/login` are public; every other route without a valid
+       token (missing, malformed, expired, tampered) gives 401
+     - A deactivated user's old token gives 401
+     - A role change in the DB applies on the next request with the same token
+     - `@Roles(ADMIN)` route: 403 for PEMBINA and MEMBER, 200 for ADMIN
+   - Idle session (15 minutes)
+     - `JWT_EXPIRES_IN` defaults to `15m`
+     - Each authenticated response carries a fresh token in `X-Access-Token`
+     - A token older than 15 minutes gives 401
+   - `must_change_password`
+     - Every route except `POST /auth/change-password` and `GET /me` gives 403 with
+       code `PASSWORD_CHANGE_REQUIRED`
+   - `GET /me`
+     - Returns id, name, email, role, `must_change_password`, memberships
+       `[{ teamId, teamName, isLeader }]`; never the password hash
+   - `POST /auth/change-password` body `{ currentPassword, newPassword }`
+     - Wrong current password: 401
+     - New password under 8 characters, or same as current: 400
+     - Success: 204, `must_change_password` becomes false, the old password stops working
 4. User management (admin)
 5. Teams + membership + leader flag
 6. Services CRUD with soft delete (ADMIN or any team leader)
@@ -164,7 +190,7 @@ starts. If a feature has none, ask the user for them before implementing.
 ## Status
 - [x] 1. Scaffold
 - [x] 2. Entities + migration + seed
-- [ ] 3. Auth
+- [x] 3. Auth
 - [ ] 4. User management
 - [ ] 5. Teams + membership
 - [ ] 6. Services
