@@ -49,10 +49,15 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - Database changes go through migrations only. Never `synchronize: true`, in any environment.
 - Never edit a migration that has already been committed. Add a new one.
 - Permission checks happen server-side in guards and services. Never trust the client.
+- Every route is protected by default (global auth guard). A new endpoint must declare
+  `@Public()`, `@Roles(...)`, or `@AllowPasswordChange()` where it needs them. Get the
+  logged-in user with `@CurrentUser()`.
 - Use the database to enforce uniqueness and races (constraints, ON CONFLICT).
   Never check-then-insert.
 - Two databases: `echo_dev` (development, `.env`) and `echo_test` (tests only, `.env.test`).
   Both env files are gitignored; commit `.env.example`.
+- `JWT_SECRET` is required in both env files (the app refuses to start without it).
+  `JWT_EXPIRES_IN` is optional (default `15m`).
 - Tests use real PostgreSQL. Do not mock the database.
 - Tests run only against a database whose name ends in `_test`. Test setup must abort otherwise.
 - Never run migrations, truncate, drop, or seed against any database other than the

@@ -97,6 +97,12 @@ Views
   - plain MEMBER: 403 (they use `/me/schedule`)
 - `GET /teams/:id/members` (leader of that team, or ADMIN)
 
+## Frontend notes
+- Read `X-Access-Token` from every authenticated response and store it; it renews the
+  15-minute idle window. If CORS is enabled, the server must expose that header.
+- A 401 from `POST /auth/change-password` means the current password was wrong, not that
+  the session expired.
+
 ## Decisions
 
 | Decision | Choice | Reason |
@@ -127,6 +133,9 @@ Views
 - Availability, swap requests, attendance, reports
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
 - Frontend, public site
+- Login rate limiting and brute-force lockout
+- Token revocation: changing a password does not log out other devices, and a leaked
+  token works until it expires (15 minutes after last use)
 
 ## Open questions (agent: ask the user BEFORE implementing; do not pick a default)
 None at the moment.
