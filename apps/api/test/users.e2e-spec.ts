@@ -6,6 +6,8 @@ import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module.js';
 import { configureApp } from '../src/app.setup.js';
+import { TeamMember } from '../src/teams/entities/team-member.entity.js';
+import { Team } from '../src/teams/entities/team.entity.js';
 import { User, UserRole } from '../src/users/entities/user.entity.js';
 import { cleanDatabase } from './utils/test-app.js';
 
@@ -299,6 +301,51 @@ describe('Users (e2e)', () => {
         .set(bearer(token))
         .send({ name: 'X' })
         .expect(400);
+    });
+
+    describe('PEMBINA and team leadership', () => {
+      async function joinTeam(user: User, isLeader: boolean) {
+        const team = await dataSource
+          .getRepository(Team)
+          .save({ name: `Team ${Math.random().toString(36).slice(2)}` });
+        await dataSource
+          .getRepository(TeamMember)
+          .save({ teamId: team.id, userId: user.id, isLeader });
+        return team;
+      }
+
+      it('400 when a team leader is set to PEMBINA; allowed once the flag is removed', async () => {
+        const { token } = await adminToken();
+        const target = await createUser();
+        const team = await joinTeam(target, true);
+        await request(http())
+          .patch(`/users/${target.id}`)
+          .set(bearer(token))
+          .send({ role: UserRole.PEMBINA })
+          .expect(400);
+        expect((await loadUser(target.id)).role).toBe(UserRole.MEMBER);
+
+        await dataSource
+          .getRepository(TeamMember)
+          .update({ teamId: team.id, userId: target.id }, { isLeader: false });
+        await request(http())
+          .patch(`/users/${target.id}`)
+          .set(bearer(token))
+          .send({ role: UserRole.PEMBINA })
+          .expect(200);
+        expect((await loadUser(target.id)).role).toBe(UserRole.PEMBINA);
+      });
+
+      it('a plain team member can be set to PEMBINA', async () => {
+        const { token } = await adminToken();
+        const target = await createUser();
+        await joinTeam(target, false);
+        await request(http())
+          .patch(`/users/${target.id}`)
+          .set(bearer(token))
+          .send({ role: UserRole.PEMBINA })
+          .expect(200);
+      });
     });
 
     it('400 on an invalid role', async () => {

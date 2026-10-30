@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcryptjs';
 import { QueryFailedError, Repository } from 'typeorm';
+import { TeamMember } from '../teams/entities/team-member.entity.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { User, UserRole } from './entities/user.entity.js';
@@ -20,6 +21,8 @@ export class UsersService {
 
   constructor(
     @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(TeamMember)
+    private readonly teamMembers: Repository<TeamMember>,
     config: ConfigService,
   ) {
     this.defaultPassword = config.getOrThrow<string>('DEFAULT_USER_PASSWORD');
@@ -60,6 +63,14 @@ export class UsersService {
     ) {
       throw new BadRequestException(
         'You cannot change your own role or active status',
+      );
+    }
+    if (
+      dto.role === UserRole.PEMBINA &&
+      (await this.teamMembers.existsBy({ userId: id, isLeader: true }))
+    ) {
+      throw new BadRequestException(
+        'A team leader cannot be PEMBINA. Remove the leader flag first',
       );
     }
     try {
