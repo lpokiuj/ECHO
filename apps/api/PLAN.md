@@ -125,6 +125,8 @@ Views
 | Roles storage | `users.role` is a Postgres enum named `user_role` (ADMIN, PEMBINA, MEMBER). | The DB rejects unknown roles |
 | Foreign keys | Plain FKs with `ON DELETE RESTRICT`. "A team assigns only its own members" (rule 7) is checked in the service layer, not by a composite FK. | A composite FK to `team_members` would conflict with rule 9 (past assignments are kept after removal) |
 | Seed data | Teams: Worship, Music, Sound, Multimedia, Usher, Stage Manager. People and assignments live in `src/database/seed-data.ts`, edited by hand (ships with marked examples). Insert-only, dev DB only (`echo_dev`). Fake users share `SEED_USER_PASSWORD` and have `must_change_password = false`. Hashing uses `bcryptjs` (pure JS, no native build). | Try assignment conflicts by hand before the admin endpoints exist |
+| Default password | Env `DEFAULT_USER_PASSWORD` (required, min 8 chars, app refuses to start without it) is the password for every account the admin creates or resets. `.env.example` uses `changeme123` for local development only. | No email service in v1; admin hands the password over out of band and the user must change it at first login |
+| User admin safety | An admin cannot change their own role or `isActive` (400). | Prevents leaving the system with no active admin |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -191,6 +193,18 @@ starts. If a feature has none, ask the user for them before implementing.
      - New password under 8 characters, or same as current: 400
      - Success: 204, `must_change_password` becomes false, the old password stops working
 4. User management (admin)
+   - Scope: users only. Teams and the leader flag are feature 5; services are feature 6.
+   - All routes are ADMIN only (PEMBINA and MEMBER get 403, no token gets 401)
+   - `POST /users` body `{ name, email, role? }`: 201, role defaults to MEMBER, password is
+     `DEFAULT_USER_PASSWORD`, `mustChangePassword` true, never returns the hash.
+     Duplicate email: 409 (from the unique constraint)
+   - `GET /users`: all users ordered by name, no hash, no memberships
+   - `PATCH /users/:id` any of `{ name, email, role, isActive }`: 200, 404 unknown id,
+     409 duplicate email. An admin changing their own role or `isActive`: 400
+     (own name and email are editable). Role and deactivation take effect on the next request.
+   - `POST /users/:id/reset-password`: 204, password becomes `DEFAULT_USER_PASSWORD`,
+     `mustChangePassword` true, old password stops working
+   - `:id` must be a UUID (400 otherwise)
 5. Teams + membership + leader flag
 6. Services CRUD with soft delete (ADMIN or any team leader)
 7. Assignments: candidates, assign (first-claim-wins), unassign, including the concurrency test
@@ -200,7 +214,7 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 1. Scaffold
 - [x] 2. Entities + migration + seed
 - [x] 3. Auth
-- [ ] 4. User management
+- [x] 4. User management
 - [ ] 5. Teams + membership
 - [ ] 6. Services
 - [ ] 7. Assignments
