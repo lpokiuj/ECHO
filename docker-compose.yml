@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Creates echo_dev. echo_test is created by docker/init-test-db.sql
+      POSTGRES_DB: echo_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - echo_pgdata:/var/lib/postgresql/data
+      # Init scripts only run when the data volume is first created
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d echo_dev']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  echo_pgdata:
