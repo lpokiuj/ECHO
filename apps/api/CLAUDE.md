@@ -21,7 +21,11 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - E2E tests: `npm run test:e2e` (needs the DB container running)
 - Generate migration: `npm run migration:generate -- src/migrations/<Name>`
 - Run migrations: `npm run migration:run`
-- Seed dev admin: `npm run seed`
+- Seed dev data: `npm run seed` (dev only: refuses production and any DB other than `echo_dev`;
+  insert-only, safe to re-run). Edit the people in `src/database/seed-data.ts`.
+- New entity: add the class to `src/database/entities.ts` (explicit list, not a glob), then
+  generate a migration, READ the SQL, run it. A second `migration:generate` must say "No changes".
+- `npm run test:e2e` builds first (migrations load from `dist/`)
 - Lint: `npm run lint`
 
 ## Structure

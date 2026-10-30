@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { ENTITIES } from './entities.js';
 
 // Env files live at the repo root. Scripts run from apps/api, so that is ../../.
 // process.loadEnvFile never overrides variables that are already set.
@@ -12,8 +13,13 @@ if (existsSync(envFilePath)) {
   process.loadEnvFile(envFilePath);
 }
 
-// import.meta.dirname is src/database (ts) or dist/database (js), so the globs
-// below work for both the Nest app and the TypeORM CLI.
+// Migrations are always loaded from the compiled output. Under Vitest this file runs from
+// src/, where Node cannot import the .ts files, so point at ../../dist instead
+// (`npm run test:e2e` builds first).
+const compiledRoot = import.meta.dirname.endsWith(join('src', 'database'))
+  ? join(import.meta.dirname, '..', '..', 'dist')
+  : join(import.meta.dirname, '..');
+
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: process.env.DB_HOST,
@@ -21,10 +27,12 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  // uuid PKs default to gen_random_uuid(); a hand-written default would cause migration drift
+  uuidExtension: 'pgcrypto',
   // Schema changes go through migrations only
   synchronize: false,
-  entities: [join(import.meta.dirname, '..', '**', '*.entity.{ts,js}')],
-  migrations: [join(import.meta.dirname, '..', 'migrations', '*.{ts,js}')],
+  entities: ENTITIES,
+  migrations: [join(compiledRoot, 'migrations', '*.js')],
 };
 
 // Exported for the TypeORM CLI (-d dist/database/data-source.js)
