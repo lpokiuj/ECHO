@@ -69,11 +69,13 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - Do not add features, endpoints, or fields that are not in PLAN.md.
 
 ## Workflow
+- Ask for commit permission in a separate question
+- Never commit unless the user tells
 - One feature per session. Start in plan mode and present the plan before editing.
 - Keep diffs small enough to read in about 15 minutes. If it grows, split the task.
 - Run build, lint, and tests yourself before saying a task is done.
   Report actual output. Do not claim success without running them.
-- One commit per feature, message `feat(<module>): <what>`.
+- When the user approves a commit, use one commit per feature, message `feat(<module>): <what>`.
 - When a decision changes, update PLAN.md in the same commit.
 - Tick the feature in the PLAN.md Status checklist only after tests pass.
 
