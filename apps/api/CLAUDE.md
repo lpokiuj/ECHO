@@ -78,6 +78,8 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - When the user approves a commit, use one commit per feature, message `feat(<module>): <what>`.
 - When a decision changes, update PLAN.md in the same commit.
 - Tick the feature in the PLAN.md Status checklist only after tests pass.
+- For the current feature, also read docs/features/NN-*.md. Do not read other features'
+  files unless asked.
 
 ## Don't
 - Don't install new dependencies without saying why first.

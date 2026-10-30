@@ -17,17 +17,16 @@ Global role on `users.role`:
 | Role | Permissions |
 |---|---|
 | ADMIN | Everything: users, teams, membership, services. Can unassign anyone. Held by the project owner and Ketua ECHO. |
-| PEMBINA | Read-only: all schedules |
-| MEMBER | Everyone else. Views own schedule. |
+| PEMBINA | Read all schedules. Can also create, edit, and delete services. Cannot be a team leader. Nothing else. |
+| MEMBER | Everyone else. Views the full service schedule (all teams' assignments). |
 
 Team leader is NOT a global role. It is `is_leader = true` on a row in
 `team_members`. A person can lead one team and be an ordinary member of another.
 
 A leader of team B can:
-- see the members of B only (not other teams' members, even shared volunteers)
-- see ALL services (they need to pick one), but only the assignments made by team B
+- see only their own team's members when assigning (the candidates list); they cannot read any team roster
+- see all services with every team's assignments (the schedule is open to all logged-in users)
 - assign and unassign members of B to services, as team B
-- create services, and edit or delete ANY service (not only their own)
 
 ## Domain rules (these are the hard part, test them)
 
@@ -42,7 +41,7 @@ A leader of team B can:
 5. Conflict reporting: for each skipped user, look up the existing row and report
    - `ALREADY_ASSIGNED_THIS_TEAM` if the same team already assigned them, or
    - `ALREADY_ASSIGNED_OTHER_TEAM` if a different team did.
-   Leaders do NOT see which other team holds them. ADMIN does.
+   Skipped `ALREADY_ASSIGNED_OTHER_TEAM` entries include `heldByTeam: { id, name }` for every caller.
 6. Candidate list for (service, team) = members of that team minus anyone
    already assigned in that service by another team. The client refreshes this
    list after a conflict.
@@ -80,8 +79,9 @@ Admin (ADMIN)
 - `POST /users`, `GET /users`, `PATCH /users/:id`, `POST /users/:id/reset-password`
 - `POST /teams`, `GET /teams`, `PATCH /teams/:id`
 - `PUT /teams/:id/members/:userId` (body: `is_leader`), `DELETE /teams/:id/members/:userId`
+- `GET /teams/:id/members`
 
-Services (ADMIN or a leader of any team)
+Services (ADMIN, PEMBINA)
 - `POST /services`, `PATCH /services/:id`, `DELETE /services/:id`
 
 Assignments (leader of that team, or ADMIN)
@@ -91,11 +91,7 @@ Assignments (leader of that team, or ADMIN)
 
 Views
 - `GET /me/schedule` (any logged-in user)
-- `GET /services`
-  - ADMIN / PEMBINA: all services with all assignments
-  - leaders: all services, only their own team's assignments
-  - plain MEMBER: 403 (they use `/me/schedule`)
-- `GET /teams/:id/members` (leader of that team, or ADMIN)
+- `GET /services` (any logged-in user: all services with all teams' assignments, names only, no emails)
 
 ## Frontend notes
 - Read `X-Access-Token` from every authenticated response and store it; it renews the
@@ -117,8 +113,16 @@ Views
 | Databases | Two databases on one Postgres container: `echo_dev` and `echo_test` (rules in CLAUDE.md) | Tests wipe data, which must never touch dev data |
 | Lists | No pagination in v1 | Small organization |
 | Team membership | Only ADMIN (project owner and Ketua ECHO) can add or remove team members and set `is_leader`. A team leader cannot add volunteers to their own team. | Membership is org-level structure, not a leader's call |
-| Service management | ADMIN or a leader of any team can create, edit, and delete any service. | Leaders schedule their own services without waiting for ADMIN |
+| Service management | ADMIN and PEMBINA can create, edit, and delete services. Team leaders cannot. | Service creation is org-level scheduling, not a team leader's call. |
 | Service time change | Allowed after assignments exist. No notification in v1 (planned for v2). | Notifications are out of scope for v1 |
+| Schedule visibility | Every logged-in user sees every service with all teams' assignments (names only). | Schedules were already visible to the whole WhatsApp group. |
+| Team roster | `GET /teams/:id/members` is ADMIN only, for the future admin team-management page. | Leaders see their own team's people through the candidates list. |
+| Service start time | A service cannot be created with `starts_at` in the past, and PATCH cannot move `starts_at` into the past (400). Past services stay readable. | Past schedules are history; assignments are already locked for started services |
+| PEMBINA and leadership | PEMBINA can never have `is_leader = true`: `PUT /teams/:id/members/:userId` with `isLeader: true` for a PEMBINA is 400, and `PATCH /users/:id` setting role PEMBINA is 400 while the user leads any team. PEMBINA can be a plain member. | PEMBINA is an oversight role, not a team role |
+| Started services | Assigning and unassigning are blocked once `starts_at <= now` (409 `SERVICE_ALREADY_STARTED`). The candidate list still works. | Past schedules are history |
+| Assign batch validation | 1 to 100 unique user ids. If any id is not an active member of the path team, the whole request is 400 `INVALID_USERS` and nothing is inserted. Conflicts with other teams are not errors: they are skipped and reported (rule 4). Candidates exclude inactive users. | A non-member id is a client bug; a conflict is a race |
+| Schedule window | `GET /services` and `GET /me/schedule` list only services with `ends_at > now` by default; `?includePast=true` lists all. Note this differs from "started" above, which uses `starts_at`. | Volunteers care about what is current or upcoming |
+| ADMIN unassign | ADMIN removes another team's assignment through the same DELETE route, using the holding team's id (visible as `heldByTeam`). No separate admin endpoint. | Keeps one code path |
 | Candidate list | Users already assigned by this team are shown and marked as assigned. Users assigned by another team are excluded. | Leader sees their full roster for the service |
 | Seed admin | `npm run seed` reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env and creates one ADMIN with `must_change_password = true`. `.env.example` uses `ADMIN_EMAIL=admin@echo.local`, `ADMIN_PASSWORD=password` for local development only. The seed refuses to run when `NODE_ENV=production`. It targets `echo_dev` only; tests create their own fixtures. | A known password is acceptable on a local dev DB only if it can't reach production |
 | Terminology | English "team" (not the Indonesian "bidang"); "team leader" (not "Ketua Bidang"). "Ketua ECHO" stays as a title. | Avoids confusion in code and docs |
@@ -135,6 +139,7 @@ Views
 - Availability, swap requests, attendance, reports
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
 - Frontend, public site
+- Service notes (a notes field on services)
 - Login rate limiting and brute-force lockout
 - Token revocation: changing a password does not log out other devices, and a leaked
   token works until it expires (15 minutes after last use)
@@ -143,72 +148,17 @@ Views
 None at the moment.
 
 ## Feature order (one Claude Code session per item)
-Acceptance criteria for features 2 to 8 are added to this file before their session
+Acceptance criteria for each feature are added to docs/features/NN-*.md before its session
 starts. If a feature has none, ask the user for them before implementing.
 
-1. Scaffold: NestJS, TypeORM, Postgres in Docker, migrations setup, config, health check + e2e test
-   - `docker-compose.yml` runs one Postgres container. `POSTGRES_DB=echo_dev` creates the dev DB.
-   - `docker/init-test-db.sql` (mounted into `/docker-entrypoint-initdb.d/`) creates `echo_test`.
-     Note: init scripts only run when the data volume is first created. If the volume
-     already exists, create `echo_test` manually or recreate the volume.
-   - `.env` points at `echo_dev`, `.env.test` points at `echo_test`. Both are gitignored.
-     Commit `.env.example` covering both.
-   - Test setup: abort unless the DB name ends in `_test`; run migrations on `echo_test`
-     before e2e tests; clean tables between tests.
-   - Acceptance criteria:
-     - `docker compose up -d` gives two databases, `echo_dev` and `echo_test`
-     - `npm run migration:run` migrates `echo_dev`; the test equivalent migrates `echo_test`
-     - `GET /health` returns 200 and the e2e test for it passes against `echo_test`
-     - Pointing the test setup at `echo_dev` makes it abort with the guard's own
-       error message (the user verifies this by hand)
-2. Entities + first migration + seed script (admin from env, the 6 teams and example people for dev)
-   - Make sure Entities and migration match each other and running migration has no error
-   - Make sure the seed throws no error and would accomodate for testing  
-3. Auth: login, JWT guard that loads the user per request, roles guard, `GET /me`,
-   change-password, `must_change_password` and `is_active` enforcement
-   - Decisions: `@nestjs/jwt` only (no Passport); global default-deny guard with
-     `@Public()` opt-out; 401 = not authenticated, 403 = authenticated but not allowed.
-   - Login and token
-     - `POST /auth/login` returns 200 `{ accessToken }`
-     - Payload is `sub` (user id), `iat`, `exp` only: no role, email, or hash
-     - Wrong password, unknown email, and inactive user all give the same 401
-   - Access control
-     - Only `/health` and `/auth/login` are public; every other route without a valid
-       token (missing, malformed, expired, tampered) gives 401
-     - A deactivated user's old token gives 401
-     - A role change in the DB applies on the next request with the same token
-     - `@Roles(ADMIN)` route: 403 for PEMBINA and MEMBER, 200 for ADMIN
-   - Idle session (15 minutes)
-     - `JWT_EXPIRES_IN` defaults to `15m`
-     - Each authenticated response carries a fresh token in `X-Access-Token`
-     - A token older than 15 minutes gives 401
-   - `must_change_password`
-     - Every route except `POST /auth/change-password` and `GET /me` gives 403 with
-       code `PASSWORD_CHANGE_REQUIRED`
-   - `GET /me`
-     - Returns id, name, email, role, `must_change_password`, memberships
-       `[{ teamId, teamName, isLeader }]`; never the password hash
-   - `POST /auth/change-password` body `{ currentPassword, newPassword }`
-     - Wrong current password: 401
-     - New password under 8 characters, or same as current: 400
-     - Success: 204, `must_change_password` becomes false, the old password stops working
-4. User management (admin)
-   - Scope: users only. Teams and the leader flag are feature 5; services are feature 6.
-   - All routes are ADMIN only (PEMBINA and MEMBER get 403, no token gets 401)
-   - `POST /users` body `{ name, email, role? }`: 201, role defaults to MEMBER, password is
-     `DEFAULT_USER_PASSWORD`, `mustChangePassword` true, never returns the hash.
-     Duplicate email: 409 (from the unique constraint)
-   - `GET /users`: all users ordered by name, no hash, no memberships
-   - `PATCH /users/:id` any of `{ name, email, role, isActive }`: 200, 404 unknown id,
-     409 duplicate email. An admin changing their own role or `isActive`: 400
-     (own name and email are editable). Role and deactivation take effect on the next request.
-   - `POST /users/:id/reset-password`: 204, password becomes `DEFAULT_USER_PASSWORD`,
-     `mustChangePassword` true, old password stops working
-   - `:id` must be a UUID (400 otherwise)
+1. Scaffold (done). Criteria: docs/features/01-scaffold.md
+2. Entities + seed (done). Criteria: docs/features/02-entities-seed.md
+3. Auth (done). Criteria: docs/features/03-auth.md
+4. User management (done). Criteria: docs/features/04-users.md
 5. Teams + membership + leader flag
-6. Services CRUD with soft delete (ADMIN or any team leader)
+6. Services CRUD with soft delete (ADMIN, PEMBINA)
 7. Assignments: candidates, assign (first-claim-wins), unassign, including the concurrency test
-8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members`
+8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only)
 
 ## Status
 - [x] 1. Scaffold
