@@ -31,7 +31,9 @@ directly into the DB as fixtures, because those endpoints don't exist yet.
   - One person can lead team A and be a plain member of team B (test it).
 
 ## Removal (rule 9)
-- `DELETE /teams/:id/members/:userId`: 204. 404 if the team or user doesn't exist, or the
+- `DELETE /teams/:id/members/:userId`: 200 `{ removedAssignments: [{ serviceId, title, startsAt }] }`
+  (future services the member was unassigned from, sorted by `startsAt`, soft-deleted services
+  not listed; empty array if none). 404 if the team or user doesn't exist, or the
   user is not a member of that team.
 - In ONE transaction it also deletes that team's assignments for that user on future
   services (`services.starts_at > now`). Verify by reading the code.
@@ -52,7 +54,7 @@ directly into the DB as fixtures, because those endpoints don't exist yet.
   400, PEMBINA with `isLeader: false` is 200.
 - A team can have several leaders and no leader; one person leads team A and is a plain
   member of team B.
-- Removal: 204; 404 for unknown team, unknown user, and a user who is not a member;
+- Removal: 200 with `removedAssignments`; 404 for unknown team, unknown user, and a user who is not a member;
   removing a leader and the last leader are allowed.
 - Rule 9: a future assignment is deleted, a past one is kept, another team's assignment
   for the same user is kept, other users' assignments by this team are kept.

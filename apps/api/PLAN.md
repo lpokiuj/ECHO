@@ -131,6 +131,7 @@ Views
 | Seed data | Teams: Worship, Music, Sound, Multimedia, Usher, Stage Manager. People and assignments live in `src/database/seed-data.ts`, edited by hand (ships with marked examples). Insert-only, dev DB only (`echo_dev`). Fake users share `SEED_USER_PASSWORD` and have `must_change_password = false`. Hashing uses `bcryptjs` (pure JS, no native build). | Try assignment conflicts by hand before the admin endpoints exist |
 | Default password | Env `DEFAULT_USER_PASSWORD` (required, min 8 chars, app refuses to start without it) is the password for every account the admin creates or resets. `.env.example` uses `changeme123` for local development only. | No email service in v1; admin hands the password over out of band and the user must change it at first login |
 | User admin safety | An admin cannot change their own role or `isActive` (400). | Prevents leaving the system with no active admin |
+| Member removal response | `DELETE /teams/:id/members/:userId` returns 200 `{ removedAssignments: [{ serviceId, title, startsAt }] }` (the future services the member was unassigned from, sorted by `startsAt`; soft-deleted services are not listed), so the admin UI can tell the admin. No push notification in v1. PEMBINA cannot remove members and sees the change in the schedule views. | Admin sees the impact of a removal without a notification system |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -155,7 +156,7 @@ starts. If a feature has none, ask the user for them before implementing.
 2. Entities + seed (done). Criteria: docs/features/02-entities-seed.md
 3. Auth (done). Criteria: docs/features/03-auth.md
 4. User management (done). Criteria: docs/features/04-users.md
-5. Teams + membership + leader flag
+5. Teams + membership + leader flag (done). Criteria: docs/features/05-teams.md
 6. Services CRUD with soft delete (ADMIN, PEMBINA)
 7. Assignments: candidates, assign (first-claim-wins), unassign, including the concurrency test
 8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only)
@@ -165,7 +166,7 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 2. Entities + migration + seed
 - [x] 3. Auth
 - [x] 4. User management
-- [ ] 5. Teams + membership
+- [x] 5. Teams + membership
 - [ ] 6. Services
 - [ ] 7. Assignments
 - [ ] 8. Schedule views
