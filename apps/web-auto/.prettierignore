@@ -1,0 +1,9 @@
+dist
+node_modules
+.screens
+playwright-report
+test-results
+package-lock.json
+PLAN.md
+CLAUDE.md
+BACKEND_REQUESTS.md
