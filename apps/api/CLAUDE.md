@@ -80,6 +80,7 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - Tick the feature in the PLAN.md Status checklist only after tests pass.
 - For the current feature, also read docs/features/NN-*.md. Do not read other features'
   files unless asked.
+- When an endpoint's behavior changes, update docs/api/ in the same commit. Do not read docs/api/ unless the task is about documentation.
 
 ## Don't
 - Don't install new dependencies without saying why first.
