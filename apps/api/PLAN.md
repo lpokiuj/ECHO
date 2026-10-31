@@ -133,6 +133,8 @@ Views
 | User admin safety | An admin cannot change their own role or `isActive` (400). | Prevents leaving the system with no active admin |
 | Member removal response | `DELETE /teams/:id/members/:userId` returns 200 `{ removedAssignments: [{ serviceId, title, startsAt }] }` (the future services the member was unassigned from, sorted by `startsAt`; soft-deleted services are not listed), so the admin UI can tell the admin. No push notification in v1. PEMBINA cannot remove members and sees the change in the schedule views. | Admin sees the impact of a removal without a notification system |
 | Service responses | `POST` and `PATCH /services` return `{ id, title, startsAt, endsAt, createdBy, createdAt }` (no `deletedAt`). `PATCH` rejects any `startsAt` in the body that is at or before now (400), even if unchanged; clients send only the fields they change. Title and `endsAt` edits on a started service still work. | Literal reading of the "Service start time" rule; one response shape |
+| Assignment errors | `INVALID_USERS` is 400 `{ statusCode, error, code, message, invalidUserIds }`; `SERVICE_ALREADY_STARTED` is 409 with the same shape minus `invalidUserIds`. | Same body shape as `PASSWORD_CHANGE_REQUIRED` |
+| Assignment check order | Body validation (global ValidationPipe) runs before the handler, so a malformed assign body is 400 even for an unknown or deleted service. Guard (403) still comes first; path-param UUIDs are checked after it (a non-UUID `:teamId` is 403 for non-admins, 400 for ADMIN). | Standard NestJS pipe order, consistent with other modules |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -159,7 +161,7 @@ starts. If a feature has none, ask the user for them before implementing.
 4. User management (done). Criteria: docs/features/04-users.md
 5. Teams + membership + leader flag (done). Criteria: docs/features/05-teams.md
 6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: docs/features/06-services.md
-7. Assignments: candidates, assign (first-claim-wins), unassign, including the concurrency test
+7. Assignments (done). Criteria: docs/features/07-assignments.md
 8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only)
 
 ## Status
@@ -169,5 +171,5 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 4. User management
 - [x] 5. Teams + membership
 - [x] 6. Services
-- [ ] 7. Assignments
+- [x] 7. Assignments
 - [ ] 8. Schedule views
