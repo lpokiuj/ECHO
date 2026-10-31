@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions, envFilePath } from './database/data-source.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HealthModule } from './health/health.module.js';
+import { ServicesModule } from './services/services.module.js';
 import { TeamsModule } from './teams/teams.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -13,6 +14,7 @@ import { UsersModule } from './users/users.module.js';
     TypeOrmModule.forRoot(dataSourceOptions),
     AuthModule,
     HealthModule,
+    ServicesModule,
     TeamsModule,
     UsersModule,
   ],
