@@ -562,4 +562,81 @@ describe('Teams (e2e)', () => {
       expect(await assignmentsOf(service.id)).toHaveLength(1);
     });
   });
+
+  describe('GET /teams/:id/members', () => {
+    const list = (headers: Record<string, string>, teamId: string) =>
+      request(http()).get(`/teams/${teamId}/members`).set(headers);
+
+    it('returns 401 without a token', async () => {
+      const team = await createTeam();
+      await request(http()).get(`/teams/${team.id}/members`).expect(401);
+    });
+
+    it.each([UserRole.PEMBINA, UserRole.MEMBER])(
+      'returns 403 for %s',
+      async (role) => {
+        const team = await createTeam();
+        const headers = bearer(await tokenFor(await createUser({ role })));
+        await list(headers, team.id).expect(403);
+      },
+    );
+
+    it('returns 403 for the leader of that very team', async () => {
+      const team = await createTeam();
+      const leader = await createUser();
+      await addMember(team.id, leader.id, true);
+      await list(bearer(await tokenFor(leader)), team.id).expect(403);
+    });
+
+    it('returns 404 for an unknown team and 400 for a non-UUID id', async () => {
+      const headers = await adminToken();
+      await list(headers, UNKNOWN_ID).expect(404);
+      await list(headers, 'nope').expect(400);
+    });
+
+    it('lists members by name with isLeader and isActive, and nothing else', async () => {
+      const headers = await adminToken();
+      const team = await createTeam();
+      const other = await createTeam();
+      const zed = await createUser({ name: 'Zed' });
+      const amy = await createUser({ name: 'Amy', isActive: false });
+      const bob = await createUser({ name: 'Bob' });
+      await addMember(team.id, zed.id, true);
+      await addMember(team.id, amy.id);
+      await addMember(team.id, bob.id);
+      await addMember(other.id, bob.id);
+
+      const res = await list(headers, team.id).expect(200);
+
+      expect(res.body).toEqual([
+        {
+          userId: amy.id,
+          name: 'Amy',
+          email: amy.email,
+          isLeader: false,
+          isActive: false,
+        },
+        {
+          userId: bob.id,
+          name: 'Bob',
+          email: bob.email,
+          isLeader: false,
+          isActive: true,
+        },
+        {
+          userId: zed.id,
+          name: 'Zed',
+          email: zed.email,
+          isLeader: true,
+          isActive: true,
+        },
+      ]);
+    });
+
+    it('returns an empty list for a team with no members', async () => {
+      const team = await createTeam();
+      const res = await list(await adminToken(), team.id).expect(200);
+      expect(res.body).toEqual([]);
+    });
+  });
 });

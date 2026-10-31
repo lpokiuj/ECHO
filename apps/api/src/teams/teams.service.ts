@@ -18,6 +18,14 @@ export interface RemovedAssignment {
   startsAt: Date;
 }
 
+export interface TeamMemberView {
+  userId: string;
+  name: string;
+  email: string;
+  isLeader: boolean;
+  isActive: boolean;
+}
+
 @Injectable()
 export class TeamsService {
   constructor(
@@ -49,6 +57,24 @@ export class TeamsService {
       throw this.mapError(err);
     }
     return this.teams.findOneByOrFail({ id });
+  }
+
+  async listMembers(teamId: string): Promise<TeamMemberView[]> {
+    if (!(await this.teams.existsBy({ id: teamId }))) {
+      throw new NotFoundException('Team not found');
+    }
+    const rows = await this.teamMembers.find({
+      where: { teamId },
+      relations: { user: true },
+      order: { user: { name: 'ASC' } },
+    });
+    return rows.map((m) => ({
+      userId: m.userId,
+      name: m.user.name,
+      email: m.user.email,
+      isLeader: m.isLeader,
+      isActive: m.user.isActive,
+    }));
   }
 
   async setMember(teamId: string, userId: string, isLeader: boolean) {

@@ -162,7 +162,7 @@ starts. If a feature has none, ask the user for them before implementing.
 5. Teams + membership + leader flag (done). Criteria: docs/features/05-teams.md
 6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: docs/features/06-services.md
 7. Assignments (done). Criteria: docs/features/07-assignments.md
-8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only)
+8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: docs/features/08-schedule-views.md
 
 ## Status
 - [x] 1. Scaffold
@@ -172,4 +172,4 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 5. Teams + membership
 - [x] 6. Services
 - [x] 7. Assignments
-- [ ] 8. Schedule views
+- [x] 8. Schedule views

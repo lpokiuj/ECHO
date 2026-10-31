@@ -5,6 +5,7 @@ import { dataSourceOptions, envFilePath } from './database/data-source.js';
 import { AssignmentsModule } from './assignments/assignments.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HealthModule } from './health/health.module.js';
+import { ScheduleModule } from './schedule/schedule.module.js';
 import { ServicesModule } from './services/services.module.js';
 import { TeamsModule } from './teams/teams.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -16,6 +17,7 @@ import { UsersModule } from './users/users.module.js';
     AssignmentsModule,
     AuthModule,
     HealthModule,
+    ScheduleModule,
     ServicesModule,
     TeamsModule,
     UsersModule,

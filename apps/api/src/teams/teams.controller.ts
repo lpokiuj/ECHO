@@ -30,6 +30,11 @@ export class TeamsController {
     return this.teams.findAll();
   }
 
+  @Get(':id/members')
+  listMembers(@Param('id', ParseUUIDPipe) id: string) {
+    return this.teams.listMembers(id);
+  }
+
   @Patch(':id')
   rename(
     @Param('id', ParseUUIDPipe) id: string,
