@@ -1,10 +1,10 @@
+import { PageHeader } from '@/components/PageHeader'
+import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { messages } from '@/lib/messages'
 
 export function PlaceholderPage() {
+  useDocumentTitle()
   return (
-    <main className="mx-auto max-w-xl p-6">
-      <h1 className="text-2xl font-semibold">{messages.placeholder.title}</h1>
-      <p className="mt-2">{messages.placeholder.description}</p>
-    </main>
+    <PageHeader title={messages.placeholder.title} description={messages.placeholder.description} />
   )
 }

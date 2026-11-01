@@ -1,0 +1,41 @@
+import { NavLink } from 'react-router'
+import { navItems } from '@/components/nav-items'
+import { cn } from '@/lib/utils'
+import { messages } from '@/lib/messages'
+
+interface NavLinksProps {
+  onNavigate?: () => void
+}
+
+export function NavLinks({ onNavigate }: NavLinksProps) {
+  return (
+    <nav aria-label={messages.nav.label}>
+      <ul className="flex flex-col gap-1">
+        {navItems.map(({ to, label, icon: Icon, devOnly }) => (
+          <li key={to}>
+            <NavLink
+              to={to}
+              end
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-h-11 items-center gap-3 rounded-md px-3 text-base font-medium transition-colors',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  isActive ? 'bg-accent text-accent-foreground' : 'text-sidebar-foreground',
+                )
+              }
+            >
+              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {devOnly ? (
+                <span className="bg-warning text-warning-foreground rounded-sm px-1.5 py-0.5 text-xs font-medium">
+                  dev
+                </span>
+              ) : null}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
