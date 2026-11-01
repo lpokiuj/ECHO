@@ -40,6 +40,11 @@ describe('buildNavItems (full intended set)', () => {
     ])
   })
   it('renders only items whose route exists', () => {
-    expect(visibleNavItems(asMe(ME_BY_ROLE.admin)).map((i) => i.id)).toEqual(['home', 'design'])
+    expect(visibleNavItems(asMe(ME_BY_ROLE.admin)).map((i) => i.id)).toEqual([
+      'home',
+      'mySchedule',
+      'fullSchedule',
+      'design',
+    ])
   })
 })

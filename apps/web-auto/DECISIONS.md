@@ -76,3 +76,27 @@
 
 ### D-016 axe skipped with account menu open
 - Same Radix `aria-hidden-focus` false positive as D-007; axe runs before and after. Revisit in feature 10. Reversible: yes. Asked by: B.
+
+## Feature 5: Schedules
+
+### D-017 e2e fixtures assign as ADMIN (SECURITY-adjacent)
+- Question: how do fixtures get a leader token to assign people (forced password change blocks new users)?
+- Options: (a) fixture changes the new user's password; (b) ADMIN assigns (assignments.md: ADMIN any team); (c) skip.
+- Choice: (b). No extra credential handling. Teams/members/leaders are created via API as admin with e2e- names. Reversible: yes. Asked by: B.
+
+### D-018 No "Anda" badge on Full schedule
+- Choice: omit (not in PLAN, beyond the quality bar). Reversible: yes. Asked by: B.
+
+### D-019 Includepast toggle uses shadcn Switch
+- Choice: Radix Switch via `shadcn view` source, imported from the already-installed `radix-ui` umbrella package. No new package. If that is not possible without a new package, stop and ask. Reversible: yes. Asked by: B.
+
+### D-020 Past-service criterion covered by MSW only
+- Question: the API rejects past startsAt on create and edit, so a real ended service can't be made.
+- Choice: unit test with MSW for "ended hidden by default / shown with includePast"; Playwright checks only that the toggle sends includePast=true and the fixture stays visible. Listed in FINAL_REPORT "mock-only criteria". Reversible: yes. Asked by: B.
+- '/' stays the placeholder home (D-014).
+
+### D-021 Schedule hooks: retry false, placeholderData (feature 5)
+- Query hooks use `retry: false` (as useMe) so error + Retry shows at once; `placeholderData: keepPreviousData` avoids a skeleton flash on toggle. Reversible: yes. Asked by: B (deviation), accepted.
+
+### D-022 dates.ts imports messages with a relative path
+- The `@/` alias does not typecheck when an e2e spec imports the module. "WIB" label lives in `messages.dates.wib`. Reversible: yes. Asked by: B.

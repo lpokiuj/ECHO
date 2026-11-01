@@ -32,14 +32,14 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       to: '/my-schedule',
       label: messages.nav.mySchedule,
       icon: CalendarIcon,
-      routeExists: false,
+      routeExists: true,
     },
     {
       id: 'fullSchedule',
       to: '/schedule',
       label: messages.nav.fullSchedule,
       icon: CalendarDaysIcon,
-      routeExists: false,
+      routeExists: true,
     },
   ]
   if (me.memberships.some((m) => m.isLeader)) {

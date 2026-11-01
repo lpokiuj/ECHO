@@ -44,3 +44,30 @@ export interface ApiErrorBody {
   code?: string
   invalidUserIds?: string[]
 }
+
+/** One person on a service, from GET /services (schedule.md). */
+export interface ScheduleAssignment {
+  userId: string
+  name: string
+  teamId: string
+  teamName: string
+}
+
+/** GET /services item: a service with everyone assigned across teams. */
+export interface ServiceSchedule {
+  id: string
+  title: string
+  startsAt: string
+  endsAt: string
+  assignments: ScheduleAssignment[]
+}
+
+/** GET /me/schedule item. Note `serviceId`, not `id`. */
+export interface MyScheduleItem {
+  serviceId: string
+  title: string
+  startsAt: string
+  endsAt: string
+  teamId: string
+  teamName: string
+}

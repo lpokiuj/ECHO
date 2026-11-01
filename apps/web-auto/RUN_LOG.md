@@ -68,3 +68,8 @@
 - B sessions for feature 4: 3 (first implemented, one inspect-only, one finish). Fix rounds: 0. B sessions total: 6.
 - Verified by me: `npm run check` pass (12 files, 91 tests); `npm run e2e` 55 passed; deps added: react-hook-form, zod, @hookform/resolvers (approved); no skip/only/any/ts-ignore. Viewed 3 screenshots (home 360, home 1280, login 360): fine.
 - Commit: see git log (feat(web): login, forced password change, navigation).
+- Feature 4 commit hash: 500d88f. Next: feature 5 with a fresh B (plan phase).
+
+## Feature 5 done
+- B sessions for feature 5: 1 (Agent/sonnet, plan then implement via SendMessage). Fix rounds: 0. B sessions total: 7.
+- Verified by me: `npm run check` pass (14 files, 108 tests); `npm run e2e` 65 passed; package.json/lock unchanged; no skip/only/any/ts-ignore; no hex. Viewed 2 screenshots (full 360, full 1280): fine.

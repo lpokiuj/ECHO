@@ -67,3 +67,58 @@ export const handlers = {
   me: (headers?: Record<string, string>, body: typeof ME_EXAMPLE = ME_EXAMPLE) =>
     http.get('*/api/me', () => HttpResponse.json(body, { headers })),
 }
+
+// Bodies copied verbatim from ../api/docs/api/schedule.md.
+export const SERVICES_EXAMPLE = [
+  {
+    id: 'e9ae933a-fe76-4f62-95a4-d3b4db8f27ae',
+    title: 'Sunday Service',
+    startsAt: '2026-11-01T03:00:00.000Z',
+    endsAt: '2026-11-01T05:00:00.000Z',
+    assignments: [
+      {
+        userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28',
+        name: 'Enji',
+        teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
+        teamName: 'Worship',
+      },
+    ],
+  },
+  {
+    id: '00adcf97-63e1-4dc6-a319-46fe3f93e922',
+    title: 'KEEP 1',
+    startsAt: '2026-11-20T15:26:31.938Z',
+    endsAt: '2026-11-20T17:50:31.938Z',
+    assignments: [
+      {
+        userId: '8bbc624a-3766-40b0-a32c-321f33524dc4',
+        name: 'Agner',
+        teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
+        teamName: 'Sound',
+      },
+      {
+        userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da',
+        name: 'Giana',
+        teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
+        teamName: 'Worship',
+      },
+    ],
+  },
+]
+
+export const MY_SCHEDULE_EXAMPLE = [
+  {
+    serviceId: '00adcf97-63e1-4dc6-a319-46fe3f93e922',
+    title: 'KEEP 1',
+    startsAt: '2026-11-20T15:26:31.938Z',
+    endsAt: '2026-11-20T17:50:31.938Z',
+    teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
+    teamName: 'Sound',
+  },
+]
+
+export const INCLUDE_PAST_BAD = {
+  message: ['includePast must be true or false'],
+  error: 'Bad Request',
+  statusCode: 400,
+}

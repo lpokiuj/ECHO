@@ -207,8 +207,11 @@ describe('navigation per role (rendered)', () => {
     await heading(messages.placeholder.title)
     const nav = screen.getAllByRole('navigation', { name: messages.nav.label })[0]!
     const links = within(nav).getAllByRole('link')
-    expect(links).toHaveLength(2)
-    expect(within(nav).getByRole('link', { name: messages.nav.home })).toBeInTheDocument()
+    // Home and the two schedules exist now (feature 5), plus the dev-only design link.
+    expect(links).toHaveLength(4)
+    for (const name of [messages.nav.home, messages.nav.mySchedule, messages.nav.fullSchedule]) {
+      expect(within(nav).getByRole('link', { name })).toBeInTheDocument()
+    }
     const role = ME_BY_ROLE[key].role as keyof typeof messages.roles
     await waitFor(() => expect(screen.getAllByText(messages.roles[role]).length).toBeGreaterThan(0))
   })

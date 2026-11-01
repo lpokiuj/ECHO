@@ -183,7 +183,7 @@ Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, 
 - [x] 2. Design foundation
 - [x] 3. API client and session core
 - [x] 4. Login, password change, navigation
-- [ ] 5. Schedules
+- [x] 5. Schedules
 - [ ] 6. Services management
 - [ ] 7. Leader assign screen
 - [ ] 8. Admin users

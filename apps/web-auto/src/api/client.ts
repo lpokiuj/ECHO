@@ -7,6 +7,8 @@ import type {
   LoginRequest,
   LoginResponse,
   MeResponse,
+  MyScheduleItem,
+  ServiceSchedule,
 } from './types'
 
 const BASE_URL = '/api'
@@ -82,4 +84,16 @@ export function changePassword(body: ChangePasswordRequest): Promise<void> {
 
 export function getHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/health')
+}
+
+function scheduleQuery(includePast: boolean): string {
+  return includePast ? '?includePast=true' : ''
+}
+
+export function getServices(includePast = false): Promise<ServiceSchedule[]> {
+  return request<ServiceSchedule[]>(`/services${scheduleQuery(includePast)}`)
+}
+
+export function getMySchedule(includePast = false): Promise<MyScheduleItem[]> {
+  return request<MyScheduleItem[]>(`/me/schedule${scheduleQuery(includePast)}`)
 }
