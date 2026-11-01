@@ -94,3 +94,5 @@ STOP and ask me before:
 - Don't add another component library besides shadcn/ui.
 - Don't refactor outside the current feature.
 - Don't put secrets or real tokens in code, docs, tests, or screenshots.
+
+The initial build is complete (features 1 to 10). For changes, keep diffs small and update PLAN.md only when a rule, decision, or documented behavior changes
