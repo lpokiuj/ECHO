@@ -5,7 +5,7 @@ import { queryClient } from '@/api/queryClient'
 import { logout } from '@/api/session'
 import { afterAll, afterEach, beforeAll } from 'vitest'
 
-// Handlers are added per test from real examples in ../api/docs/api/. None yet.
+// Handlers are added per test from real examples in ../../docs/api/. None yet.
 export const server = setupServer()
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))

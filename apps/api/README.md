@@ -12,10 +12,10 @@ cp .env.example .env        # also create .env.test (see .env.example)
 docker compose up -d --wait db
 ```
 
-Then in `apps/api`:
+Then install once at the repo root (`npm install`, npm workspaces) and, in `apps/api`
+(or from the root with `npm run <script> -w @echo/api`):
 
 ```
-npm install
 npm run migration:run
 npm run seed                # dev only: creates the first ADMIN
 npm run start:dev
@@ -30,6 +30,6 @@ npm run start:dev
 
 ## Docs
 
-- [docs/api/README.md](docs/api/README.md): API guide for frontend developers
+- [docs/api/README.md](../../docs/api/README.md): API guide for frontend developers
 - [CLAUDE.md](CLAUDE.md): conventions and commands
-- [PLAN.md](PLAN.md), [docs/features/](docs/features/): design and feature specs
+- [PLAN.md](PLAN.md), [docs/features/](../../docs/features/): design and feature specs

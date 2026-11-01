@@ -3,16 +3,17 @@
 Indonesian-language web app where Echo volunteers see the service schedule and leaders and
 admins manage it. Vite, React, TypeScript (strict), React Router, TanStack Query, Tailwind CSS
 and shadcn/ui. It talks to the backend in `../api`. `PLAN.md` holds scope and decisions,
-`DECISIONS.md` logs the choices made while building, `../api/docs/api/` documents the API.
+`../../docs/archive/web/DECISIONS.md` (archived) logs the choices made while building,
+`../../docs/api/` documents the API.
 
 ## Run
 
-Prerequisites: Node.js and a running Echo API (see `../api/docs/api/README.md`:
+Prerequisites: Node.js and a running Echo API (see `../../docs/api/README.md`:
 `docker compose up -d --wait db`, `npm run migration:run`, `npm run seed`, `npm run start:dev`).
 
 ```bash
-npm install
-npm run dev        # http://localhost:5173
+npm install        # once, at the repo root (npm workspaces)
+npm run dev        # http://localhost:5173 (from apps/web, or `npm run dev:web` at the root)
 ```
 
 The dev server proxies `/api` to the backend, so the browser stays same-origin. The proxy
@@ -33,6 +34,8 @@ Set these in the shell that runs the commands. Names only; never commit values.
 `VITE_*` variables are exposed to the browser. Never put a secret in one.
 
 ## Scripts
+
+Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 
 | Command         | What it does                                            |
 | --------------- | ------------------------------------------------------- |

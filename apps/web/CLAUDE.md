@@ -2,11 +2,12 @@
 
 Frontend for the Echo volunteer portal, built autonomously with Vite and React. Read
 PLAN.md before any task. PLAN.md is the source of truth for scope and decisions.
-`../api/docs/api/` is the source of truth for the API.
+`../../docs/api/` is the source of truth for the API.
 
 ## Commands (edit if scripts differ)
 
-- Install: `npm install`, then once `npx playwright install chromium`
+- Install once at the repo root: `npm install`, then once `npx playwright install chromium`.
+  Run the scripts below from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 - Dev server: `npm run dev`
 - All checks: `npm run check` (typecheck + lint + unit tests)
 - Unit tests: `npm test`
@@ -29,7 +30,7 @@ STOP and ask me before:
 
 - anything affecting security (token storage, CORS, what is logged or stored)
 - a dependency not on the approved list in PLAN.md
-- a change needed in the backend (write it in `BACKEND_REQUESTS.md` instead)
+- a change needed in the backend (write it in `../../docs/backend-requests.md` instead)
 - the docs disagreeing with the real API's behavior
 - adding a screen or feature not in PLAN.md, or polish beyond the UI quality bar
 - anything destructive to data beyond what Data safety allows
@@ -76,7 +77,7 @@ STOP and ask me before:
   Playwright at 3360px, 390px, 768px, and 1280px wide. Save screenshots in `.screens/` (gitignored),
   look at them, and judge them against the UI quality bar. List what you found and fixed.
   Report console errors and axe results.
-- MSW handlers copy real response examples from `docs/api/`. Never invent a response shape.
+- MSW handlers copy real response examples from `../../docs/api/`. Never invent a response shape.
 - Never say a screen works without having run it.
 
 ## Workflow

@@ -152,17 +152,17 @@ Views
 None at the moment.
 
 ## Feature order (one Claude Code session per item)
-Acceptance criteria for each feature are added to docs/features/NN-*.md before its session
+Acceptance criteria for each feature are added to ../../docs/features/NN-*.md before its session
 starts. If a feature has none, ask the user for them before implementing.
 
-1. Scaffold (done). Criteria: docs/features/01-scaffold.md
-2. Entities + seed (done). Criteria: docs/features/02-entities-seed.md
-3. Auth (done). Criteria: docs/features/03-auth.md
-4. User management (done). Criteria: docs/features/04-users.md
-5. Teams + membership + leader flag (done). Criteria: docs/features/05-teams.md
-6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: docs/features/06-services.md
-7. Assignments (done). Criteria: docs/features/07-assignments.md
-8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: docs/features/08-schedule-views.md
+1. Scaffold (done). Criteria: ../../docs/features/01-scaffold.md
+2. Entities + seed (done). Criteria: ../../docs/features/02-entities-seed.md
+3. Auth (done). Criteria: ../../docs/features/03-auth.md
+4. User management (done). Criteria: ../../docs/features/04-users.md
+5. Teams + membership + leader flag (done). Criteria: ../../docs/features/05-teams.md
+6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: ../../docs/features/06-services.md
+7. Assignments (done). Criteria: ../../docs/features/07-assignments.md
+8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: ../../docs/features/08-schedule-views.md
 
 ## Status
 - [x] 1. Scaffold

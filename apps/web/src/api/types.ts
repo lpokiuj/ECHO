@@ -1,4 +1,4 @@
-// The one module for API data types. Hand-written from ../api/docs/api/ (no OpenAPI spec).
+// The one module for API data types. Hand-written from ../../docs/api/ (no OpenAPI spec).
 export type UserRole = 'ADMIN' | 'PEMBINA' | 'MEMBER'
 
 export type ErrorCode = 'PASSWORD_CHANGE_REQUIRED' | 'INVALID_USERS' | 'SERVICE_ALREADY_STARTED'

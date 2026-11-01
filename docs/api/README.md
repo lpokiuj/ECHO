@@ -23,7 +23,7 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 
 ## Run the API locally
 
-From the repo root (`~/code/echo`), then `apps/api`:
+Install once at the repo root (`~/code/echo`): `npm install` (npm workspaces). Then, from the root and then `apps/api` (root aliases exist: `npm run db:up`, `npm run dev:api`):
 
 ```bash
 docker compose up -d --wait db          # Postgres; creates echo_dev and echo_test

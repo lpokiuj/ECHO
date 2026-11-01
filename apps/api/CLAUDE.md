@@ -9,7 +9,8 @@ Vitest, oxlint. Developed in WSL (Ubuntu).
 Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 
 ## Layout
-- This API lives in `apps/api`. Run npm commands from here; start Claude Code sessions here.
+- This API lives in `apps/api`. Install once at the repo root (`npm install`, npm workspaces). Run the scripts below from here, or from the root with `npm run <script> -w @echo/api` (root aliases: `dev:api`, `db:up`, `lint`, `test`, `check`).
+  Start Claude Code sessions here. See also [README.md](README.md) and the root [CLAUDE.md](../../CLAUDE.md).
 - `docker-compose.yml`, `docker/`, `.env`, `.env.test`, `.env.example` live at the repo root (`../..`).
 
 ## Commands (edit if scripts differ)
@@ -26,6 +27,8 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - New entity: add the class to `src/database/entities.ts` (explicit list, not a glob), then
   generate a migration, READ the SQL, run it. A second `migration:generate` must say "No changes".
 - `npm run test:e2e` builds first (migrations load from `dist/`)
+- `vitest.config.ts` defines two projects, `unit` and `e2e`. A bare `vitest` runs BOTH (e2e needs
+  `NODE_ENV=test` and the test DB). Use `npm test` (unit) and `npm run test:e2e`.
 - Lint: `npm run lint`
 
 ## Structure
@@ -78,9 +81,9 @@ Keep the repo in the Linux filesystem (`~/code/echo`), not under `/mnt/c`.
 - When the user approves a commit, use one commit per feature, message `feat(<module>): <what>`.
 - When a decision changes, update PLAN.md in the same commit.
 - Tick the feature in the PLAN.md Status checklist only after tests pass.
-- For the current feature, also read docs/features/NN-*.md. Do not read other features'
+- For the current feature, also read ../../docs/features/NN-*.md. Do not read other features'
   files unless asked.
-- When an endpoint's behavior changes, update docs/api/ in the same commit. Do not read docs/api/ unless the task is about documentation.
+- When an endpoint's behavior changes, update ../../docs/api/ in the same commit. Do not read ../../docs/api/ unless the task is about documentation.
 
 ## Don't
 - Don't install new dependencies without saying why first.

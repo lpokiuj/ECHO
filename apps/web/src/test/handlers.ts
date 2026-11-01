@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 
-// Bodies copied from ../api/docs/api/ (README.md and auth.md).
+// Bodies copied from ../../docs/api/ (README.md and auth.md).
 export const LOGIN_OK = { accessToken: '<accessToken>' }
 
 export const ME_EXAMPLE = {
@@ -68,7 +68,7 @@ export const handlers = {
     http.get('*/api/me', () => HttpResponse.json(body, { headers })),
 }
 
-// Bodies copied verbatim from ../api/docs/api/schedule.md.
+// Bodies copied verbatim from ../../docs/api/schedule.md.
 export const SERVICES_EXAMPLE = [
   {
     id: 'e9ae933a-fe76-4f62-95a4-d3b4db8f27ae',
@@ -123,7 +123,7 @@ export const INCLUDE_PAST_BAD = {
   statusCode: 400,
 }
 
-// Bodies copied verbatim from ../api/docs/api/services.md.
+// Bodies copied verbatim from ../../docs/api/services.md.
 export const SERVICE_CREATED = {
   id: 'f13c4b91-112d-44ae-8c63-4ed9400ad52f',
   title: 'docs-example Service 1',
@@ -168,7 +168,7 @@ export const SERVICE_ERROR_BODIES = {
   },
 }
 
-// Bodies copied verbatim from ../api/docs/api/assignments.md.
+// Bodies copied verbatim from ../../docs/api/assignments.md.
 export const CANDIDATES_EXAMPLE = [
   { userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28', name: 'Enji', assigned: true },
   { userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da', name: 'Giana', assigned: false },
@@ -208,7 +208,7 @@ export const ASSIGNMENT_NOT_FOUND = {
   statusCode: 404,
 }
 
-// Bodies copied verbatim from ../api/docs/api/users.md.
+// Bodies copied verbatim from ../../docs/api/users.md.
 export const USER_ADMIN = {
   id: '3ba66b7e-9a5f-4a7f-be68-8b012feae3a7',
   name: 'Admin',
@@ -263,7 +263,7 @@ export const USER_ERROR_BODIES = {
   notFound: { message: 'Not Found', statusCode: 404 },
 }
 
-// Bodies copied verbatim from ../api/docs/api/teams.md.
+// Bodies copied verbatim from ../../docs/api/teams.md.
 export const TEAMS_EXAMPLE = [
   { id: 'a3ff8b91-dc3a-4175-af7b-1ac7c5b58bdb', name: 'Multimedia' },
   { id: 'aba2c1ed-b318-467b-8388-e97b051dec22', name: 'Music' },
