@@ -46,6 +46,7 @@ describe('buildNavItems (full intended set)', () => {
       'fullSchedule',
       'services',
       'users',
+      'teams',
       'design',
     ])
   })

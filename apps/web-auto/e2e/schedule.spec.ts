@@ -142,6 +142,8 @@ for (const width of widths) {
     page,
     request,
   }) => {
+    // Axe over a schedule that grows with every leftover e2e- service (see D-032).
+    test.setTimeout(150_000)
     const errors = collectErrors(page)
     const { service } = await createFixture(request)
     await seedSession(page, await adminToken(request))

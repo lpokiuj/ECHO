@@ -187,7 +187,7 @@ Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, 
 - [x] 6. Services management
 - [x] 7. Leader assign screen
 - [x] 8. Admin users
-- [ ] 9. Admin teams and membership
+- [x] 9. Admin teams and membership
 - [ ] 10. Hardening
 
 ## Notes for later features (orchestrator, feature 2)

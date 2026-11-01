@@ -107,6 +107,8 @@ test('admin creates a user; that user logs in and changes the password', async (
 
   await createViaUi(page, user.name, user.email)
   const row = itemFor(page, 1280, user.name)
+  // The list refetches after the create; with hundreds of leftover users and parallel workers
+  // that can take much longer than the default (see D-032).
   await expect(row).toBeVisible()
   await expect(row).toContainText(messages.roles.MEMBER)
   await expect(row).toContainText(t.active)

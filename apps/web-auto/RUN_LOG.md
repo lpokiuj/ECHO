@@ -88,3 +88,30 @@
 ## Feature 8 done
 - B sessions for feature 8: 1 (Agent/sonnet, plan then implement via SendMessage). Fix rounds: 0. B sessions total: 10.
 - Verified by me: `npm run check` pass (17 files, 181 tests); `npm run e2e` 87 passed; package.json/lock unchanged; no skip/only/any/ts-ignore/hex. Viewed 1 screenshot (users list 360): fine. BACKEND_REQUESTS.md created (error codes for two 400s).
+- Feature 8 commit hash: 4149467. Next: feature 9 with a fresh B (plan phase).
+
+## 2026-11-01: PAUSED by user request in feature 9 (waiting for echo_dev reset)
+- Committed so far: features 1-8 (hashes: f4 500d88f, f5 3bbb531, f6 a453ac4, f7 c1e3e03, f8 4149467). PLAN.md Status ticks 1-8. Feature 9 is NOT committed or ticked.
+- Feature 9 (admin teams and membership) is implemented in the working tree (src/features/teams/, e2e/teams.spec.ts, router/nav/messages/types/handlers/client/fixtures edits, longer timeouts in users/services/teams/schedule specs, useUsers.ts setQueryData). Decisions D-039..D-044 are logged. B sessions total so far: 11 (feature 9 B = 1 session, 2 fix rounds used: round 1 timeouts, round 2 more timeouts + setQueryData).
+- `npm run check`: pass (18 files, 210 tests). Last full `npm run e2e` (mine, 14.1m): 93 passed, 3 failed: assign.spec.ts:105 and :189 (feature 7 tests: "Penugasan" heading / checkbox not visible at the 30s default; they pass when run alone, and a re-run of the whole file failed :105 and :166 instead, so it is timing under load, not a stable bug) and users.spec.ts:221 (768px, 300s timeout in the axe scan of the ~1000-user list).
+- Cause: ~1000 leftover e2e- users and ~150 e2e- services in echo_dev. User will reset echo_dev themselves (D-044). Backend was briefly down once during B's run (502); it was up again afterwards.
+- To resume: user resets echo_dev (drop, migration:run, seed, restart backend) and re-runs the same prompt. Then: preflight, a fresh B (resume rule) inspects git status/diff for feature 9, runs `npm run check` and the full `npm run e2e` on the clean data. If assign.spec still fails on clean data, it is a real bug: send to B. Consider adding test.setTimeout to assign.spec.ts if only load-related. Tighten the D-043 timeouts if the clean run is fast. Do not count the previous 2 fix rounds as reset, but a fresh run on clean data may be treated as a new attempt; log it.
+- Noted for feature 10: restore full axe coverage on users/teams lists (D-038), assign screen service Select truncates the date at 360px, find a way to keep leftover data small (e2e cleanup), time inputs show AM/PM in some locales, 44px check skipped at 1280.
+
+## 2026-11-01: RESUMED feature 9
+- Preflight OK: branch web-auto-build, /health 200, `npm run check` pass (210 tests). Uncommitted feature 9 changes attributed to feature 9 (resume rule).
+- B session 12: Agent/sonnet, fresh, told to inspect git status/diff, keep correct work, run check + full e2e on (presumably) reset echo_dev, screenshots, tighten D-043 timeouts if safe.
+
+## 2026-11-01: HARD STOP in feature 9 (admin must change password after echo_dev reset)
+- B session 12 changed no files. `npm run check` pass (210 tests). Full e2e on the reset DB: ~19 passed, rest failed in fixture setup with 403 PASSWORD_CHANGE_REQUIRED (POST /users, POST /services). The seeded e2e admin has must_change_password again after the reset.
+- I did not touch credentials. Options (b) (fixture bootstraps the seeded admin) and (c) (backend change) are not mine to take; (a) needs the user.
+- To resume: the user completes the admin's forced password change so the password equals E2E_ADMIN_PASSWORD (as after the first setup, D-011), then re-runs the same prompt. Each future DB reset needs this repeated.
+- Feature 9 remains uncommitted and unticked.
+
+## 2026-11-01: RESUMED after admin password change (user done)
+- Probe e2e/teams.spec.ts:91 passes. Starting B session 13 for feature 9 (fresh B, same task as session 12).
+
+## Feature 9 done
+- B sessions for feature 9: 3 total (sessions 11, 12 (blocked on admin password), 13). Fix rounds: 2 earlier (timeouts) + 0 on clean data. B sessions total: 13.
+- Verified by me: `npm run check` pass (18 files, 210 tests); `npm run e2e` 96 passed (4.4m); package.json/lock unchanged; no skip/only/any/ts-ignore/hex in the diff. Viewed 2 screenshots (team detail 360, list 1280): fine.
+- Carry to feature 10: full axe on users/teams lists (D-038), assign Select date truncation at 360px, e2e data cleanup, time inputs AM/PM, 44px check at 1280.

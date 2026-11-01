@@ -13,9 +13,13 @@ import type {
   CreateUserBody,
   UpdateUserBody,
   User,
+  MemberUpsertResult,
   MyScheduleItem,
+  RemoveMemberResult,
   Service,
   ServiceSchedule,
+  Team,
+  TeamMember,
   UpdateServiceBody,
 } from './types'
 
@@ -159,4 +163,40 @@ export function updateUser(id: string, body: UpdateUserBody): Promise<User> {
 /** 204 with an empty body. The server sets its default password; nothing is returned. */
 export function resetUserPassword(id: string): Promise<void> {
   return request<void>(`/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' })
+}
+
+const teamPath = (id: string) => `/teams/${encodeURIComponent(id)}`
+const memberPath = (teamId: string, userId: string) =>
+  `${teamPath(teamId)}/members/${encodeURIComponent(userId)}`
+
+export function getTeams(): Promise<Team[]> {
+  return request<Team[]>('/teams')
+}
+
+export function createTeam(name: string): Promise<Team> {
+  return request<Team>('/teams', { method: 'POST', body: { name } })
+}
+
+export function renameTeam(id: string, name: string): Promise<Team> {
+  return request<Team>(teamPath(id), { method: 'PATCH', body: { name } })
+}
+
+export function getTeamMembers(teamId: string): Promise<TeamMember[]> {
+  return request<TeamMember[]>(`${teamPath(teamId)}/members`)
+}
+
+/** Upsert. `isLeader` is always sent: a bodiless PUT would reset an existing leader to false. */
+export function putTeamMember(
+  teamId: string,
+  userId: string,
+  isLeader: boolean,
+): Promise<MemberUpsertResult> {
+  return request<MemberUpsertResult>(memberPath(teamId, userId), {
+    method: 'PUT',
+    body: { isLeader },
+  })
+}
+
+export function removeTeamMember(teamId: string, userId: string): Promise<RemoveMemberResult> {
+  return request<RemoveMemberResult>(memberPath(teamId, userId), { method: 'DELETE' })
 }

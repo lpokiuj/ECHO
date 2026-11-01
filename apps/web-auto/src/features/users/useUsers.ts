@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createUser, getUsers, resetUserPassword, updateUser } from '@/api/client'
-import type { CreateUserBody, UpdateUserBody } from '@/api/types'
+import type { CreateUserBody, UpdateUserBody, User } from '@/api/types'
 import { ME_KEY } from '@/features/auth/useMe'
 
 export const USERS_KEY = ['users'] as const
@@ -23,7 +23,15 @@ function useRefreshUsers() {
 
 export function useCreateUser() {
   const refresh = useRefreshUsers()
-  return useMutation({ mutationFn: (body: CreateUserBody) => createUser(body), onSuccess: refresh })
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (body: CreateUserBody) => createUser(body),
+    onSuccess: (user) => {
+      // Show the new row at once; the background refetch then puts it in server order.
+      client.setQueryData<User[]>(USERS_KEY, (list) => (list ? [...list, user] : list))
+      refresh()
+    },
+  })
 }
 
 export function useUpdateUser() {
@@ -32,6 +40,10 @@ export function useUpdateUser() {
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: UpdateUserBody }) => updateUser(id, body),
     onSuccess: (user) => {
+      // Show the change at once; the background refetch confirms it.
+      client.setQueryData<User[]>(USERS_KEY, (list) =>
+        list?.map((u) => (u.id === user.id ? { ...u, ...user } : u)),
+      )
       refresh()
       // The admin edited their own name or email: the shell reads it from GET /me.
       const me = client.getQueryData<{ id: string }>(ME_KEY)

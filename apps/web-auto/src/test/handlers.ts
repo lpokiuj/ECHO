@@ -262,3 +262,77 @@ export const USER_ERROR_BODIES = {
   },
   notFound: { message: 'Not Found', statusCode: 404 },
 }
+
+// Bodies copied verbatim from ../api/docs/api/teams.md.
+export const TEAMS_EXAMPLE = [
+  { id: 'a3ff8b91-dc3a-4175-af7b-1ac7c5b58bdb', name: 'Multimedia' },
+  { id: 'aba2c1ed-b318-467b-8388-e97b051dec22', name: 'Music' },
+]
+export const TEAM_CREATED = {
+  id: 'd582b5a4-4814-4e8b-9f2a-f21c8a956e35',
+  name: 'docs-example-team-a',
+}
+export const MEMBERS_EXAMPLE = [
+  {
+    userId: 'd50ed778-821b-47f1-8992-475f525b4097',
+    name: 'Docs Example Lead A',
+    email: 'docs-example-lead-a@echo.local',
+    isLeader: true,
+    isActive: true,
+  },
+  {
+    userId: 'be218193-9844-482b-b44d-575c49d2e16f',
+    name: 'Docs Example Member 1',
+    email: 'docs-example-m1@echo.local',
+    isLeader: false,
+    isActive: true,
+  },
+]
+// Member view (teams.md) of the inactive user documented in users.md.
+export const MEMBER_INACTIVE = {
+  userId: '85c483d5-d17f-495d-a088-78f652357e4d',
+  name: 'Docs Example Member 2',
+  email: 'docs-example-m2@echo.local',
+  isLeader: false,
+  isActive: false,
+}
+export const MEMBER_PUT_RESULT = {
+  teamId: 'd582b5a4-4814-4e8b-9f2a-f21c8a956e35',
+  userId: 'd50ed778-821b-47f1-8992-475f525b4097',
+  isLeader: true,
+}
+export const REMOVED_EXAMPLE = {
+  removedAssignments: [
+    {
+      serviceId: 'f13c4b91-112d-44ae-8c63-4ed9400ad52f',
+      title: 'docs-example Service 1',
+      startsAt: '2026-12-06T02:00:00.000Z',
+    },
+    {
+      serviceId: 'c570c017-5e63-41b7-8290-6d9da522b837',
+      title: 'docs-example Service 2 (renamed)',
+      startsAt: '2026-12-13T02:00:00.000Z',
+    },
+  ],
+}
+export const TEAM_ERROR_BODIES = {
+  nameEmpty: {
+    message: ['name should not be empty'],
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  nameTaken: { message: 'Team name already in use', error: 'Conflict', statusCode: 409 },
+  teamNotFound: { message: 'Team not found', error: 'Not Found', statusCode: 404 },
+  memberNotFound: { message: 'Member not found', error: 'Not Found', statusCode: 404 },
+  inactiveUser: {
+    message: 'Cannot add an inactive user to a team',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  pembinaLeader: {
+    message: 'A PEMBINA cannot be a team leader',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  forbidden: ERROR_BODIES.forbidden,
+}

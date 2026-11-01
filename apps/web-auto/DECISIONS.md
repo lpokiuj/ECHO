@@ -154,3 +154,27 @@
 
 ### D-038 Reduced axe scope on the users list (revisit in feature 10)
 - echo_dev holds ~500 leftover e2e- users, which makes full-page axe too slow. `users screens at Npx` runs axe on the first 10 rows/cards only (rows share one markup) and on dialogs scoped to the dialog; timeouts raised (90s/180s). Revisit? YES: coverage is narrower than "axe on every route"; feature 10 should run full-page axe on a smaller list or via a lighter check. Reversible: yes. Asked by: B, accepted by orchestrator.
+
+## Feature 9: Admin teams and membership
+
+### D-039 Shape-based error mapping for teams
+- 409 on team create/rename maps to the `name` field; a 400 with no field on PUT member shows "Pembina cannot be leader" when isLeader:true was sent and "inactive user" when false (same approach as D-034; never parse backend text). Reversible: yes. Asked by: B.
+
+### D-040 Inactive users selectable in the add picker
+- Options: (a) selectable with a "Nonaktif" badge, server error shown; (b) hidden; (c) disabled. Choice: (a); it is the only way to exercise "adding an inactive user shows the error" in the UI. Reversible: yes. Asked by: B.
+
+### D-041 Search input and 50-row cap inside the add-member picker only
+- No combobox exists/approved; ~500 users make a plain list unusable and axe too slow (D-038). Choice: search input (name/email, client-side) + first 50 matches + hint, inside the dialog only. Not a list-wide search (D-033 stands). Reversible: yes. Asked by: B.
+
+### D-042 No /users fetch on the team detail page
+- Options: (a) fetch roles to disable "Jadikan Ketua" for PEMBINA; (b) no fetch, let the server 400 show the mapped sentence. Choice: (b) (smaller, no 500-user request per view). Reversible: yes. Asked by: B.
+
+### D-043 Long-list e2e timeouts and setQueryData in users hooks (feature 9, fix rounds 1-2)
+- `expect` timeout 60s and describe timeout 150s in users/services/teams specs; responsive tests 300s; schedule.spec "full schedule at N px" 150s. `useUsers.ts` appends/replaces the cached user on create/update (setQueryData) before the background invalidation. No assertion removed, axe unchanged. Revisit? YES: these exist only because echo_dev holds ~1000 leftover e2e- users and ~150 services; after a DB reset they can be tightened. Reversible: yes. Asked by: B.
+
+### D-044 echo_dev reset requested from the user
+- Leftover e2e- data makes lists/axe slow and specs flaky (assign.spec failed on different tests in each run at the 30s default). The UI can only delete services, not users/teams, and agents may not wipe data. Choice: the user resets echo_dev themselves (drop, migration:run, seed, restart backend). Reversible: n/a (user action). Asked by: orchestrator.
+
+### D-045 D-043 timeouts tightened after the echo_dev reset (feature 9)
+- On clean data the e2e `expect` timeout returned to 20s, describe to 90s, responsive tests to 180s (users/services/teams specs); full e2e 96 passed in ~4.4m. `setQueryData` in useUsers.ts kept (harmless). D-043 and D-044 are resolved. schedule.spec 150s timeout left as is. No assertion removed. Reversible: yes. Asked by: B, decided by orchestrator.
+- Note: after each echo_dev reset the seeded admin must again complete the forced password change (user action).

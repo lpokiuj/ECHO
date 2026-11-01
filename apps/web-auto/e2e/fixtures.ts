@@ -70,7 +70,7 @@ const authed = (token: string) => ({ Authorization: `Bearer ${token}` })
 
 async function adminCall<T>(
   request: APIRequestContext,
-  method: 'post' | 'put',
+  method: 'post' | 'put' | 'patch',
   path: string,
   data: unknown,
   expected: number[],
@@ -130,6 +130,27 @@ export async function addTeamMember(
   isLeader = false,
 ): Promise<void> {
   await adminCall(request, 'put', `/teams/${teamId}/members/${userId}`, { isLeader }, [200])
+}
+
+/** Deactivates an `e2e-` user as admin (PATCH /users/:id). */
+export async function deactivateUser(request: APIRequestContext, userId: string): Promise<void> {
+  await adminCall(request, 'patch', `/users/${userId}`, { isActive: false }, [200])
+}
+
+/** Ids of everyone assigned to one service, from the full schedule (GET /services). */
+export async function assignedUserIds(
+  request: APIRequestContext,
+  serviceId: string,
+): Promise<string[]> {
+  const token = await adminToken(request)
+  const response = await request.get(`${baseUrl}/api/services`, { headers: authed(token) })
+  if (response.status() !== 200)
+    throw new Error(`GET /services failed with status ${response.status()}`)
+  const services = (await response.json()) as {
+    id: string
+    assignments: { userId: string }[]
+  }[]
+  return services.find((s) => s.id === serviceId)?.assignments.map((a) => a.userId) ?? []
 }
 
 /** Assigns users to a service for a team as admin (ADMIN may use any team). */

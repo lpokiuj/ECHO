@@ -136,3 +136,36 @@ export interface UpdateUserBody {
   role?: UserRole
   isActive?: boolean
 }
+
+/** GET /teams item, POST /teams and PATCH /teams/:id response (teams.md). */
+export interface Team {
+  id: string
+  name: string
+}
+
+/** GET /teams/:id/members item (teams.md). */
+export interface TeamMember {
+  userId: string
+  name: string
+  email: string
+  isLeader: boolean
+  isActive: boolean
+}
+
+/** PUT /teams/:id/members/:userId, 200. */
+export interface MemberUpsertResult {
+  teamId: string
+  userId: string
+  isLeader: boolean
+}
+
+/** DELETE /teams/:id/members/:userId, 200. */
+export interface RemovedAssignment {
+  serviceId: string
+  title: string
+  startsAt: string
+}
+
+export interface RemoveMemberResult {
+  removedAssignments: RemovedAssignment[]
+}

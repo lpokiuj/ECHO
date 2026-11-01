@@ -69,7 +69,7 @@ export function buildNavItems(me: MeResponse): NavItem[] {
         icon: UserCogIcon,
         routeExists: true,
       },
-      { id: 'teams', to: '/teams', label: messages.nav.teams, icon: UsersIcon, routeExists: false },
+      { id: 'teams', to: '/teams', label: messages.nav.teams, icon: UsersIcon, routeExists: true },
     )
   }
   items.push({

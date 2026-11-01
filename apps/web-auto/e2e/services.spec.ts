@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test as plain, type Page } from '@playwright/test'
+import { expect as baseExpect, test as plain, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import {
   adminToken,
@@ -12,6 +12,11 @@ import {
   seedSession,
   wibInstant,
 } from './fixtures.ts'
+
+// The list holds every leftover e2e- service (hundreds), so a dev-mode render is slow under
+// parallel workers: wait longer than the default 5s and allow longer tests (see D-032).
+const expect = baseExpect.configure({ timeout: 20_000 })
+test.describe.configure({ timeout: 90_000 })
 
 const t = messages.services
 const f = t.form

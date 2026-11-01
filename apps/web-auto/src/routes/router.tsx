@@ -9,6 +9,8 @@ import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
 import { MySchedulePage } from '@/features/schedule/MySchedulePage'
 import { ServicesPage } from '@/features/services/ServicesPage'
+import { TeamDetailPage } from '@/features/teams/TeamDetailPage'
+import { TeamsPage } from '@/features/teams/TeamsPage'
 import { UsersPage } from '@/features/users/UsersPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
 import {
@@ -75,6 +77,19 @@ export const routes = [
                   />
                 ),
                 children: [{ path: PATHS.users.slice(1), element: <UsersPage /> }],
+              },
+              {
+                element: (
+                  <RequireRole
+                    roles={['ADMIN']}
+                    noAccessTitle={messages.teams.noAccessTitle}
+                    noAccessDescription={messages.teams.noAccessDescription}
+                  />
+                ),
+                children: [
+                  { path: PATHS.teams.slice(1), element: <TeamsPage /> },
+                  { path: `${PATHS.teams.slice(1)}/:teamId`, element: <TeamDetailPage /> },
+                ],
               },
               {
                 element: <RequireLeader />,

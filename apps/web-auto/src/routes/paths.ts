@@ -7,4 +7,6 @@ export const PATHS = {
   services: '/services',
   assign: '/assign',
   users: '/users',
+  teams: '/teams',
+  team: (id: string) => `/teams/${encodeURIComponent(id)}`,
 } as const
