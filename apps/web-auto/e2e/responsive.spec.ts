@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
+import { expect, test } from './fixtures.ts'
 import { messages } from '../src/lib/messages.ts'
 
 for (const width of [390, 768, 1280]) {

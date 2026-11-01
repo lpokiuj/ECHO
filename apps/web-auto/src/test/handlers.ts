@@ -18,6 +18,19 @@ export const ME_EXAMPLE = {
   ],
 }
 
+// Same shape as ME_EXAMPLE (auth.md); only role, mustChangePassword and memberships vary.
+const NO_TEAMS: typeof ME_EXAMPLE.memberships = []
+export const ME_BY_ROLE = {
+  member: {
+    ...ME_EXAMPLE,
+    memberships: [{ ...ME_EXAMPLE.memberships[0]!, isLeader: false }],
+  },
+  leader: ME_EXAMPLE,
+  pembina: { ...ME_EXAMPLE, role: 'PEMBINA', memberships: NO_TEAMS },
+  admin: { ...ME_EXAMPLE, role: 'ADMIN', memberships: NO_TEAMS },
+  mustChange: { ...ME_EXAMPLE, mustChangePassword: true },
+}
+
 export const ERROR_BODIES = {
   validationArray: {
     message: ['email must be an email', 'password must be longer than or equal to 1 characters'],
@@ -51,6 +64,6 @@ export const respond = (status: number, body: unknown, headers?: Record<string, 
   HttpResponse.json(body as Record<string, unknown>, { status, headers })
 
 export const handlers = {
-  me: (headers?: Record<string, string>) =>
-    http.get('*/api/me', () => HttpResponse.json(ME_EXAMPLE, { headers })),
+  me: (headers?: Record<string, string>, body: typeof ME_EXAMPLE = ME_EXAMPLE) =>
+    http.get('*/api/me', () => HttpResponse.json(body, { headers })),
 }

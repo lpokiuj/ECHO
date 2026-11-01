@@ -1,18 +1,19 @@
 import { NavLink } from 'react-router'
-import { navItems } from '@/components/nav-items'
+import type { NavItem } from '@/components/nav-items'
 import { cn } from '@/lib/utils'
 import { messages } from '@/lib/messages'
 
 interface NavLinksProps {
+  items: NavItem[]
   onNavigate?: () => void
 }
 
-export function NavLinks({ onNavigate }: NavLinksProps) {
+export function NavLinks({ items, onNavigate }: NavLinksProps) {
   return (
     <nav aria-label={messages.nav.label}>
       <ul className="flex flex-col gap-1">
-        {navItems.map(({ to, label, icon: Icon, devOnly }) => (
-          <li key={to}>
+        {items.map(({ id, to, label, icon: Icon, devOnly }) => (
+          <li key={id}>
             <NavLink
               to={to}
               end

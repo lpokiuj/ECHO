@@ -51,3 +51,28 @@
 ### D-009 Types scope and ESLint guard
 - Types: only what each feature needs, appended to the single `src/api/types.ts`. Reversible: yes.
 - SECURITY: add ESLint `no-restricted-globals`/`no-restricted-properties` for localStorage (config only, no dependency). Stricter option chosen. Reversible: yes. Asked by: B.
+
+## Feature 4: Login, forced password change, navigation
+
+### D-010 SECURITY: initial password for admin-created e2e users
+- Question: the default password of a created user is the server's DEFAULT_USER_PASSWORD, not knowable from docs.
+- Options: (a) new env var `E2E_USER_PASSWORD` (read from process.env only, name in .env.example, never a value); (b) read the API env (forbidden); (c) skip the forced-change e2e (violates criterion).
+- Choice: (a). If the variable is missing or wrong, the e2e login fails: that is a HARD STOP for the run (user must set it). Reversible: yes. Asked by: B.
+
+### D-011 Seeded admin must_change_password
+- Choice: (b) assume the user already bootstrapped E2E_ADMIN_PASSWORD (user verified it). The fixture does NOT change any seeded user's password. If the admin login or POST /users returns PASSWORD_CHANGE_REQUIRED, fixture fails with a clear message (hard stop). Reversible: yes. Asked by: B.
+
+### D-012 Nav before screens exist
+- Choice: (a) `buildNavItems(me)` holds every role rule; each item has a `routeExists` flag, flipped on by the feature that adds the route. Only existing routes render. No "coming soon" screens (not in PLAN). Reversible: yes. Asked by: B.
+
+### D-013 SECURITY: Playwright traces
+- Choice: stricter than proposed: set `trace: 'off'` in playwright.config.ts for all specs (fixtures send passwords/tokens). No video. Screenshots must not reveal a password field. Reversible: yes. Asked by: B.
+
+### D-014 Home and "3360px" typo
+- Home = existing placeholder with greeting, name and role badge from /me; no new screen. CLAUDE.md "3360px" is read as 360px (PLAN says 360). Reversible: yes. Asked by: B.
+
+### D-015 Button hover and UserMenu compact (feature 4)
+- Default Button hover changed from `bg-primary/80` to `brightness-90` (axe contrast failure on hover); UserMenu gets a `compact` prop (avatar only below 640px) and no aria-label (label-content-name-mismatch). Reversible: yes. Asked by: B; accepted by orchestrator (small, needed for axe).
+
+### D-016 axe skipped with account menu open
+- Same Radix `aria-hidden-focus` false positive as D-007; axe runs before and after. Revisit in feature 10. Reversible: yes. Asked by: B.

@@ -6,7 +6,8 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   reporter: [['list']],
-  use: { baseURL, trace: 'retain-on-failure' },
+  // Traces and videos would record passwords and tokens (DECISIONS D-013).
+  use: { baseURL, trace: 'off', video: 'off' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'npm run dev',

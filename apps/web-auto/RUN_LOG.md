@@ -38,3 +38,33 @@
 - Blocked: my Bash command `git reset -q && sed -i (tick Status 3 in PLAN.md) && cat >> RUN_LOG.md && git add . && git commit -m "feat(web): API client, session store, error normalization"`. Denied by a permission rule; rule not named. The earlier feature 2 commit of the same shape was allowed. I did not retry or use another route.
 - State: feature 3 files are staged (from my earlier `git add .`), not committed. PLAN.md Status for 3 is still unticked, so a restart resumes feature 3 at commit/record. HEAD is still 1d9fed8.
 - Resume: allow the git commit (or commit yourself), tick feature 3 in PLAN.md, then re-run the same prompt.
+
+## 2026-11-01: resumed (feature 4)
+- Feature 3 was committed (9935d60) by the user after the earlier stop; PLAN.md Status ticks 1-3. Tree clean on `web-auto-build`.
+- Preflight OK: /health 200, `npm run check` pass (10 files, 65 tests). Credentials not touched. B mechanism: Agent tool, model=sonnet. Next: feature 4.
+
+## 2026-11-01: HARD STOP in feature 4 (e2e cannot run: credentials not available)
+- B sessions for feature 4: 1 (Agent/sonnet, plan + implement, same session). Fix rounds: 0. B sessions total: 4. Commits: none. Status: feature 4 unticked.
+- B implemented feature 4 (uncommitted, in the working tree). Installed only react-hook-form, zod, @hookform/resolvers (approved).
+- Verified by me: `npm run check` pass (12 files, 91 tests). `npm run e2e`: only 3 passed; the rest fail before any app code runs because the fixture reports the e2e environment variables are missing. B reported the same in its shell. I did not inspect or print any E2E_* value.
+- Not verified: Playwright criteria (forced-change flow, responsive/axe at 360/390/768/1280), screenshots.
+- Also needed: `E2E_USER_PASSWORD` (new, D-010) must equal the server's DEFAULT_USER_PASSWORD. It is a new variable that was not in the original setup.
+- Resume: export E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, E2E_USER_PASSWORD in the shell that launches this session, then re-run the same prompt. The uncommitted feature 4 changes belong to feature 4; the resume rule will have a fresh B inspect `git status`/`git diff`, keep what is correct, and finish.
+
+## 2026-11-01: resumed (feature 4, finish)
+- Preflight OK: branch web-auto-build, /health 200, `npm run check` pass (12 files, 91 tests). Credentials not touched.
+- Uncommitted changes (auth feature, nav, guards, e2e/auth.spec.ts, fixtures) belong to feature 4 (previous B). Fresh B (Agent/sonnet) will inspect git status/diff, keep what is correct, finish and run e2e + screenshots. B sessions total so far: 4.
+
+## 2026-11-01: HARD STOP in feature 4 (missing E2E variable, again)
+- B sessions total: 5 (this one: Agent/sonnet, inspected only, changed no files). Fix rounds: 0. Commits: none. Feature 4 unticked.
+- The e2e fixture reports "Missing environment variable E2E_ADMIN_EMAIL" in the shell the Bash tool runs in. `npm run e2e`: 3 passed, the rest fail in fixture setup. I did not inspect, print or search for any E2E_* value or .env file.
+- `npm run check` pass (12 files, 91 tests). Unverified: all Playwright criteria for feature 4, screenshots, axe, console errors.
+- Resume: export E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD, E2E_USER_PASSWORD in the shell that launches Claude Code (the Bash tool inherits that environment; vars set in another terminal are not visible), then re-run the same prompt.
+
+## 2026-11-01: resumed (feature 4, finish, attempt 3)
+- Preflight OK: branch web-auto-build, /health 200, `npm run check` pass (91 tests). Credentials not touched. Uncommitted changes belong to feature 4. Fresh B (Agent/sonnet) next. B sessions total so far: 5.
+
+## Feature 4 done
+- B sessions for feature 4: 3 (first implemented, one inspect-only, one finish). Fix rounds: 0. B sessions total: 6.
+- Verified by me: `npm run check` pass (12 files, 91 tests); `npm run e2e` 55 passed; deps added: react-hook-form, zod, @hookform/resolvers (approved); no skip/only/any/ts-ignore. Viewed 3 screenshots (home 360, home 1280, login 360): fine.
+- Commit: see git log (feat(web): login, forced password change, navigation).

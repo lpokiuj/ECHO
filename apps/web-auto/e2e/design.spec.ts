@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { expect, test } from './fixtures.ts'
 import { messages } from '../src/lib/messages.ts'
 
 const widths = [360, 390, 768, 1280]
@@ -187,6 +188,7 @@ for (const width of widths) {
 
 test('focus ring is visible on keyboard focus', async ({ page }) => {
   await page.goto('/design')
+  await expect(page.getByRole('main')).toBeVisible()
   await page.keyboard.press('Tab') // skip link
   await page.keyboard.press('Tab')
   const outline = await page.evaluate(() => {

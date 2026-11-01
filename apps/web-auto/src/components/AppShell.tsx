@@ -2,6 +2,9 @@ import { MenuIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link, Outlet } from 'react-router'
 import { NavLinks } from '@/components/NavLinks'
+import { visibleNavItems } from '@/components/nav-items'
+import { UserMenu } from '@/components/UserMenu'
+import { useMe } from '@/features/auth/useMe'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -17,7 +20,7 @@ function Brand() {
   return (
     <Link
       to="/"
-      className="text-foreground flex min-h-11 items-center gap-2 rounded-md text-lg font-semibold"
+      className="text-foreground flex min-h-11 items-center gap-2 rounded-md text-lg font-semibold whitespace-nowrap"
     >
       <span
         aria-hidden="true"
@@ -32,6 +35,8 @@ function Brand() {
 
 export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { data: me } = useMe()
+  const items = me ? visibleNavItems(me) : []
 
   return (
     <div className="min-h-dvh">
@@ -44,7 +49,12 @@ export function AppShell() {
 
       <aside className="w-sidebar bg-sidebar fixed inset-y-0 left-0 z-30 hidden flex-col gap-6 border-r p-4 lg:flex">
         <Brand />
-        <NavLinks />
+        <NavLinks items={items} />
+        {me ? (
+          <div className="mt-auto border-t pt-3">
+            <UserMenu me={me} />
+          </div>
+        ) : null}
       </aside>
 
       <header className="h-topbar bg-background sticky top-0 z-30 flex items-center gap-2 border-b px-4 lg:hidden">
@@ -62,11 +72,16 @@ export function AppShell() {
               </SheetDescription>
             </SheetHeader>
             <div className="px-4">
-              <NavLinks onNavigate={() => setMenuOpen(false)} />
+              <NavLinks items={items} onNavigate={() => setMenuOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
         <Brand />
+        {me ? (
+          <div className="ml-auto min-w-0">
+            <UserMenu me={me} compact />
+          </div>
+        ) : null}
       </header>
 
       <main id="main" tabIndex={-1} className="lg:pl-sidebar">
