@@ -24,6 +24,16 @@ function EndedBadge({ item }: { item: MyScheduleItem }) {
   return hasEnded(item.endsAt) ? <Badge variant="secondary">{t.ended}</Badge> : null
 }
 
+function MyNote({ item }: { item: MyScheduleItem }) {
+  if (item.notes === '') return null
+  return (
+    <p className="bg-muted text-foreground border-primary mt-1 rounded-md border-l-4 px-3 py-2 text-base font-normal break-words whitespace-pre-wrap">
+      <span className="font-semibold">{t.notesLabel}: </span>
+      {item.notes}
+    </p>
+  )
+}
+
 function ItemTable({ items }: { items: MyScheduleItem[] }) {
   return (
     <div className="hidden md:block" data-testid="schedule-table">
@@ -41,6 +51,7 @@ function ItemTable({ items }: { items: MyScheduleItem[] }) {
             <TableRow key={s.serviceId}>
               <TableCell className="font-medium whitespace-normal">
                 <span className="break-words">{s.title}</span> <EndedBadge item={s} />
+                <MyNote item={s} />
               </TableCell>
               <TableCell>{formatDate(s.startsAt)}</TableCell>
               <TableCell>{formatTimeRange(s.startsAt, s.endsAt)}</TableCell>
@@ -79,6 +90,7 @@ function ItemCards({ items }: { items: MyScheduleItem[] }) {
                 <span className="text-muted-foreground">{t.team}:</span>
                 <Badge variant="outline">{s.teamName}</Badge>
               </p>
+              <MyNote item={s} />
             </CardContent>
           </Card>
         </li>

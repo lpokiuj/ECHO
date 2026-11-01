@@ -144,6 +144,53 @@ test('leader assigns with a double click (one request), then unassigns after con
   await context.close()
 })
 
+test('leader assigns with a note, everyone reads it in the detail, only the leader edits it', async ({
+  browser,
+  request,
+}) => {
+  const s = await scenario(request)
+  const { context, page } = await leaderSession(browser, s.leaderA, s.service.id, s.teamA.id)
+  const errors = collectErrors(page)
+  const first = `e2e-note-${s.service.id.slice(0, 6)}`
+  const second = `${first}-edited`
+
+  await checkbox(page, s.volunteer.name).check()
+  await page.getByLabel(fillMessage(t.noteLabel, { name: s.volunteer.name })).fill(first)
+  await assignButton(page).click()
+  await expect(page.getByTestId('assign-result')).toContainText(s.volunteer.name)
+
+  const detail = async (p: Page) => {
+    await p.goto('/schedule')
+    const row = p.getByRole('row').filter({ hasText: s.service.title })
+    await row.getByRole('button', { name: new RegExp(messages.schedule.detail) }).click()
+    return p.getByRole('dialog', { name: s.service.title })
+  }
+  const editName = fillMessage(messages.schedule.editNoteAria, { name: s.volunteer.name })
+
+  // The leader sees the note and can edit it.
+  const leaderDialog = await detail(page)
+  await expect(leaderDialog).toContainText(first)
+  await leaderDialog.getByRole('button', { name: editName }).click()
+  await leaderDialog
+    .getByLabel(fillMessage(messages.schedule.noteFieldLabel, { name: s.volunteer.name }))
+    .fill(second)
+  await leaderDialog.getByRole('button', { name: messages.schedule.noteSave }).click()
+  await expect(leaderDialog).toContainText(second)
+  await expect(leaderDialog.getByRole('button', { name: editName })).toBeVisible()
+
+  // The volunteer reads it but cannot edit it.
+  const memberContext = await browser.newContext()
+  const memberPage = await memberContext.newPage()
+  await loginAndChange(memberPage, s.volunteer)
+  const memberDialog = await detail(memberPage)
+  await expect(memberDialog).toContainText(second)
+  await expect(memberDialog.getByRole('button', { name: editName })).toHaveCount(0)
+
+  expect(errors).toEqual([])
+  await memberContext.close()
+  await context.close()
+})
+
 test('a leader of two teams can switch teams', async ({ browser, request }) => {
   const s = await scenario(request)
   // leaderA also leads team B.

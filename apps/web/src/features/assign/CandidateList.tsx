@@ -3,6 +3,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Table,
   TableBody,
@@ -15,9 +17,15 @@ import { fillMessage, messages } from '@/lib/messages'
 
 const t = messages.assign
 
+/** Draft notes by userId. */
+export type NoteMap = Readonly<Record<string, string>>
+const NOTE_MAX = 1000
+
 interface CandidateListProps {
   candidates: Candidate[]
   selected: ReadonlySet<string>
+  notes: NoteMap
+  onNoteChange: (userId: string, value: string) => void
   /** True while the service has started or a request is running. */
   locked: boolean
   /** Id of the element that explains why the controls are disabled. */
@@ -31,18 +39,43 @@ interface RowProps extends Omit<CandidateListProps, 'candidates'> {
 }
 
 /** The whole row is the label, so the touch target is at least 44px tall. */
-function NameCell({ candidate, selected, locked, lockReasonId, onToggle }: RowProps) {
+function NameCell({ candidate, ...rest }: RowProps) {
+  const { selected, locked, lockReasonId, onToggle } = rest
   if (candidate.assigned) return <span className="min-w-0 break-words">{candidate.name}</span>
   return (
-    <label className="flex min-h-11 w-full cursor-pointer items-center gap-3">
-      <Checkbox
-        checked={selected.has(candidate.userId)}
+    <div className="w-full">
+      <label className="flex min-h-11 w-full cursor-pointer items-center gap-3">
+        <Checkbox
+          checked={selected.has(candidate.userId)}
+          disabled={locked}
+          aria-describedby={locked ? lockReasonId : undefined}
+          onCheckedChange={(checked) => onToggle(candidate.userId, checked === true)}
+        />
+        <span className="min-w-0 break-words">{candidate.name}</span>
+      </label>
+      <NoteField candidate={candidate} {...rest} />
+    </div>
+  )
+}
+
+/** Optional note for a selected candidate; sent with the assignment. */
+function NoteField({ candidate, selected, notes, onNoteChange, locked }: RowProps) {
+  if (candidate.assigned || !selected.has(candidate.userId)) return null
+  const id = `note-${candidate.userId}`
+  return (
+    <div className="mt-1 flex w-full flex-col gap-1 font-normal">
+      <Label htmlFor={id} className="text-muted-foreground">
+        {fillMessage(t.noteLabel, { name: candidate.name })}
+      </Label>
+      <Textarea
+        id={id}
+        value={notes[candidate.userId] ?? ''}
+        maxLength={NOTE_MAX}
+        rows={2}
         disabled={locked}
-        aria-describedby={locked ? lockReasonId : undefined}
-        onCheckedChange={(checked) => onToggle(candidate.userId, checked === true)}
+        onChange={(e) => onNoteChange(candidate.userId, e.target.value)}
       />
-      <span className="min-w-0 break-words">{candidate.name}</span>
-    </label>
+    </div>
   )
 }
 

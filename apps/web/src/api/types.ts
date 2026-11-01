@@ -51,6 +51,8 @@ export interface ScheduleAssignment {
   name: string
   teamId: string
   teamName: string
+  /** Set by the team leader, `""` when none. Visible to every logged-in user. */
+  notes: string
 }
 
 /** GET /services item: a service with everyone assigned across teams. */
@@ -70,6 +72,8 @@ export interface MyScheduleItem {
   endsAt: string
   teamId: string
   teamName: string
+  /** Note on the caller's assignment, `""` when none. */
+  notes: string
 }
 
 /** POST /services and PATCH /services/:id response. */
@@ -111,6 +115,14 @@ export interface SkippedEntry {
 export interface AssignResult {
   assigned: string[]
   skipped: SkippedEntry[]
+}
+
+/** PATCH /services/:id/teams/:teamId/assignments/:userId, 200. */
+export interface AssignmentNote {
+  serviceId: string
+  userId: string
+  teamId: string
+  notes: string
 }
 
 /** User object from users.md (the password hash is never returned). */

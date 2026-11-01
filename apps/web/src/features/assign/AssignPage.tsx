@@ -23,7 +23,7 @@ import { useServices } from '@/features/schedule/useSchedule'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { formatDate, isFuture } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
-import { CandidateList } from './CandidateList'
+import { CandidateList, type NoteMap } from './CandidateList'
 import { ResultPanel, type AssignOutcome } from './ResultPanel'
 import { useAssign, useCandidates, useUnassign } from './useAssign'
 
@@ -45,6 +45,7 @@ function Workspace({ service, team }: WorkspaceProps) {
   const assign = useAssign(service.id, team.teamId)
   const unassign = useUnassign(service.id, team.teamId)
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const [notes, setNotes] = useState<NoteMap>({})
   const [outcome, setOutcome] = useState<AssignOutcome | undefined>()
   const [removing, setRemoving] = useState<Candidate | undefined>()
   const [startedByServer, setStartedByServer] = useState(false)
@@ -80,7 +81,7 @@ function Workspace({ service, team }: WorkspaceProps) {
     const names = new Map(list.map((c) => [c.userId, c.name]))
     const nameOf = (id: string) => names.get(id) ?? t.result.unknownPerson
     try {
-      const result = await assign.mutateAsync(ids)
+      const result = await assign.mutateAsync({ userIds: ids, notes })
       setOutcome({
         added: result.assigned.map(nameOf),
         skipped: result.skipped.map((entry) => ({
@@ -104,6 +105,7 @@ function Workspace({ service, team }: WorkspaceProps) {
         )
       }
       setSelected(new Set())
+      setNotes({})
     } catch (error) {
       notifyFailure(error)
     } finally {
@@ -174,6 +176,8 @@ function Workspace({ service, team }: WorkspaceProps) {
           <CandidateList
             candidates={list}
             selected={selected}
+            notes={notes}
+            onNoteChange={(userId, value) => setNotes((current) => ({ ...current, [userId]: value }))}
             locked={locked}
             lockReasonId={started ? noticeId : undefined}
             onToggle={onToggle}

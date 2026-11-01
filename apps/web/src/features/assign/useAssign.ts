@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { assignUsers, getCandidates, unassignUser } from '@/api/client'
+import { assignUsers, getCandidates, unassignUser, updateAssignmentNote } from '@/api/client'
 import { normalizeError } from '@/api/errors'
 import { ME_KEY } from '@/features/auth/useMe'
 import { MY_SCHEDULE_KEY, SERVICES_KEY } from '@/features/schedule/useSchedule'
@@ -38,7 +38,8 @@ function useRefreshAfter(serviceId: string, teamId: string) {
 export function useAssign(serviceId: string, teamId: string) {
   const refresh = useRefreshAfter(serviceId, teamId)
   return useMutation({
-    mutationFn: (userIds: string[]) => assignUsers(serviceId, teamId, userIds),
+    mutationFn: ({ userIds, notes }: { userIds: string[]; notes: Record<string, string> }) =>
+      assignUsers(serviceId, teamId, userIds, notes),
     onSettled: (_data, error) => refresh(error),
   })
 }
@@ -47,6 +48,15 @@ export function useUnassign(serviceId: string, teamId: string) {
   const refresh = useRefreshAfter(serviceId, teamId)
   return useMutation({
     mutationFn: (userId: string) => unassignUser(serviceId, teamId, userId),
+    onSettled: (_data, error) => refresh(error),
+  })
+}
+
+export function useUpdateNote(serviceId: string, teamId: string) {
+  const refresh = useRefreshAfter(serviceId, teamId)
+  return useMutation({
+    mutationFn: ({ userId, notes }: { userId: string; notes: string }) =>
+      updateAssignmentNote(serviceId, teamId, userId, notes),
     onSettled: (_data, error) => refresh(error),
   })
 }

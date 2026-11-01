@@ -3,6 +3,7 @@ import { ApiError, fromResponse, networkError } from './errors'
 import { expireSession, emit, getToken, setToken } from './session'
 import type {
   AssignResult,
+  AssignmentNote,
   Candidate,
   ChangePasswordRequest,
   HealthResponse,
@@ -134,11 +135,26 @@ export function assignUsers(
   serviceId: string,
   teamId: string,
   userIds: string[],
+  notes: Record<string, string> = {},
 ): Promise<AssignResult> {
+  // Only non-empty notes are sent; users without an entry get "" on the server.
+  const filled = Object.entries(notes).filter(([id, note]) => userIds.includes(id) && note !== '')
   return request<AssignResult>(`${assignmentsPath(serviceId, teamId)}/assignments`, {
     method: 'POST',
-    body: { userIds },
+    body: filled.length > 0 ? { userIds, notes: Object.fromEntries(filled) } : { userIds },
   })
+}
+
+export function updateAssignmentNote(
+  serviceId: string,
+  teamId: string,
+  userId: string,
+  notes: string,
+): Promise<AssignmentNote> {
+  return request<AssignmentNote>(
+    `${assignmentsPath(serviceId, teamId)}/assignments/${encodeURIComponent(userId)}`,
+    { method: 'PATCH', body: { notes } },
+  )
 }
 
 export function unassignUser(serviceId: string, teamId: string, userId: string): Promise<void> {

@@ -2,7 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { messages } from '@/lib/messages'
+import { fillMessage, messages } from '@/lib/messages'
 import {
   ERROR_BODIES,
   INCLUDE_PAST_BAD,
@@ -195,3 +195,128 @@ describe('My schedule', () => {
     expect(await screen.findByTestId('schedule-table')).toBeInTheDocument()
   })
 })
+
+describe('Assignment notes', () => {
+  const WORSHIP = '681e9003-157a-4f26-9b69-a39af059d88b'
+  const SOUND = '77256f56-93fc-46e9-b360-ca69f8b3263a'
+  const withNotes = SERVICES_EXAMPLE.map((s) => ({
+    ...s,
+    assignments: s.assignments.map((a) => (a.name === 'Giana' ? { ...a, notes: 'bawa gitar' } : a)),
+  }))
+  const leaderOf = (teamId: string, teamName: string) => ({
+    ...ME_BY_ROLE.leader,
+    memberships: [{ teamId, teamName, isLeader: true }],
+  })
+
+  async function openDetail(title: string) {
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    const row = within(table()).getByRole('row', { name: new RegExp(title) })
+    await userEvent.click(within(row).getByRole('button', { name: new RegExp(t.detail) }))
+    return screen.findByRole('dialog', { name: title })
+  }
+
+  const editButton = (dialog: HTMLElement) =>
+    within(dialog).queryByRole('button', { name: fillMessage(t.editNoteAria, { name: 'Giana' }) })
+
+  it('shows notes to a plain member, without an edit button', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(withNotes)))
+    const dialog = await openDetail('KEEP 1')
+    expect(within(dialog).getByText('bawa gitar')).toBeInTheDocument()
+    expect(editButton(dialog)).toBeNull()
+  })
+
+  it('does not offer editing to the leader of another team', async () => {
+    server.use(
+      http.get('*/api/services', () => HttpResponse.json(withNotes)),
+      handlers.me(undefined, leaderOf(SOUND, 'Sound')),
+    )
+    expect(editButton(await openDetail('KEEP 1'))).toBeNull()
+  })
+
+  it('lets the leader of that team edit the note and sends a PATCH', async () => {
+    const bodies: unknown[] = []
+    server.use(
+      http.get('*/api/services', () => HttpResponse.json(withNotes)),
+      handlers.me(undefined, leaderOf(WORSHIP, 'Worship')),
+      http.patch(
+        '*/api/services/:id/teams/:teamId/assignments/:userId',
+        async ({ request, params }) => {
+          const body = (await request.json()) as { notes: string }
+          bodies.push({ teamId: params.teamId, userId: params.userId, ...body })
+          return HttpResponse.json({
+            serviceId: params.id,
+            userId: params.userId,
+            teamId: params.teamId,
+            notes: body.notes,
+          })
+        },
+      ),
+    )
+    const dialog = await openDetail('KEEP 1')
+    // Sound is another team: no button on Agner.
+    expect(
+      within(dialog).queryByRole('button', {
+        name: fillMessage(t.editNoteAria, { name: 'Agner' }),
+      }),
+    ).toBeNull()
+    await userEvent.click(await waitForButton(dialog))
+    const field = within(dialog).getByLabelText(fillMessage(t.noteFieldLabel, { name: 'Giana' }))
+    await userEvent.clear(field)
+    await userEvent.type(field, 'bawa bass')
+    await userEvent.click(within(dialog).getByRole('button', { name: t.noteSave }))
+    await waitFor(() =>
+      expect(bodies).toEqual([
+        { teamId: WORSHIP, userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da', notes: 'bawa bass' },
+      ]),
+    )
+  })
+
+  it('hides the edit button once the service has started', async () => {
+    server.use(
+      http.get('*/api/services', () => HttpResponse.json(withNotes)),
+      handlers.me(undefined, leaderOf(WORSHIP, 'Worship')),
+    )
+    vi.setSystemTime(new Date('2026-11-21T00:00:00.000Z'))
+    renderApp('/schedule?', { token: true })
+    await userEvent.click(await screen.findByRole('switch', { name: t.includePast }))
+    const row = await within(table()).findByRole('row', { name: /KEEP 1/ })
+    await userEvent.click(within(row).getByRole('button', { name: new RegExp(t.detail) }))
+    const dialog = await screen.findByRole('dialog', { name: 'KEEP 1' })
+    expect(within(dialog).getByText('bawa gitar')).toBeInTheDocument()
+    expect(editButton(dialog)).toBeNull()
+  })
+
+  it('maps a 409 to Indonesian and keeps the editor open', async () => {
+    server.use(
+      http.get('*/api/services', () => HttpResponse.json(withNotes)),
+      handlers.me(undefined, leaderOf(WORSHIP, 'Worship')),
+      http.patch('*/api/services/:id/teams/:teamId/assignments/:userId', () =>
+        respond(409, ERROR_BODIES.serviceStarted),
+      ),
+    )
+    const dialog = await openDetail('KEEP 1')
+    await userEvent.click(await waitForButton(dialog))
+    await userEvent.click(within(dialog).getByRole('button', { name: t.noteSave }))
+    expect(
+      await within(dialog).findByLabelText(fillMessage(t.noteFieldLabel, { name: 'Giana' })),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the own note on Jadwal Saya', async () => {
+    server.use(
+      http.get('*/api/me/schedule', () =>
+        HttpResponse.json([{ ...MY_SCHEDULE_EXAMPLE[0]!, notes: 'datang jam 6' }]),
+      ),
+    )
+    renderApp('/my-schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    expect(within(table()).getByText(/datang jam 6/)).toBeInTheDocument()
+  })
+})
+
+async function waitForButton(dialog: HTMLElement) {
+  return within(dialog).findByRole('button', {
+    name: fillMessage(messages.schedule.editNoteAria, { name: 'Giana' }),
+  })
+}

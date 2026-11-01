@@ -50,7 +50,7 @@ const user = () => userEvent.setup({ advanceTimers: () => undefined })
 interface Spy {
   candidateCalls: number
   assignCalls: number
-  bodies: { userIds: string[] }[]
+  bodies: { userIds: string[]; notes?: Record<string, string> }[]
 }
 
 function setup(
@@ -71,7 +71,7 @@ function setup(
     }),
     http.post('*/api/services/:id/teams/:teamId/assignments', async ({ request }) => {
       spy.assignCalls += 1
-      spy.bodies.push((await request.json()) as { userIds: string[] })
+      spy.bodies.push((await request.json()) as Spy['bodies'][number])
       return options.assign?.() ?? HttpResponse.json(ASSIGN_IDEMPOTENT)
     }),
     http.delete(
@@ -135,6 +135,27 @@ describe('assign', () => {
     expect(spy.bodies).toEqual([{ userIds: [GIANA!.userId, LUKAS!.userId] }])
     await waitFor(() => expect(spy.candidateCalls).toBeGreaterThanOrEqual(2))
     expect(spy.assignCalls).toBe(1)
+  })
+
+  it('offers a note field only for selected candidates and sends only filled notes', async () => {
+    const spy = setup()
+    await openPage()
+    const u = user()
+    const noteLabel = (name: string) => fillMessage(t.noteLabel, { name })
+    expect(screen.queryByLabelText(noteLabel(GIANA!.name))).toBeNull()
+    await pick(u, GIANA!.name)
+    await pick(u, LUKAS!.name)
+    await u.type(table().getByLabelText(noteLabel(GIANA!.name)), 'bawa gitar')
+    // A dropped selection drops its field; the empty note of Lukas is not sent.
+    await pick(u, LIVANA!.name)
+    await u.type(table().getByLabelText(noteLabel(LIVANA!.name)), 'tidak jadi')
+    await pick(u, LIVANA!.name)
+    expect(table().queryByLabelText(noteLabel(LIVANA!.name))).toBeNull()
+    await u.click(assignButton())
+    await waitFor(() => expect(spy.assignCalls).toBe(1))
+    expect(spy.bodies).toEqual([
+      { userIds: [GIANA!.userId, LUKAS!.userId], notes: { [GIANA!.userId]: 'bawa gitar' } },
+    ])
   })
 
   it('disables the button while nothing is selected', async () => {

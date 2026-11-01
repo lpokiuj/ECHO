@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
+import { toast } from 'sonner'
+import { errorMessage, normalizeError } from '@/api/errors'
 import type { ScheduleAssignment, ServiceSchedule } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -20,19 +23,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Textarea } from '@/components/ui/textarea'
+import { useMe } from '@/features/auth/useMe'
+import { useUpdateNote } from '@/features/assign/useAssign'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { formatDate, formatTimeRange, hasEnded } from '@/lib/dates'
-import { messages } from '@/lib/messages'
+import { formatDate, formatTimeRange, hasEnded, isFuture } from '@/lib/dates'
+import { fillMessage, messages } from '@/lib/messages'
 import { IncludePastToggle } from './IncludePastToggle'
 import { ScheduleBody } from './ScheduleBody'
 import { useServices } from './useSchedule'
 
 const t = messages.schedule
+const NOTE_MAX = 1000
 
 interface TeamGroup {
   teamId: string
   teamName: string
-  names: string[]
+  members: ScheduleAssignment[]
 }
 
 /** Groups assignments by team, keeping the API order (teamName, then name). */
@@ -40,13 +47,113 @@ function groupByTeam(assignments: ScheduleAssignment[]): TeamGroup[] {
   const groups: TeamGroup[] = []
   for (const a of assignments) {
     const last = groups.find((g) => g.teamId === a.teamId)
-    if (last) last.names.push(a.name)
-    else groups.push({ teamId: a.teamId, teamName: a.teamName, names: [a.name] })
+    if (last) last.members.push(a)
+    else groups.push({ teamId: a.teamId, teamName: a.teamName, members: [a] })
   }
   return groups
 }
 
+interface NoteEditorProps {
+  service: ServiceSchedule
+  member: ScheduleAssignment
+  onDone: () => void
+}
+
+function NoteEditor({ service, member, onDone }: NoteEditorProps) {
+  const [value, setValue] = useState(member.notes)
+  const update = useUpdateNote(service.id, member.teamId)
+  const sending = useRef(false)
+  const id = `note-edit-${member.userId}`
+
+  async function save(event: FormEvent) {
+    event.preventDefault()
+    if (sending.current) return
+    sending.current = true
+    try {
+      await update.mutateAsync({ userId: member.userId, notes: value })
+      toast.success(t.noteSaved)
+      onDone()
+    } catch (error) {
+      const e = normalizeError(error)
+      if (e.status === 404 && !e.code) {
+        toast.error(t.noteAssignmentGone)
+        onDone()
+      } else toast.error(errorMessage(e))
+    } finally {
+      sending.current = false
+    }
+  }
+
+  return (
+    <form className="mt-2 flex flex-col gap-2" onSubmit={(e) => void save(e)}>
+      <Label htmlFor={id}>{fillMessage(t.noteFieldLabel, { name: member.name })}</Label>
+      <Textarea
+        id={id}
+        value={value}
+        maxLength={NOTE_MAX}
+        rows={3}
+        autoFocus
+        onChange={(e) => setValue(e.target.value)}
+      />
+      <p className="text-muted-foreground text-sm" aria-live="polite">
+        {fillMessage(t.noteCounter, { count: value.length, max: NOTE_MAX })}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" loading={update.isPending}>
+          {t.noteSave}
+        </Button>
+        <Button type="button" variant="outline" disabled={update.isPending} onClick={onDone}>
+          {messages.common.cancel}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function Person({
+  service,
+  member,
+  canEdit,
+}: {
+  service: ServiceSchedule
+  member: ScheduleAssignment
+  canEdit: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  return (
+    <li className="break-words">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span>{member.name}</span>
+        {canEdit && !editing ? (
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={fillMessage(t.editNoteAria, { name: member.name })}
+            onClick={() => setEditing(true)}
+          >
+            {t.editNote}
+          </Button>
+        ) : null}
+      </div>
+      {editing ? (
+        <NoteEditor service={service} member={member} onDone={() => setEditing(false)} />
+      ) : member.notes !== '' ? (
+        <p className="bg-muted text-foreground border-primary mt-1 rounded-md border-l-4 px-3 py-2 text-base whitespace-pre-wrap">
+          <span className="font-semibold">{t.notesLabel}: </span>
+          {member.notes}
+        </p>
+      ) : null}
+    </li>
+  )
+}
+
 function People({ service }: { service: ServiceSchedule }) {
+  const me = useMe()
+  const leaderOf = new Set(
+    (me.data?.memberships ?? []).filter((m) => m.isLeader).map((m) => m.teamId),
+  )
+  // Notes can only change before the service starts (the server answers 409 afterwards).
+  const editable = isFuture(service.startsAt)
   const groups = groupByTeam(service.assignments)
   if (groups.length === 0) {
     return <p className="text-muted-foreground">{t.noAssignees}</p>
@@ -56,11 +163,14 @@ function People({ service }: { service: ServiceSchedule }) {
       {groups.map((g) => (
         <section key={g.teamId} aria-label={g.teamName}>
           <h3 className="font-medium break-words">{g.teamName}</h3>
-          <ul className="mt-1 list-disc pl-5">
-            {g.names.map((name, i) => (
-              <li key={`${i}-${name}`} className="break-words">
-                {name}
-              </li>
+          <ul className="mt-1 flex list-none flex-col gap-2">
+            {g.members.map((m) => (
+              <Person
+                key={m.userId}
+                service={service}
+                member={m}
+                canEdit={editable && leaderOf.has(g.teamId)}
+              />
             ))}
           </ul>
         </section>

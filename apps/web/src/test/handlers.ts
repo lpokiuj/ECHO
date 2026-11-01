@@ -81,6 +81,7 @@ export const SERVICES_EXAMPLE = [
         name: 'Enji',
         teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
         teamName: 'Worship',
+        notes: '',
       },
     ],
   },
@@ -95,12 +96,14 @@ export const SERVICES_EXAMPLE = [
         name: 'Agner',
         teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
         teamName: 'Sound',
+        notes: '',
       },
       {
         userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da',
         name: 'Giana',
         teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
         teamName: 'Worship',
+        notes: '',
       },
     ],
   },
@@ -114,6 +117,7 @@ export const MY_SCHEDULE_EXAMPLE = [
     endsAt: '2026-11-20T17:50:31.938Z',
     teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
     teamName: 'Sound',
+    notes: '',
   },
 ]
 
