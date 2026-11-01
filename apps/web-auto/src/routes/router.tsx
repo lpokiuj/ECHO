@@ -9,6 +9,7 @@ import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
 import { MySchedulePage } from '@/features/schedule/MySchedulePage'
 import { ServicesPage } from '@/features/services/ServicesPage'
+import { UsersPage } from '@/features/users/UsersPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
 import {
   PublicOnly,
@@ -17,6 +18,7 @@ import {
   RequireRole,
   RequirePasswordChange,
 } from './guards'
+import { messages } from '@/lib/messages'
 import { PATHS } from './paths'
 import { SessionEvents } from './SessionEvents'
 
@@ -63,6 +65,16 @@ export const routes = [
               {
                 element: <RequireRole roles={['ADMIN', 'PEMBINA']} />,
                 children: [{ path: PATHS.services.slice(1), element: <ServicesPage /> }],
+              },
+              {
+                element: (
+                  <RequireRole
+                    roles={['ADMIN']}
+                    noAccessTitle={messages.users.noAccessTitle}
+                    noAccessDescription={messages.users.noAccessDescription}
+                  />
+                ),
+                children: [{ path: PATHS.users.slice(1), element: <UsersPage /> }],
               },
               {
                 element: <RequireLeader />,

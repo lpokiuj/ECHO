@@ -134,3 +134,23 @@
 
 ### D-032 services.spec timeout raised (fix round 1)
 - `services screens at Npx` runs axe 5 times over a list that grows with leftover e2e- services (138 at the time); timeout raised to 180s. No assertion changed. Leftover growth (~9 services per run) should be revisited in feature 10. Revisit? yes. Reversible: yes. Asked by: B (DR-A).
+
+## Feature 8: Admin users
+
+### D-033 No search/filter on the users list
+- Options: (a) search + role filter; (b) search only; (c) none (not in PLAN; never add scope). Choice: (c). Specs find their own row with a text filter on the rendered list (Playwright doesn't need scrolling); extended timeouts where axe runs on a long list (see D-032). Reversible: yes. Asked by: B.
+
+### D-034 Plain-string 400s on user PATCH
+- The two 400s (self role/active change, leader can't be PEMBINA) have no field name or code. Options: (a) shape-based single combined Indonesian sentence; (b) parse backend English text (rejected: raw text); (c) pre-check only. Choice: (a)+(c): self controls disabled client-side; a 400 with no fieldErrors on a PATCH carrying role/isActive shows one combined sentence. 409 on POST/PATCH maps to the email field. BACKEND_REQUESTS.md gets an item asking for error codes. Reversible: yes. Asked by: B.
+
+### D-035 Confirm dialog before deactivating a user
+- Deactivation ends the user's sessions at once (users.md). Quality bar: destructive actions use a confirm dialog naming what will change. Choice: ConfirmDialog when saving an edit that sets active to false. Reversible: yes. Asked by: B.
+
+### D-036 Users page details (feature 8)
+- One dialog serves create and edit; the deactivate confirm is part of the edit flow; list refetch after a mutation runs in the background. Reversible: yes. Asked by: B.
+
+### D-037 Destructive Button hover /20 -> /15
+- axe measured 4.34:1 on hover in the confirm dialog; same kind of fix as D-015. Reversible: yes. Asked by: B.
+
+### D-038 Reduced axe scope on the users list (revisit in feature 10)
+- echo_dev holds ~500 leftover e2e- users, which makes full-page axe too slow. `users screens at Npx` runs axe on the first 10 rows/cards only (rows share one markup) and on dialogs scoped to the dialog; timeouts raised (90s/180s). Revisit? YES: coverage is narrower than "axe on every route"; feature 10 should run full-page axe on a smaller list or via a lighter check. Reversible: yes. Asked by: B, accepted by orchestrator.

@@ -207,3 +207,58 @@ export const ASSIGNMENT_NOT_FOUND = {
   error: 'Not Found',
   statusCode: 404,
 }
+
+// Bodies copied verbatim from ../api/docs/api/users.md.
+export const USER_ADMIN = {
+  id: '3ba66b7e-9a5f-4a7f-be68-8b012feae3a7',
+  name: 'Admin',
+  email: 'admin@echo.local',
+  role: 'ADMIN',
+  mustChangePassword: false,
+  isActive: true,
+  createdAt: '2026-10-30T13:29:15.792Z',
+}
+export const USER_CREATED = {
+  id: 'd50ed778-821b-47f1-8992-475f525b4097',
+  name: 'Docs Example Lead A',
+  email: 'docs-example-lead-a@echo.local',
+  role: 'MEMBER',
+  mustChangePassword: true,
+  isActive: true,
+  createdAt: '2026-10-31T18:31:12.432Z',
+}
+export const USER_PATCHED = {
+  id: '85c483d5-d17f-495d-a088-78f652357e4d',
+  name: 'Docs Example Member 2',
+  email: 'docs-example-m2@echo.local',
+  role: 'MEMBER',
+  mustChangePassword: true,
+  isActive: false,
+  createdAt: '2026-10-31T18:31:21.077Z',
+}
+// The list reuses the three documented objects (users.md shows the array shape with the admin first).
+export const USERS_EXAMPLE = [USER_ADMIN, USER_CREATED, USER_PATCHED]
+
+export const USER_ERROR_BODIES = {
+  validation: {
+    message: [
+      'name should not be empty',
+      'email must be an email',
+      'role must be one of the following values: ADMIN, PEMBINA, MEMBER',
+    ],
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  emailTaken: { message: 'Email already in use', error: 'Conflict', statusCode: 409 },
+  selfChange: {
+    message: 'You cannot change your own role or active status',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  leaderPembina: {
+    message: 'A team leader cannot be PEMBINA. Remove the leader flag first',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  notFound: { message: 'Not Found', statusCode: 404 },
+}

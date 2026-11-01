@@ -72,16 +72,19 @@ export function RequirePasswordChange({ children }: { children: ReactNode }) {
 }
 
 /** UX only: hides a page from other roles. The backend still answers 403 to every call. */
-export function RequireRole({ roles }: { roles: readonly UserRole[] }) {
+export function RequireRole({
+  roles,
+  noAccessTitle = messages.services.noAccessTitle,
+  noAccessDescription = messages.services.noAccessDescription,
+}: {
+  roles: readonly UserRole[]
+  noAccessTitle?: string
+  noAccessDescription?: string
+}) {
   const me = useMe()
   if (!me.data) return <Outlet />
   if (roles.includes(me.data.role)) return <Outlet />
-  return (
-    <ErrorState
-      title={messages.services.noAccessTitle}
-      description={messages.services.noAccessDescription}
-    />
-  )
+  return <ErrorState title={noAccessTitle} description={noAccessDescription} />
 }
 
 /** UX only: the assign screen is for users with any isLeader membership. The backend still answers 403. */

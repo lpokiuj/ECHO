@@ -6,4 +6,5 @@ export const PATHS = {
   fullSchedule: '/schedule',
   services: '/services',
   assign: '/assign',
+  users: '/users',
 } as const

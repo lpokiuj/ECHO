@@ -67,7 +67,7 @@ export function buildNavItems(me: MeResponse): NavItem[] {
         to: '/users',
         label: messages.nav.users,
         icon: UserCogIcon,
-        routeExists: false,
+        routeExists: true,
       },
       { id: 'teams', to: '/teams', label: messages.nav.teams, icon: UsersIcon, routeExists: false },
     )

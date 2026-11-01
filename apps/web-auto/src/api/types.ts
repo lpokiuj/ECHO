@@ -112,3 +112,27 @@ export interface AssignResult {
   assigned: string[]
   skipped: SkippedEntry[]
 }
+
+/** User object from users.md (the password hash is never returned). */
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  mustChangePassword: boolean
+  isActive: boolean
+  createdAt: string
+}
+
+export interface CreateUserBody {
+  name: string
+  email: string
+  role?: UserRole
+}
+
+export interface UpdateUserBody {
+  name?: string
+  email?: string
+  role?: UserRole
+  isActive?: boolean
+}

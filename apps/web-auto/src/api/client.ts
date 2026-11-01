@@ -10,6 +10,9 @@ import type {
   LoginResponse,
   MeResponse,
   CreateServiceBody,
+  CreateUserBody,
+  UpdateUserBody,
+  User,
   MyScheduleItem,
   Service,
   ServiceSchedule,
@@ -139,4 +142,21 @@ export function unassignUser(serviceId: string, teamId: string, userId: string):
     `${assignmentsPath(serviceId, teamId)}/assignments/${encodeURIComponent(userId)}`,
     { method: 'DELETE' },
   )
+}
+
+export function getUsers(): Promise<User[]> {
+  return request<User[]>('/users')
+}
+
+export function createUser(body: CreateUserBody): Promise<User> {
+  return request<User>('/users', { method: 'POST', body })
+}
+
+export function updateUser(id: string, body: UpdateUserBody): Promise<User> {
+  return request<User>(`/users/${encodeURIComponent(id)}`, { method: 'PATCH', body })
+}
+
+/** 204 with an empty body. The server sets its default password; nothing is returned. */
+export function resetUserPassword(id: string): Promise<void> {
+  return request<void>(`/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' })
 }
