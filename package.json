@@ -1,0 +1,23 @@
+{
+  "name": "echo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Echo monorepo: NestJS API and React web app",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @echo/api",
+    "dev:web": "npm run dev -w @echo/web",
+    "build": "npm run build -w @echo/api && npm run build -w @echo/web",
+    "lint": "npm run lint -w @echo/api && npm run lint -w @echo/web",
+    "test": "npm test -w @echo/api && npm test -w @echo/web",
+    "test:e2e": "npm run test:e2e -w @echo/api",
+    "check": "npm run lint -w @echo/api && npm test -w @echo/api && npm run check -w @echo/web",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.5"
+  }
+}
