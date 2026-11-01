@@ -40,3 +40,14 @@
 ### D-007 axe not run with Radix Select open; Desain dev badge (feature 2)
 - Open Select state is skipped in axe (aria-hidden-focus false positive from Radix); accepted, axe runs before/after. Revisit in feature 10 hardening. Reversible: yes.
 - "dev" badge on Desain link kept until feature 10 (D-003). Reversible: yes. Asked by: B.
+
+## Feature 3: API client and session core
+
+### D-008 401 on change-password
+- Question: treat it as wrong password always, or only if token is recent?
+- Options: (a) always wrong password (PLAN.md says so); (b) track lastTokenAt; (c) verify via GET /me.
+- Choice: (a). Reasoning: PLAN.md already decides it; simplest; a dead session surfaces on the next call. Reversible: yes. Asked by: B.
+
+### D-009 Types scope and ESLint guard
+- Types: only what each feature needs, appended to the single `src/api/types.ts`. Reversible: yes.
+- SECURITY: add ESLint `no-restricted-globals`/`no-restricted-properties` for localStorage (config only, no dependency). Stricter option chosen. Reversible: yes. Asked by: B.

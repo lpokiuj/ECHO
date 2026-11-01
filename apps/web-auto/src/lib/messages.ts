@@ -32,6 +32,26 @@ export const messages = {
     genericErrorTitle: 'Gagal memuat data',
     emptyTitle: 'Belum ada data',
   },
+  errors: {
+    validation: 'Data yang dimasukkan tidak valid. Periksa kembali isian Anda.',
+    unauthorized: 'Sesi Anda berakhir. Silakan masuk kembali.',
+    wrongCurrentPassword: 'Kata sandi saat ini salah.',
+    forbidden: 'Anda tidak memiliki izin untuk melakukan tindakan ini.',
+    notFound: 'Data tidak ditemukan.',
+    conflict: 'Data bertentangan dengan data yang sudah ada.',
+    server: 'Server sedang bermasalah. Silakan coba lagi nanti.',
+    network: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+    codes: {
+      PASSWORD_CHANGE_REQUIRED: 'Anda harus mengganti kata sandi terlebih dahulu.',
+      INVALID_USERS: 'Daftar relawan sudah berubah. Daftar telah dimuat ulang.',
+      SERVICE_ALREADY_STARTED: 'Kegiatan sudah dimulai sehingga tidak dapat diubah.',
+    },
+    fields: {
+      email: 'Format email tidak valid.',
+      tooShort: 'Isian terlalu pendek.',
+      required: 'Isian ini wajib diisi.',
+    },
+  },
   roles: {
     ADMIN: 'Admin',
     PEMBINA: 'Pembina',

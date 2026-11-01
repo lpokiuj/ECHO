@@ -181,7 +181,7 @@ Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, 
 
 - [x] 1. Scaffold
 - [x] 2. Design foundation
-- [ ] 3. API client and session core
+- [x] 3. API client and session core
 - [ ] 4. Login, password change, navigation
 - [ ] 5. Schedules
 - [ ] 6. Services management

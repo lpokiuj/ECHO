@@ -18,6 +18,24 @@ export default tseslint.config(
         { 'ts-ignore': true, 'ts-expect-error': 'allow-with-description' },
       ],
       'no-alert': 'error',
+      // The token lives in sessionStorage only (PLAN Auth token decision).
+      'no-restricted-globals': [
+        'error',
+        { name: 'localStorage', message: 'Use the session store; never localStorage.' },
+      ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'window',
+          property: 'localStorage',
+          message: 'Use the session store; never localStorage.',
+        },
+        {
+          object: 'globalThis',
+          property: 'localStorage',
+          message: 'Use the session store; never localStorage.',
+        },
+      ],
     },
   },
 )

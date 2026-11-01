@@ -4,11 +4,17 @@ import { DesignPage } from '@/features/design/DesignPage'
 import { ErrorPage } from '@/features/errors/ErrorPage'
 import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
+import { SessionEvents } from './SessionEvents'
 
 export const routes = [
   {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <>
+        <SessionEvents />
+        <AppShell />
+      </>
+    ),
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <PlaceholderPage /> },
