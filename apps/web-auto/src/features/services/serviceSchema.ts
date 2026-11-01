@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import type { Service, UpdateServiceBody } from '@/api/types'
-import { isFuture, toWibInputs, toWibIso } from '@/lib/dates'
+import { isFuture, isTimeInput, toWibInputs, toWibIso } from '@/lib/dates'
 import { messages } from '@/lib/messages'
 
 const v = messages.services.validation
@@ -53,12 +53,13 @@ export function serviceSchema({ original, now = Date.now }: SchemaOptions = {}) 
     .object({
       title: z.string().trim().min(1, v.required).max(TITLE_MAX, v.titleTooLong),
       startDate: z.string().min(1, v.required),
-      startTime: z.string().min(1, v.required),
+      startTime: z.string().min(1, v.required).refine(isTimeInput, v.timeFormat),
       endDate: z.string().min(1, v.required),
-      endTime: z.string().min(1, v.required),
+      endTime: z.string().min(1, v.required).refine(isTimeInput, v.timeFormat),
     })
     .superRefine((values, ctx) => {
-      if (!values.startDate || !values.startTime || !values.endDate || !values.endTime) return
+      if (!values.startDate || !values.endDate) return
+      if (!isTimeInput(values.startTime) || !isTimeInput(values.endTime)) return
       const start = toWibIso(values.startDate, values.startTime)
       const end = toWibIso(values.endDate, values.endTime)
       if (new Date(end).getTime() <= new Date(start).getTime()) {

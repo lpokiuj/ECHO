@@ -68,10 +68,14 @@ export function hasEnded(endsAt: string, now: number = Date.now()): boolean {
 const DATE_INPUT = /^\d{4}-\d{2}-\d{2}$/
 const TIME_INPUT = /^\d{2}:\d{2}$/
 
+/** True for a 24-hour "HH:mm" time with a real hour (00 to 23) and minute (00 to 59). */
+export function isTimeInput(time: string): boolean {
+  return TIME_INPUT.test(time) && Number(time.slice(0, 2)) < 24 && Number(time.slice(3)) < 60
+}
+
 /** Form input (date "YYYY-MM-DD", time "HH:mm", read as Asia/Jakarta) to ISO 8601 with +07:00. */
 export function toWibIso(date: string, time: string): string {
-  if (!DATE_INPUT.test(date) || !TIME_INPUT.test(time))
-    throw new Error('Invalid date or time input')
+  if (!DATE_INPUT.test(date) || !isTimeInput(time)) throw new Error('Invalid date or time input')
   const iso = `${date}T${time}:00+07:00`
   if (Number.isNaN(new Date(iso).getTime())) throw new Error('Invalid date or time input')
   return iso

@@ -8,16 +8,10 @@ const ids = (me: MeResponse) => buildNavItems(me).map((i) => i.id)
 
 describe('buildNavItems (full intended set)', () => {
   it('MEMBER: schedules only', () => {
-    expect(ids(asMe(ME_BY_ROLE.member))).toEqual(['home', 'mySchedule', 'fullSchedule', 'design'])
+    expect(ids(asMe(ME_BY_ROLE.member))).toEqual(['home', 'mySchedule', 'fullSchedule'])
   })
   it('leader (any isLeader membership): adds assign', () => {
-    expect(ids(asMe(ME_BY_ROLE.leader))).toEqual([
-      'home',
-      'mySchedule',
-      'fullSchedule',
-      'assign',
-      'design',
-    ])
+    expect(ids(asMe(ME_BY_ROLE.leader))).toEqual(['home', 'mySchedule', 'fullSchedule', 'assign'])
   })
   it('PEMBINA: adds services, no admin items', () => {
     expect(ids(asMe(ME_BY_ROLE.pembina))).toEqual([
@@ -25,7 +19,6 @@ describe('buildNavItems (full intended set)', () => {
       'mySchedule',
       'fullSchedule',
       'services',
-      'design',
     ])
   })
   it('ADMIN: adds services, users and teams', () => {
@@ -36,7 +29,6 @@ describe('buildNavItems (full intended set)', () => {
       'services',
       'users',
       'teams',
-      'design',
     ])
   })
   it('renders only items whose route exists', () => {
@@ -47,7 +39,6 @@ describe('buildNavItems (full intended set)', () => {
       'services',
       'users',
       'teams',
-      'design',
     ])
   })
 })

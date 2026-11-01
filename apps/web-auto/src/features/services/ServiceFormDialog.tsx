@@ -136,7 +136,11 @@ function ServiceForm({ service, onDone }: { service?: ServiceSchedule; onDone: (
         />
         <FormField
           id="service-start-time"
-          type="time"
+          type="text"
+          inputMode="numeric"
+          placeholder={f.timePlaceholder}
+          maxLength={5}
+          autoComplete="off"
           label={f.startTime}
           error={errors.startTime?.message}
           disabled={startLocked}
@@ -151,7 +155,11 @@ function ServiceForm({ service, onDone }: { service?: ServiceSchedule; onDone: (
         />
         <FormField
           id="service-end-time"
-          type="time"
+          type="text"
+          inputMode="numeric"
+          placeholder={f.timePlaceholder}
+          maxLength={5}
+          autoComplete="off"
           label={f.endTime}
           error={errors.endTime?.message}
           {...form.register('endTime')}

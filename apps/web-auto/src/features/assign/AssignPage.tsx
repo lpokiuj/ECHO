@@ -259,7 +259,10 @@ export function AssignPage() {
             <div className="flex min-w-0 flex-col gap-2">
               <Label htmlFor="assign-service">{t.serviceLabel}</Label>
               <Select value={service.id} onValueChange={(v) => choose('service', v)}>
-                <SelectTrigger id="assign-service" className="w-full">
+                <SelectTrigger
+                  id="assign-service"
+                  className="h-auto min-h-11 w-full py-2 text-left whitespace-normal *:data-[slot=select-value]:line-clamp-2"
+                >
                   <SelectValue placeholder={t.selectService} />
                 </SelectTrigger>
                 <SelectContent>

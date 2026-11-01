@@ -115,3 +115,13 @@
 - B sessions for feature 9: 3 total (sessions 11, 12 (blocked on admin password), 13). Fix rounds: 2 earlier (timeouts) + 0 on clean data. B sessions total: 13.
 - Verified by me: `npm run check` pass (18 files, 210 tests); `npm run e2e` 96 passed (4.4m); package.json/lock unchanged; no skip/only/any/ts-ignore/hex in the diff. Viewed 2 screenshots (team detail 360, list 1280): fine.
 - Carry to feature 10: full axe on users/teams lists (D-038), assign Select date truncation at 360px, e2e data cleanup, time inputs AM/PM, 44px check at 1280.
+- Feature 9 commit hash: decb6b1. Next: feature 10 (Hardening) with a fresh B (plan phase).
+
+## Feature 10 in progress
+- B session 14 (Agent/sonnet): plan approved after 1 plan round; decisions D-046..D-050; implementing via SendMessage.
+- Feature 10: full e2e 55 passed, 1 failed (routes.spec admin test hit its 180s timeout in axe under load; passes alone). Fix round 1 sent to B: split per width, home copy, screenshots review.
+- Permission note: B mistakenly `git rm`'d e2e/responsive.spec.ts and its attempt to restore with `git reset` was denied; B did not work around it. I restored the file with `git restore --source=HEAD --staged --worktree e2e/responsive.spec.ts` (named file, allowed by CLAUDE.md).
+
+## Feature 10 done
+- B sessions for feature 10: 2 (plan session 14 was the only B; continued via SendMessage). Total B sessions: 14. Fix rounds: 2 (routes.spec timeout split + home copy; port of design.spec checks + ConfirmDialog focus fix).
+- Verified by me: `npm run check` pass (18 files, 214 tests); `npm run e2e` 80 passed (7.9m, teardown removed 99 of 99); package.json/lock unchanged; no skip/only/any/ts-ignore added. Viewed home 360: fine.

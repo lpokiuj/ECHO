@@ -306,6 +306,12 @@ test('assign screen at 360, 390, 768 and 1280: no overflow, no axe violations, n
       page.getByRole('button', { name: fillMessage(t.unassignAria, { name: s.volunteer.name }) }),
     ).toBeVisible()
     await check('result', width)
+    // The selected service (title and date) is never cut off, even at 360px.
+    const shown = page.locator('#assign-service [data-slot="select-value"]')
+    const clipped = await shown.evaluate(
+      (el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1,
+    )
+    expect(clipped, `service select clipped at ${width}`).toBe(false)
     // Touch targets below 1024px.
     if (width < 1024) {
       const unassign = page.getByRole('button', {

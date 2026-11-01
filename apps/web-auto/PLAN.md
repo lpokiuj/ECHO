@@ -188,9 +188,9 @@ Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, 
 - [x] 7. Leader assign screen
 - [x] 8. Admin users
 - [x] 9. Admin teams and membership
-- [ ] 10. Hardening
+- [x] 10. Hardening
 
 ## Notes for later features (orchestrator, feature 2)
 
 - `shadcn add` would install `cn` and `next-themes` (not approved). Take component source with `npx shadcn@latest view <name>` and write the file, importing `cn` from `@/lib/utils`. `components.json` style is `radix-nova`.
-- `/design` and its dev-only "Desain" nav link (D-003) are removed together in feature 10.
+- `/design` and its dev-only "Desain" nav link (D-003) were removed together in feature 10 (done).

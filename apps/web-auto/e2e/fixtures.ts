@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { expect, test as base, type APIRequestContext, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
+import { recordCreated } from './created.ts'
 
 // Credentials come from process.env only. Messages name the variable, never its value,
 // and no response body is ever included in an error (bodies can hold tokens).
@@ -63,6 +64,7 @@ export async function createE2eUser(
   if (response.status() !== 201)
     throw new Error(`POST /users failed with status ${response.status()}`)
   const created = (await response.json()) as { id: string }
+  recordCreated('user', created.id)
   return { id: created.id, name, email, password }
 }
 
@@ -106,13 +108,15 @@ export async function createE2eService(
   daysAhead = 30,
 ): Promise<CreatedService> {
   const title = `e2e-${randomSuffix()}`
-  return adminCall<CreatedService>(
+  const service = await adminCall<CreatedService>(
     request,
     'post',
     '/services',
     { title, startsAt: wibInstant(daysAhead, 9), endsAt: wibInstant(daysAhead, 11) },
     [201],
   )
+  recordCreated('service', service.id)
+  return service
 }
 
 /** Creates an `e2e-` team as admin (POST /teams). */

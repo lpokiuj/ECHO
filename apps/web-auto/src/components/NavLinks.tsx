@@ -12,7 +12,7 @@ export function NavLinks({ items, onNavigate }: NavLinksProps) {
   return (
     <nav aria-label={messages.nav.label}>
       <ul className="flex flex-col gap-1">
-        {items.map(({ id, to, label, icon: Icon, devOnly }) => (
+        {items.map(({ id, to, label, icon: Icon }) => (
           <li key={id}>
             <NavLink
               to={to}
@@ -28,11 +28,6 @@ export function NavLinks({ items, onNavigate }: NavLinksProps) {
             >
               <Icon className="size-5 shrink-0" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">{label}</span>
-              {devOnly ? (
-                <span className="bg-warning text-warning-foreground rounded-sm px-1.5 py-0.5 text-xs font-medium">
-                  dev
-                </span>
-              ) : null}
             </NavLink>
           </li>
         ))}

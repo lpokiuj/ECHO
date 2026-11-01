@@ -153,6 +153,18 @@ describe('create', () => {
     expect(sink.calls).toBe(0)
   })
 
+  it('refuses a time that is not a 24-hour HH:mm without calling the server', async () => {
+    const sink: { calls: number } = { calls: 0 }
+    server.use(
+      http.post('*/api/services', () => ((sink.calls += 1), respond(201, SERVICE_CREATED))),
+    )
+    await openPage()
+    const u = await fillCreate('Ibadah', ['2026-12-06', '9:00 PM'], ['2026-12-06', '25:00'])
+    await u.click(screen.getByRole('button', { name: f.submitCreate }))
+    expect(await screen.findAllByText(t.validation.timeFormat)).toHaveLength(2)
+    expect(sink.calls).toBe(0)
+  })
+
   it('accepts exactly 150 characters', async () => {
     const sink: { body?: { title: string }; calls: number } = { calls: 0 }
     server.use(

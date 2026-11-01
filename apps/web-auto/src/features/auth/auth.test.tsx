@@ -96,7 +96,7 @@ describe('login', () => {
 })
 
 describe('forced password change', () => {
-  it.each(['/', '/design', '/tidak-ada'])('keeps a must-change user off %s', async (path) => {
+  it.each(['/', '/my-schedule', '/tidak-ada'])('keeps a must-change user off %s', async (path) => {
     server.use(handlers.me(undefined, ME_BY_ROLE.mustChange))
     const { router } = renderApp(path, { token: true })
     expect(await heading(messages.auth.changePasswordTitle)).toBeInTheDocument()
@@ -208,11 +208,11 @@ describe('navigation per role (rendered)', () => {
     const nav = screen.getAllByRole('navigation', { name: messages.nav.label })[0]!
     const links = within(nav).getAllByRole('link')
     // Home and the two schedules exist (feature 5), services for ADMIN and PEMBINA (feature 6),
-    // the assign screen for leaders (feature 7), the users page for ADMIN (feature 8), the teams page for ADMIN (feature 9), plus the dev-only design link.
+    // the assign screen for leaders (feature 7), the users page for ADMIN (feature 8), the teams page for ADMIN (feature 9).
     const manages = key === 'pembina' || key === 'admin'
     const leads = key === 'leader'
     const admin = key === 'admin'
-    expect(links).toHaveLength(4 + (manages ? 1 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
+    expect(links).toHaveLength(3 + (manages ? 1 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
     expect(within(nav).queryByRole('link', { name: messages.nav.assign }) !== null).toBe(leads)
     const names = [messages.nav.home, messages.nav.mySchedule, messages.nav.fullSchedule]
     for (const name of names) {

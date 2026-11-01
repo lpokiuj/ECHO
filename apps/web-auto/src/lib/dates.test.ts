@@ -5,6 +5,7 @@ import {
   formatTimeRange,
   hasEnded,
   isFuture,
+  isTimeInput,
   jakartaDayKey,
   parseInstant,
   toWibInputs,
@@ -52,6 +53,12 @@ describe('form inputs', () => {
     expect(() => toWibIso('', '09:00')).toThrow()
     expect(() => toWibIso('2026-12-06', '9am')).toThrow()
     expect(() => toWibIso('2026-13-45', '09:00')).toThrow()
+  })
+  it('accepts only real 24-hour times', () => {
+    for (const ok of ['00:00', '09:05', '23:59']) expect(isTimeInput(ok)).toBe(true)
+    for (const bad of ['', '9:00', '24:00', '12:60', '09:00 PM', '0900']) {
+      expect(isTimeInput(bad)).toBe(false)
+    }
   })
   it('reads an API instant back as WIB inputs, across midnight', () => {
     expect(toWibInputs('2026-12-06T02:00:00.000Z')).toEqual({ date: '2026-12-06', time: '09:00' })

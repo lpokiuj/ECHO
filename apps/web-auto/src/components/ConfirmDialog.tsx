@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -14,8 +14,8 @@ import { messages } from '@/lib/messages'
 
 interface ConfirmDialogProps {
   /**
-   * The element that opens the dialog. Pass it so focus returns to it on close;
-   * a dialog opened without a trigger loses keyboard focus when it closes.
+   * The element that opens the dialog. Optional: without it, focus still returns to whichever
+   * element had it when the dialog opened (if that element is still on the page).
    */
   trigger?: ReactNode
   open: boolean
@@ -40,10 +40,25 @@ export function ConfirmDialog({
   destructive = false,
   pending = false,
 }: ConfirmDialogProps) {
+  // A dialog opened from state has no Radix trigger, so remember who had focus and give it back.
+  const returnTo = useRef<HTMLElement | null>(null)
+  useLayoutEffect(() => {
+    if (open && document.activeElement instanceof HTMLElement)
+      returnTo.current = document.activeElement
+  }, [open])
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       {trigger ? <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger> : null}
-      <AlertDialogContent>
+      <AlertDialogContent
+        onCloseAutoFocus={(event) => {
+          const target = returnTo.current
+          if (target?.isConnected) {
+            event.preventDefault()
+            target.focus()
+          }
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

@@ -26,9 +26,7 @@ describe('AppShell', () => {
       'aria-current',
       'page',
     )
-    expect(
-      within(nav).getByRole('link', { name: new RegExp(messages.nav.design) }),
-    ).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: messages.nav.mySchedule })).toBeInTheDocument()
   })
 
   it('opens the menu sheet from the top bar button', async () => {
@@ -36,11 +34,9 @@ describe('AppShell', () => {
     await userEvent.click(screen.getByRole('button', { name: messages.nav.openMenu }))
     const dialog = await screen.findByRole('dialog', { name: messages.nav.menuTitle })
     expect(within(dialog).getByRole('link', { name: messages.nav.home })).toBeInTheDocument()
-    await userEvent.click(
-      within(dialog).getByRole('link', { name: new RegExp(messages.nav.design) }),
-    )
+    await userEvent.click(within(dialog).getByRole('link', { name: messages.nav.mySchedule }))
     expect(
-      await screen.findByRole('heading', { level: 1, name: messages.design.title }),
+      await screen.findByRole('heading', { level: 1, name: messages.schedule.myTitle }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).toBeNull()
   })

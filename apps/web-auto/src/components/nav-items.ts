@@ -3,7 +3,6 @@ import {
   HomeIcon,
   CalendarDaysIcon,
   CalendarIcon,
-  PaletteIcon,
   SettingsIcon,
   UserCogIcon,
   UsersIcon,
@@ -19,8 +18,6 @@ export interface NavItem {
   icon: LucideIcon
   /** False until the feature that builds the route lands (DECISIONS D-012). */
   routeExists: boolean
-  /** Dev-only entries are removed in feature 10 (DECISIONS D-003). */
-  devOnly?: boolean
 }
 
 /** Every item the user is meant to have, from GET /me. Hiding is UX only; the backend decides. */
@@ -72,14 +69,6 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       { id: 'teams', to: '/teams', label: messages.nav.teams, icon: UsersIcon, routeExists: true },
     )
   }
-  items.push({
-    id: 'design',
-    to: '/design',
-    label: messages.nav.design,
-    icon: PaletteIcon,
-    routeExists: true,
-    devOnly: true,
-  })
   return items
 }
 

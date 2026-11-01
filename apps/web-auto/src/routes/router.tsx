@@ -3,7 +3,6 @@ import { AppShell } from '@/components/AppShell'
 import { AssignPage } from '@/features/assign/AssignPage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { DesignPage } from '@/features/design/DesignPage'
 import { ErrorPage } from '@/features/errors/ErrorPage'
 import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
@@ -95,8 +94,6 @@ export const routes = [
                 element: <RequireLeader />,
                 children: [{ path: PATHS.assign.slice(1), element: <AssignPage /> }],
               },
-              // Dev-only (DECISIONS D-003): remove this route and the nav link in feature 10.
-              { path: 'design', element: <DesignPage /> },
               { path: '*', element: <NotFoundPage /> },
             ],
           },

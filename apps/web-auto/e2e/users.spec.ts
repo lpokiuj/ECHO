@@ -32,7 +32,7 @@ function collectErrors(page: Page): string[] {
   return errors
 }
 
-/** `scope` limits axe to one dialog: the list grows with leftover e2e- users, so a page-wide run is slow. */
+/** `scope` limits axe to one dialog; without it the whole page, every row, is scanned (D-038 resolved). */
 async function seriousViolations(page: Page, scope?: string) {
   // Contrast is measured on the colors on screen, so wait for the dialog's open animation to end.
   if (scope)
@@ -40,14 +40,7 @@ async function seriousViolations(page: Page, scope?: string) {
       .locator(scope)
       .evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)))
   const builder = new AxeBuilder({ page })
-  // Page-wide runs check the first 10 rows and cards only (all rows are the same component).
-  const results = await (
-    scope
-      ? builder.include(scope)
-      : builder
-          .exclude('[data-testid="users-table"] tbody tr:nth-child(n+11)')
-          .exclude('[data-testid="users-cards"] > li:nth-child(n+11)')
-  ).analyze()
+  const results = await (scope ? builder.include(scope) : builder).analyze()
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)

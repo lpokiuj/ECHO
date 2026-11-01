@@ -50,7 +50,7 @@ test('wrong credentials show one generic message and stay on login', async ({ pa
 })
 
 test('an unauthenticated visit to a protected route goes to login', async ({ page }) => {
-  await page.goto('/design')
+  await page.goto('/my-schedule')
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('heading', { level: 1, name: t.loginTitle })).toBeVisible()
 })
@@ -70,7 +70,7 @@ test('admin-created user logs in, completes the forced change, lands home', asyn
   await expect(page.getByRole('navigation', { name: messages.nav.label })).toHaveCount(0)
 
   // No other route is reachable while the change is pending.
-  await page.goto('/design')
+  await page.goto('/my-schedule')
   await expect(page).toHaveURL(/\/change-password$/)
   await page.goto('/')
   await expect(page).toHaveURL(/\/change-password$/)

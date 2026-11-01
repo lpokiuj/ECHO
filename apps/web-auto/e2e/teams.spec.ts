@@ -34,11 +34,7 @@ function collectErrors(page: Page): string[] {
   return errors
 }
 
-/**
- * `scope` limits axe to one dialog. A page-wide run skips teams-list rows after the tenth
- * (the list grows with leftover e2e- teams; all rows are the same component). The roster of a
- * fresh e2e team is small and is scanned in full.
- */
+/** `scope` limits axe to one dialog; without it the whole page, every row, is scanned (D-038 resolved). */
 async function seriousViolations(page: Page, scope?: string) {
   // Contrast is measured on the colors on screen, so wait for the dialog's open animation to end.
   if (scope)
@@ -46,13 +42,7 @@ async function seriousViolations(page: Page, scope?: string) {
       .locator(scope)
       .evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)))
   const builder = new AxeBuilder({ page })
-  const results = await (
-    scope
-      ? builder.include(scope)
-      : builder
-          .exclude('[data-testid="teams-table"] tbody tr:nth-child(n+11)')
-          .exclude('[data-testid="teams-cards"] > li:nth-child(n+11)')
-  ).analyze()
+  const results = await (scope ? builder.include(scope) : builder).analyze()
   return results.violations
     .filter((v) => v.impact === 'serious' || v.impact === 'critical')
     .map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`)

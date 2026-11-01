@@ -178,3 +178,27 @@
 ### D-045 D-043 timeouts tightened after the echo_dev reset (feature 9)
 - On clean data the e2e `expect` timeout returned to 20s, describe to 90s, responsive tests to 180s (users/services/teams specs); full e2e 96 passed in ~4.4m. `setQueryData` in useUsers.ts kept (harmless). D-043 and D-044 are resolved. schedule.spec 150s timeout left as is. No assertion removed. Reversible: yes. Asked by: B, decided by orchestrator.
 - Note: after each echo_dev reset the seeded admin must again complete the forced password change (user action).
+
+### D-046 e2e cleanup scope (feature 10)
+- Options: (a) per-run teardown of only ids the run created (delete services, deactivate users); (b) also sweep all e2e- data at run start; (c) none. Choice: (a): deterministic, never touches others' data. Teams cannot be removed; full reset stays a user action (D-044). Reversible: yes. Asked by: B.
+
+### D-047 Home route '/' stays PlaceholderPage (feature 10)
+- Options: (a)/(c) keep and audit states; (b) redirect to My schedule (edits feature 4/5 tests). Choice: keep; audit its states. If it reads as a stub in screenshots, B reports it again. Reversible: yes. Asked by: B.
+
+### D-048 24-hour time input (feature 10)
+- PLAN requires a 24-hour clock; `type="time"` shows AM/PM by browser locale. Options: (a) lang attr (browser-dependent); (b) two Selects; (c) text input "HH:mm", inputMode numeric, zod pattern, parsed through the dates helper. Choice: (c): smallest and deterministic. Tests change from time entry to text entry; no assertion weakened. Reversible: yes. Asked by: B.
+
+### D-049 Fix assign Select date truncation at 360px (feature 10)
+- Treated as a bug against "no clipped content", not polish. Choice: fix (wrap or shorten via the dates helper) with a 360px assertion. Reversible: yes. Asked by: B.
+
+### D-050 Console-error filter on no-access pages (feature 10)
+- Allowed: only browser resource-load messages matching the documented 403/404 of the page under test; nothing else is filtered. Reversible: yes. Asked by: B.
+
+### D-051 Home page '/' stub copy replaced (feature 10)
+- Options: (a) keep "Aplikasi sedang disiapkan."; (b) short welcome copy + links to Jadwal Saya and Jadwal Lengkap; (c) redirect to My schedule (touches auth/nav tests). Choice: (b), smallest fix to user-visible stub text; supersedes the "keep as is" part of D-047. Reversible: yes. Asked by: B.
+
+### D-052 Feature 10 implementation notes (B-reported)
+- /design removed along with the "dev" nav badge (nav.devOnly). Teardown (created.ts, global-teardown.ts) removes only ids recorded by fixtures; UI-created users and teams stay. no-literals.test.ts guards user-facing literals outside messages.ts. Assign service trigger wraps on 2 lines. D-038 resolved (full axe on users/teams lists restored). No-access states render an h2, not h1 (axe clean, left as is).
+
+### D-053 ConfirmDialog returns focus; other form dialogs not covered (feature 10, fix round 2)
+- Porting the confirm-dialog check to /services found focus not returned after Esc (state-driven dialogs have no Radix trigger). Fixed in ConfirmDialog (remember focused element, refocus on close). The users/teams/services form dialogs may share the gap; not changed (scope). Revisit: yes, check by hand. D-038 resolved (full axe restored). D-003 resolved (/design removed). Ported from design.spec: focus ring, reduced motion, hover, shell, confirm dialog, single-column form. Reversible: yes. Asked by: B.

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { InboxIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -76,6 +76,31 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).not.toHaveBeenCalled()
     await userEvent.click(screen.getByRole('button', { name: 'Hapus' }))
     expect(onConfirm).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns focus to the element that opened a state-driven dialog', async () => {
+    function FromState() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>Buka</Button>
+          <ConfirmDialog
+            open={open}
+            onOpenChange={setOpen}
+            title="Judul"
+            description="Isi"
+            onConfirm={() => undefined}
+          />
+        </>
+      )
+    }
+    render(<FromState />)
+    const opener = screen.getByRole('button', { name: 'Buka' })
+    await userEvent.click(opener)
+    await screen.findByRole('alertdialog')
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull())
+    expect(opener).toHaveFocus()
   })
 
   it('does not call onConfirm on cancel and closes', async () => {
