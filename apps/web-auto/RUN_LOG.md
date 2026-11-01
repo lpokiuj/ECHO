@@ -125,3 +125,4 @@
 ## Feature 10 done
 - B sessions for feature 10: 2 (plan session 14 was the only B; continued via SendMessage). Total B sessions: 14. Fix rounds: 2 (routes.spec timeout split + home copy; port of design.spec checks + ConfirmDialog focus fix).
 - Verified by me: `npm run check` pass (18 files, 214 tests); `npm run e2e` 80 passed (7.9m, teardown removed 99 of 99); package.json/lock unchanged; no skip/only/any/ts-ignore added. Viewed home 360: fine.
+- Feature 10 commit hash: a1ceb6b. All 10 features committed. Next: FINAL_REPORT.md.
