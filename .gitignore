@@ -1,5 +1,38 @@
+# Env (unanchored: also matches apps/*/.env)
 .env
 .env.test
+
+# Dependencies and build output
 node_modules
 dist
+dist-ssr
 *.tsbuildinfo
+*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test and tooling output
+coverage/
+playwright-report/
+test-results/
+.screens/
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Claude Code local settings
+**/.claude/settings.local.json
