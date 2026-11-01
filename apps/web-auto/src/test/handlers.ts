@@ -122,3 +122,48 @@ export const INCLUDE_PAST_BAD = {
   error: 'Bad Request',
   statusCode: 400,
 }
+
+// Bodies copied verbatim from ../api/docs/api/services.md.
+export const SERVICE_CREATED = {
+  id: 'f13c4b91-112d-44ae-8c63-4ed9400ad52f',
+  title: 'docs-example Service 1',
+  startsAt: '2026-12-06T02:00:00.000Z',
+  endsAt: '2026-12-06T04:00:00.000Z',
+  createdBy: '4febc500-191d-4f5e-9929-b4e7eea31995',
+  createdAt: '2026-10-31T18:32:07.099Z',
+}
+export const SERVICE_PATCHED = {
+  id: 'c570c017-5e63-41b7-8290-6d9da522b837',
+  title: 'docs-example Service 2 (renamed)',
+  startsAt: '2026-12-13T02:00:00.000Z',
+  endsAt: '2026-12-13T04:00:00.000Z',
+  createdBy: '3ba66b7e-9a5f-4a7f-be68-8b012feae3a7',
+  createdAt: '2026-10-31T18:32:07.140Z',
+}
+export const SERVICE_ERROR_BODIES = {
+  titleTooLong: {
+    message: ['title must be shorter than or equal to 150 characters'],
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  noOffset: {
+    message: ['startsAt must include a timezone offset (Z or +HH:MM)'],
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  endBeforeStart: {
+    message: 'endsAt must be after startsAt',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  startNotFuture: {
+    message: 'startsAt must be in the future',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  emptyPatch: {
+    message: 'Provide at least one field to update',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+}

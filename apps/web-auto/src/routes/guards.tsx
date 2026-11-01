@@ -4,6 +4,7 @@ import { errorMessage } from '@/api/errors'
 import { getToken } from '@/api/session'
 import { ErrorState } from '@/components/ErrorState'
 import { Skeleton } from '@/components/ui/skeleton'
+import type { UserRole } from '@/api/types'
 import { useMe } from '@/features/auth/useMe'
 import { messages } from '@/lib/messages'
 import { PATHS } from './paths'
@@ -68,4 +69,17 @@ export function RequirePasswordChange({ children }: { children: ReactNode }) {
   if (guard.kind === 'node') return guard.node
   if (!guard.me.mustChangePassword) return <Navigate to={PATHS.home} replace />
   return children
+}
+
+/** UX only: hides a page from other roles. The backend still answers 403 to every call. */
+export function RequireRole({ roles }: { roles: readonly UserRole[] }) {
+  const me = useMe()
+  if (!me.data) return <Outlet />
+  if (roles.includes(me.data.role)) return <Outlet />
+  return (
+    <ErrorState
+      title={messages.services.noAccessTitle}
+      description={messages.services.noAccessDescription}
+    />
+  )
 }

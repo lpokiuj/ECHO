@@ -73,3 +73,8 @@
 ## Feature 5 done
 - B sessions for feature 5: 1 (Agent/sonnet, plan then implement via SendMessage). Fix rounds: 0. B sessions total: 7.
 - Verified by me: `npm run check` pass (14 files, 108 tests); `npm run e2e` 65 passed; package.json/lock unchanged; no skip/only/any/ts-ignore; no hex. Viewed 2 screenshots (full 360, full 1280): fine.
+- Feature 5 commit hash: 3bbb531. Next: feature 6 with a fresh B (plan phase).
+
+## Feature 6 done
+- B sessions for feature 6: 1 (Agent/sonnet, plan then implement). Fix rounds: 0. B sessions total: 8.
+- Verified by me: `npm run check` pass (15 files, 136 tests); `npm run e2e` 73 passed; package.json/lock unchanged; no skip/only/any/ts-ignore/hex. Viewed 2 screenshots (form errors 360, list 1280): fine.

@@ -7,8 +7,9 @@ import { ErrorPage } from '@/features/errors/ErrorPage'
 import { NotFoundPage } from '@/features/errors/NotFoundPage'
 import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
 import { MySchedulePage } from '@/features/schedule/MySchedulePage'
+import { ServicesPage } from '@/features/services/ServicesPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
-import { PublicOnly, RequireAuth, RequirePasswordChange } from './guards'
+import { PublicOnly, RequireAuth, RequireRole, RequirePasswordChange } from './guards'
 import { PATHS } from './paths'
 import { SessionEvents } from './SessionEvents'
 
@@ -52,6 +53,10 @@ export const routes = [
               { index: true, element: <PlaceholderPage /> },
               { path: PATHS.mySchedule.slice(1), element: <MySchedulePage /> },
               { path: PATHS.fullSchedule.slice(1), element: <FullSchedulePage /> },
+              {
+                element: <RequireRole roles={['ADMIN', 'PEMBINA']} />,
+                children: [{ path: PATHS.services.slice(1), element: <ServicesPage /> }],
+              },
               // Dev-only (DECISIONS D-003): remove this route and the nav link in feature 10.
               { path: 'design', element: <DesignPage /> },
               { path: '*', element: <NotFoundPage /> },

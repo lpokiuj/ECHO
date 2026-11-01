@@ -100,3 +100,17 @@
 
 ### D-022 dates.ts imports messages with a relative path
 - The `@/` alias does not typecheck when an e2e spec imports the module. "WIB" label lives in `messages.dates.wib`. Reversible: yes. Asked by: B.
+
+## Feature 6: Services management
+
+### D-023 Native date/time inputs
+- Options: (a) native type=date/time; (b) shadcn Calendar (needs react-day-picker + date-fns, not approved). Choice: (a). Reversible: yes. Asked by: B.
+
+### D-024 e2e PEMBINA user created via admin API
+- Options: (a) create an `e2e-` PEMBINA via POST /users and use the same forced-change login flow as existing fixtures (E2E_USER_PASSWORD, D-010); (b) skip PEMBINA e2e. Choice: (a). No seeded user is touched; the new password is generated at runtime, kept in memory, never logged. Missing/failed login = hard stop as before. Reversible: yes. Asked by: B.
+
+### D-025 Editing a started service
+- Choice: allowed with startsAt disabled and a hint (matches services.md). Edit PATCH sends only changed fields. Reversible: yes. Asked by: B.
+
+### D-026 Services page naming and layout (feature 6)
+- Nav "Kegiatan", heading "Kelola Kegiatan"; `RequireRole` guard shows a no-access page for other roles; list hides ended services by default (include-past toggle); 404 on edit/delete = "already gone" toast + refetch; form is a dialog (bottom-aligned below 640px). The 44px field check is skipped at 1280px (Button/Input are 40px from 1024px). Reversible: yes. Asked by: B, accepted.

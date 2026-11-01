@@ -4,4 +4,5 @@ export const PATHS = {
   changePassword: '/change-password',
   mySchedule: '/my-schedule',
   fullSchedule: '/schedule',
+  services: '/services',
 } as const

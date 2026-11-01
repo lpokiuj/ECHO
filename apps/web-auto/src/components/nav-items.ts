@@ -57,7 +57,7 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       to: '/services',
       label: messages.nav.services,
       icon: SettingsIcon,
-      routeExists: false,
+      routeExists: true,
     })
   }
   if (me.role === 'ADMIN') {

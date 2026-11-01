@@ -64,3 +64,40 @@ export function jakartaDayKey(iso: string): string {
 export function hasEnded(endsAt: string, now: number = Date.now()): boolean {
   return parseInstant(endsAt).getTime() <= now
 }
+
+const DATE_INPUT = /^\d{4}-\d{2}-\d{2}$/
+const TIME_INPUT = /^\d{2}:\d{2}$/
+
+/** Form input (date "YYYY-MM-DD", time "HH:mm", read as Asia/Jakarta) to ISO 8601 with +07:00. */
+export function toWibIso(date: string, time: string): string {
+  if (!DATE_INPUT.test(date) || !TIME_INPUT.test(time))
+    throw new Error('Invalid date or time input')
+  const iso = `${date}T${time}:00+07:00`
+  if (Number.isNaN(new Date(iso).getTime())) throw new Error('Invalid date or time input')
+  return iso
+}
+
+const inputFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+/** An API instant to the Jakarta date and time to prefill form inputs. */
+export function toWibInputs(iso: string): { date: string; time: string } {
+  const parts = inputFormat.formatToParts(parseInstant(iso))
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
+  return {
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+    time: `${get('hour')}:${get('minute')}`,
+  }
+}
+
+/** True when the instant is strictly after `now`. */
+export function isFuture(iso: string, now: number = Date.now()): boolean {
+  return parseInstant(iso).getTime() > now
+}

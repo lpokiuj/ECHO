@@ -207,11 +207,15 @@ describe('navigation per role (rendered)', () => {
     await heading(messages.placeholder.title)
     const nav = screen.getAllByRole('navigation', { name: messages.nav.label })[0]!
     const links = within(nav).getAllByRole('link')
-    // Home and the two schedules exist now (feature 5), plus the dev-only design link.
-    expect(links).toHaveLength(4)
-    for (const name of [messages.nav.home, messages.nav.mySchedule, messages.nav.fullSchedule]) {
+    // Home and the two schedules exist (feature 5), services for ADMIN and PEMBINA (feature 6),
+    // plus the dev-only design link.
+    const manages = key === 'pembina' || key === 'admin'
+    expect(links).toHaveLength(manages ? 5 : 4)
+    const names = [messages.nav.home, messages.nav.mySchedule, messages.nav.fullSchedule]
+    for (const name of names) {
       expect(within(nav).getByRole('link', { name })).toBeInTheDocument()
     }
+    expect(within(nav).queryByRole('link', { name: messages.nav.services }) !== null).toBe(manages)
     const role = ME_BY_ROLE[key].role as keyof typeof messages.roles
     await waitFor(() => expect(screen.getAllByText(messages.roles[role]).length).toBeGreaterThan(0))
   })

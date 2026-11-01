@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
-import { test as base, type APIRequestContext, type Page } from '@playwright/test'
+import { expect, test as base, type APIRequestContext, type Page } from '@playwright/test'
+import { messages } from '../src/lib/messages.ts'
 
 // Credentials come from process.env only. Messages name the variable, never its value,
 // and no response body is ever included in an error (bodies can hold tokens).
@@ -40,15 +41,18 @@ export interface CreatedUser {
   password: string
 }
 
-/** Creates an `e2e-` MEMBER through POST /users. Its password is the server's default one. */
-export async function createE2eUser(request: APIRequestContext): Promise<CreatedUser> {
+/** Creates an `e2e-` user (MEMBER unless `role` is given) through POST /users. Its password is the server's default one. */
+export async function createE2eUser(
+  request: APIRequestContext,
+  role: 'MEMBER' | 'PEMBINA' = 'MEMBER',
+): Promise<CreatedUser> {
   const password = requireEnv('E2E_USER_PASSWORD')
   const token = await adminToken(request)
   const suffix = randomSuffix()
   const name = `e2e-${suffix}`
   const email = `e2e-${suffix}@echo.local`
   const response = await request.post(`${baseUrl}/api/users`, {
-    data: { name, email, role: 'MEMBER' },
+    data: { name, email, role },
     headers: { Authorization: `Bearer ${token}` },
   })
   if (response.status() === 403) {
@@ -142,6 +146,43 @@ export async function assignUsers(
     [200],
   )
   if (result.assigned.length !== userIds.length) throw new Error('Not every e2e user was assigned')
+}
+
+/**
+ * Logs in through the UI and completes the forced password change. The new password is
+ * generated here, lives only in memory, and is never logged or stored.
+ */
+export async function loginAndChange(page: Page, user: CreatedUser): Promise<void> {
+  const a = messages.auth
+  const next = `Np-${randomSuffix()}-${randomSuffix()}`
+  await page.goto('/login')
+  await page.getByLabel(a.emailLabel).fill(user.email)
+  await page.getByLabel(a.passwordLabel).fill(user.password)
+  await page.getByRole('button', { name: a.loginSubmit }).click()
+  await expect(page).toHaveURL(/\/change-password$/)
+  await page.getByLabel(a.currentPasswordLabel).fill(user.password)
+  await page.getByLabel(a.newPasswordLabel, { exact: true }).fill(next)
+  await page.getByLabel(a.confirmPasswordLabel).fill(next)
+  await page.getByRole('button', { name: a.changePasswordSubmit }).click()
+  await expect(page).toHaveURL(/\/$/)
+}
+
+/** Reads the service list as admin (GET /services?includePast=true). */
+export async function listServices(
+  request: APIRequestContext,
+): Promise<{ id: string; title: string; startsAt: string; endsAt: string }[]> {
+  const token = await adminToken(request)
+  const response = await request.get(`${baseUrl}/api/services?includePast=true`, {
+    headers: authed(token),
+  })
+  if (response.status() !== 200)
+    throw new Error(`GET /services failed with status ${response.status()}`)
+  return (await response.json()) as {
+    id: string
+    title: string
+    startsAt: string
+    endsAt: string
+  }[]
 }
 
 /** Puts a session token in sessionStorage before any page script runs. */

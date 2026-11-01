@@ -71,3 +71,22 @@ export interface MyScheduleItem {
   teamId: string
   teamName: string
 }
+
+/** POST /services and PATCH /services/:id response. */
+export interface Service {
+  id: string
+  title: string
+  startsAt: string
+  endsAt: string
+  createdBy: string
+  createdAt: string
+}
+
+export interface CreateServiceBody {
+  title: string
+  startsAt: string
+  endsAt: string
+}
+
+/** Any non-empty subset. Send only what changed. */
+export type UpdateServiceBody = Partial<CreateServiceBody>

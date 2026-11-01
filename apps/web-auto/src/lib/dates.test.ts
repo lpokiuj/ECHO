@@ -4,8 +4,11 @@ import {
   formatTime,
   formatTimeRange,
   hasEnded,
+  isFuture,
   jakartaDayKey,
   parseInstant,
+  toWibInputs,
+  toWibIso,
 } from './dates'
 
 describe('dates (Asia/Jakarta, id-ID)', () => {
@@ -36,5 +39,27 @@ describe('dates (Asia/Jakarta, id-ID)', () => {
     const now = Date.parse('2026-11-01T04:00:00Z')
     expect(hasEnded('2026-11-01T03:59:59Z', now)).toBe(true)
     expect(hasEnded('2026-11-01T05:00:00Z', now)).toBe(false)
+  })
+})
+
+describe('form inputs', () => {
+  it('converts a WIB date and time to ISO with +07:00', () => {
+    expect(toWibIso('2026-12-06', '09:00')).toBe('2026-12-06T09:00:00+07:00')
+    // Same instant as the docs example response.
+    expect(new Date(toWibIso('2026-12-06', '09:00')).toISOString()).toBe('2026-12-06T02:00:00.000Z')
+  })
+  it('rejects malformed input instead of guessing', () => {
+    expect(() => toWibIso('', '09:00')).toThrow()
+    expect(() => toWibIso('2026-12-06', '9am')).toThrow()
+    expect(() => toWibIso('2026-13-45', '09:00')).toThrow()
+  })
+  it('reads an API instant back as WIB inputs, across midnight', () => {
+    expect(toWibInputs('2026-12-06T02:00:00.000Z')).toEqual({ date: '2026-12-06', time: '09:00' })
+    expect(toWibInputs('2026-12-06T17:30:00.000Z')).toEqual({ date: '2026-12-07', time: '00:30' })
+  })
+  it('knows whether an instant is in the future', () => {
+    const now = Date.parse('2026-12-06T02:00:00.000Z')
+    expect(isFuture('2026-12-06T09:00:01+07:00', now)).toBe(true)
+    expect(isFuture('2026-12-06T09:00:00+07:00', now)).toBe(false)
   })
 })

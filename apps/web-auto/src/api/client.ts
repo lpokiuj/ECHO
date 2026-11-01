@@ -7,8 +7,11 @@ import type {
   LoginRequest,
   LoginResponse,
   MeResponse,
+  CreateServiceBody,
   MyScheduleItem,
+  Service,
   ServiceSchedule,
+  UpdateServiceBody,
 } from './types'
 
 const BASE_URL = '/api'
@@ -96,4 +99,16 @@ export function getServices(includePast = false): Promise<ServiceSchedule[]> {
 
 export function getMySchedule(includePast = false): Promise<MyScheduleItem[]> {
   return request<MyScheduleItem[]>(`/me/schedule${scheduleQuery(includePast)}`)
+}
+
+export function createService(body: CreateServiceBody): Promise<Service> {
+  return request<Service>('/services', { method: 'POST', body })
+}
+
+export function updateService(id: string, body: UpdateServiceBody): Promise<Service> {
+  return request<Service>(`/services/${encodeURIComponent(id)}`, { method: 'PATCH', body })
+}
+
+export function deleteService(id: string): Promise<void> {
+  return request<void>(`/services/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }

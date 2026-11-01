@@ -60,6 +60,10 @@ function asKnownCode(code: unknown): ErrorCode | undefined {
 // Field validation messages look like "newPassword must be longer than or equal to 8 characters".
 // Only the field name and the rule are read, to pick an Indonesian text. The text itself is dropped.
 const RULES: { test: RegExp; text: string }[] = [
+  { test: /must be shorter than or equal to/, text: messages.errors.fields.tooLong },
+  { test: /must be after/, text: messages.errors.fields.endBeforeStart },
+  { test: /must be in the future/, text: messages.errors.fields.startNotFuture },
+  { test: /timezone offset|valid ISO 8601/, text: messages.errors.fields.invalidDate },
   { test: /must be an email/, text: messages.errors.fields.email },
   { test: /must be longer than or equal to/, text: messages.errors.fields.tooShort },
   { test: /should not be empty|must be a string/, text: messages.errors.fields.required },
