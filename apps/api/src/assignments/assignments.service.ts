@@ -25,6 +25,13 @@ export interface SkippedUser {
   heldByTeam?: { id: string; name: string };
 }
 
+export interface AssignmentNotesView {
+  serviceId: string;
+  userId: string;
+  teamId: string;
+  notes: string;
+}
+
 export interface AssignResult {
   assigned: string[];
   skipped: SkippedUser[];
@@ -65,6 +72,7 @@ export class AssignmentsService {
     teamId: string,
     userIds: string[],
     assignedBy: string,
+    notes?: Record<string, string>,
   ): Promise<AssignResult> {
     const service = await this.loadService(serviceId, teamId);
     this.assertNotStarted(service);
@@ -93,11 +101,17 @@ export class AssignmentsService {
 
     // Rules 3 and 4: the unique constraint decides who wins, in one statement
     const inserted: { user_id: string }[] = await this.dataSource.query(
-      `INSERT INTO service_assignments (service_id, user_id, team_id, assigned_by)
-       SELECT $1, u, $2, $3 FROM unnest($4::uuid[]) AS u
+      `INSERT INTO service_assignments (service_id, user_id, team_id, assigned_by, notes)
+       SELECT $1, t.u, $2, $3, t.n FROM unnest($4::uuid[], $5::text[]) AS t(u, n)
        ON CONFLICT (service_id, user_id) DO NOTHING
        RETURNING user_id`,
-      [serviceId, teamId, assignedBy, ids],
+      [
+        serviceId,
+        teamId,
+        assignedBy,
+        ids,
+        ids.map((id) => notes?.[id] ?? ''),
+      ],
     );
     const assigned = new Set(inserted.map((r) => r.user_id));
     const skippedIds = ids.filter((id) => !assigned.has(id));
@@ -148,6 +162,28 @@ export class AssignmentsService {
       [serviceId, teamId, userId],
     )) as [unknown, number];
     if (!affected) throw new NotFoundException('Assignment not found');
+  }
+
+  async updateNotes(
+    serviceId: string,
+    teamId: string,
+    userId: string,
+    notes: string,
+  ): Promise<AssignmentNotesView> {
+    const service = await this.loadService(serviceId, teamId);
+    this.assertNotStarted(service);
+    const rows: { notes: string }[] = (
+      await this.dataSource.query(
+        `UPDATE service_assignments SET notes = $4
+         WHERE service_id = $1 AND team_id = $2 AND user_id = $3
+         RETURNING notes`,
+        [serviceId, teamId, userId, notes],
+      )
+    )[0];
+    if (!rows || rows.length === 0) {
+      throw new NotFoundException('Assignment not found');
+    }
+    return { serviceId, userId, teamId, notes: rows[0].notes };
   }
 
   // Unknown or soft-deleted service, or unknown team (reachable by ADMIN only)

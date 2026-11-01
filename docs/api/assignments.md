@@ -3,7 +3,7 @@
 A team leader assigns members of their team to a service. Conventions: [README.md](README.md).
 Screen flow: [flows.md](flows.md).
 
-## Who may call (all three routes)
+## Who may call (all four routes)
 - **ADMIN**: any team.
 - **Leader of `:teamId`**: a user with `isLeader: true` on that team, read from the database on
   every request (no stale token problem).
@@ -52,6 +52,7 @@ user was skipped; inspect the body.
 | Body field | Type | Required | Rules |
 |---|---|---|---|
 | `userIds` | uuid[] | yes | 1 to 100 entries, each a UUID. Duplicates are removed silently |
+| `notes` | `{ [userId]: string }` | no | Per-user note stored on the new assignment. Keys must be UUIDs listed in `userIds`; values are strings of at most 1000 characters (`""` allowed). Users without an entry get `""`. `null`, arrays, non-string values: 400. Never overwrites the note of someone already assigned (they are skipped) |
 
 Request:
 ```json
@@ -91,7 +92,7 @@ neither list) **(code)**.
 
 | Status | Condition | Body |
 |---|---|---|
-| 400 | Empty array, >100 ids, non-array, non-UUID entry | `{"message":["userIds must contain at least 1 elements"],"error":"Bad Request","statusCode":400}`; `["each value in userIds must be a UUID"]`; `["userIds must contain no more than 100 elements"]` |
+| 400 | Empty array, >100 ids, non-array, non-UUID entry; invalid `notes` (see table above) | `{"message":["userIds must contain at least 1 elements"],"error":"Bad Request","statusCode":400}`; `["each value in userIds must be a UUID"]`; `["userIds must contain no more than 100 elements"]` |
 | 400 | **Any** id is not an **active member of this team** (nothing is inserted) | `{"statusCode":400,"error":"Bad Request","code":"INVALID_USERS","message":"Some users are not active members of this team","invalidUserIds":["85c483d5-d17f-495d-a088-78f652357e4d"]}` |
 | 401 / 403 | | |
 | 404 | Unknown/deleted service; unknown team (ADMIN) | `Service not found` / `Team not found` |
@@ -100,6 +101,28 @@ neither list) **(code)**.
 `INVALID_USERS` is the only 4xx with a list of offenders; it is for UI bugs (stale candidate list,
 a member removed or deactivated meanwhile). Conflicts with other teams are **not** errors; they
 come back in `skipped`.
+
+## PATCH /services/:id/teams/:teamId/assignments/:userId
+Set or edit the note on one assignment made by this team. Same access as the other routes
+(leader of `:teamId`, or ADMIN using the holding team's id).
+
+| Body field | Type | Required | Rules |
+|---|---|---|---|
+| `notes` | string | yes | At most 1000 characters. `""` clears the note. `null`, missing, non-string: 400 |
+
+**200**
+```json
+{"serviceId":"...","userId":"...","teamId":"...","notes":"bring guitar"}
+```
+
+| Status | Condition |
+|---|---|
+| 400 | Malformed uuid, or invalid `notes` |
+| 401 / 403 | |
+| 404 | `Service not found` / `Team not found` (ADMIN only), or `Assignment not found` when **this team** has no assignment for that user (includes: another team holds them) |
+| 409 | Service already started: `SERVICE_ALREADY_STARTED` (same body as above) |
+
+Notes are read through `GET /services` and `GET /me/schedule` (`notes`, default `""`).
 
 ## DELETE /services/:id/teams/:teamId/assignments/:userId
 Remove one assignment made by this team. **204**, empty body. Works for deactivated users, so a

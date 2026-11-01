@@ -597,4 +597,260 @@ describe('Assignments (e2e)', () => {
       }
     });
   });
+
+  describe('assignment notes', () => {
+    const notesOf = async (serviceId: string, userId: string) =>
+      (
+        await dataSource
+          .getRepository(ServiceAssignment)
+          .findOneByOrFail({ serviceId, userId })
+      ).notes;
+
+    async function memberOf(team: Team, name = 'Vol') {
+      const user = await createUser({ name });
+      await addMember(team, user);
+      return user;
+    }
+
+    describe('POST assignments with notes', () => {
+      it('defaults to an empty string and stores per-user notes', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA, 'X');
+        const y = await memberOf(teamA, 'Y');
+        const z = await memberOf(teamA, 'Z');
+        const res = await request(http())
+          .post(assignPath(service.id, teamA.id))
+          .set(await headersFor(leaderA))
+          .send({
+            userIds: [x.id, y.id, z.id],
+            notes: { [x.id]: 'bring guitar', [y.id]: '' },
+          })
+          .expect(200);
+        expect(res.body.assigned).toHaveLength(3);
+        expect(await notesOf(service.id, x.id)).toBe('bring guitar');
+        expect(await notesOf(service.id, y.id)).toBe('');
+        expect(await notesOf(service.id, z.id)).toBe('');
+      });
+
+      it('accepts a note of exactly 1000 characters', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        const note = 'a'.repeat(1000);
+        await request(http())
+          .post(assignPath(service.id, teamA.id))
+          .set(await headersFor(leaderA))
+          .send({ userIds: [x.id], notes: { [x.id]: note } })
+          .expect(200);
+        expect(await notesOf(service.id, x.id)).toBe(note);
+      });
+
+      it('rejects bad notes with 400 and inserts nothing', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        const outsider = await memberOf(teamA);
+        const h = await headersFor(leaderA);
+        const bad = [
+          'text',
+          ['a'],
+          null,
+          { [x.id]: 5 },
+          { [x.id]: null },
+          { [x.id]: 'a'.repeat(1001) },
+          { notAUuid: 'hi' },
+          { [outsider.id]: 'not in userIds' },
+        ];
+        for (const notes of bad) {
+          await request(http())
+            .post(assignPath(service.id, teamA.id))
+            .set(h)
+            .send({ userIds: [x.id], notes })
+            .expect(400);
+        }
+        expect(await rowsFor(service.id)).toHaveLength(0);
+      });
+
+      it('does not overwrite the note when the user is already assigned', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        const h = await headersFor(leaderA);
+        await request(http())
+          .post(assignPath(service.id, teamA.id))
+          .set(h)
+          .send({ userIds: [x.id], notes: { [x.id]: 'first' } })
+          .expect(200);
+        const res = await request(http())
+          .post(assignPath(service.id, teamA.id))
+          .set(h)
+          .send({ userIds: [x.id], notes: { [x.id]: 'second' } })
+          .expect(200);
+        expect(res.body.skipped[0].reason).toBe('ALREADY_ASSIGNED_THIS_TEAM');
+        expect(await notesOf(service.id, x.id)).toBe('first');
+      });
+    });
+
+    describe('PATCH assignments/:userId', () => {
+      const patch = (s: string, t: string, u: string) =>
+        request(http()).patch(unassignPath(s, t, u));
+
+      it('returns 401 without a token', async () => {
+        await patch(UNKNOWN_ID, UNKNOWN_ID, UNKNOWN_ID)
+          .send({ notes: 'x' })
+          .expect(401);
+      });
+
+      it('returns 403 for a leader of another team, a plain member and PEMBINA', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        await insertAssignment(service, x, teamA, leaderA);
+        const teamB = await createTeam('Team B');
+        const leaderB = await createUser();
+        await addMember(teamB, leaderB, true);
+        const pembina = await createUser({ role: UserRole.PEMBINA });
+        for (const user of [leaderB, x, pembina]) {
+          await patch(service.id, teamA.id, x.id)
+            .set(await headersFor(user))
+            .send({ notes: 'nope' })
+            .expect(403);
+        }
+        expect(await notesOf(service.id, x.id)).toBe('');
+      });
+
+      it('lets the leader set, edit and clear the note', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        await insertAssignment(service, x, teamA, leaderA);
+        const h = await headersFor(leaderA);
+        const res = await patch(service.id, teamA.id, x.id)
+          .set(h)
+          .send({ notes: 'bring guitar' })
+          .expect(200);
+        expect(res.body).toEqual({
+          serviceId: service.id,
+          userId: x.id,
+          teamId: teamA.id,
+          notes: 'bring guitar',
+        });
+        await patch(service.id, teamA.id, x.id)
+          .set(h)
+          .send({ notes: 'bring bass' })
+          .expect(200);
+        expect(await notesOf(service.id, x.id)).toBe('bring bass');
+        await patch(service.id, teamA.id, x.id)
+          .set(h)
+          .send({ notes: '' })
+          .expect(200);
+        expect(await notesOf(service.id, x.id)).toBe('');
+      });
+
+      it('lets ADMIN edit a note using the holding team id', async () => {
+        const { admin, service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        await insertAssignment(service, x, teamA, leaderA);
+        await patch(service.id, teamA.id, x.id)
+          .set(await headersFor(admin))
+          .send({ notes: 'by admin' })
+          .expect(200);
+        expect(await notesOf(service.id, x.id)).toBe('by admin');
+      });
+
+      it('returns 400 for a missing, null, non-string or too long note', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        await insertAssignment(service, x, teamA, leaderA);
+        const h = await headersFor(leaderA);
+        for (const body of [
+          {},
+          { notes: null },
+          { notes: 5 },
+          { notes: 'a'.repeat(1001) },
+        ]) {
+          await patch(service.id, teamA.id, x.id)
+            .set(h)
+            .send(body)
+            .expect(400);
+        }
+      });
+
+      it('returns 400 for non-UUID ids', async () => {
+        const { admin } = await world();
+        await patch('nope', UNKNOWN_ID, UNKNOWN_ID)
+          .set(await headersFor(admin))
+          .send({ notes: 'x' })
+          .expect(400);
+        await patch(UNKNOWN_ID, UNKNOWN_ID, 'nope')
+          .set(await headersFor(admin))
+          .send({ notes: 'x' })
+          .expect(400);
+      });
+
+      it('returns 404 when this team has no assignment for the user, even if another team holds them', async () => {
+        const { service, teamA, leaderA } = await world();
+        const teamB = await createTeam('Team B');
+        const leaderB = await createUser();
+        await addMember(teamB, leaderB, true);
+        const x = await memberOf(teamA);
+        await addMember(teamB, x);
+        await insertAssignment(service, x, teamA, leaderA);
+        await patch(service.id, teamB.id, x.id)
+          .set(await headersFor(leaderB))
+          .send({ notes: 'steal' })
+          .expect(404);
+        expect(await notesOf(service.id, x.id)).toBe('');
+      });
+
+      it('returns 404 for a deleted service', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA);
+        await insertAssignment(service, x, teamA, leaderA);
+        await dataSource
+          .getRepository(Service)
+          .update(service.id, { deletedAt: new Date() });
+        await patch(service.id, teamA.id, x.id)
+          .set(await headersFor(leaderA))
+          .send({ notes: 'x' })
+          .expect(404);
+      });
+
+      it('returns 409 SERVICE_ALREADY_STARTED on a started service', async () => {
+        const { admin, teamA, leaderA } = await world();
+        const started = await insertService(admin.id, -HOUR);
+        const x = await memberOf(teamA);
+        await insertAssignment(started, x, teamA, leaderA);
+        const res = await patch(started.id, teamA.id, x.id)
+          .set(await headersFor(leaderA))
+          .send({ notes: 'late' })
+          .expect(409);
+        expect(res.body.code).toBe('SERVICE_ALREADY_STARTED');
+        expect(await notesOf(started.id, x.id)).toBe('');
+      });
+    });
+
+    describe('reading notes', () => {
+      it('GET /services and GET /me/schedule return the notes', async () => {
+        const { service, teamA, leaderA } = await world();
+        const x = await memberOf(teamA, 'X');
+        await insertAssignment(service, x, teamA, leaderA);
+        const hx = await headersFor(x);
+
+        let list = await request(http()).get('/services').set(hx).expect(200);
+        expect(list.body[0].assignments[0].notes).toBe('');
+        let mine = await request(http())
+          .get('/me/schedule')
+          .set(hx)
+          .expect(200);
+        expect(mine.body[0].notes).toBe('');
+
+        await request(http())
+          .patch(unassignPath(service.id, teamA.id, x.id))
+          .set(await headersFor(leaderA))
+          .send({ notes: 'bring guitar' })
+          .expect(200);
+
+        list = await request(http()).get('/services').set(hx).expect(200);
+        expect(list.body[0].assignments[0].notes).toBe('bring guitar');
+        mine = await request(http()).get('/me/schedule').set(hx).expect(200);
+        expect(mine.body[0].notes).toBe('bring guitar');
+      });
+    });
+  });
 });

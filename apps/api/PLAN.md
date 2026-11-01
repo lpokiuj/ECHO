@@ -65,7 +65,7 @@ A leader of team B can:
 - `team_members(team_id, user_id, is_leader, created_at)` PK `(team_id, user_id)`
 - `services(id uuid, title, starts_at, ends_at, created_by, created_at, deleted_at)`
   CHECK `(ends_at > starts_at)`
-- `service_assignments(id uuid, service_id, user_id, team_id, assigned_by, created_at)`
+- `service_assignments(id uuid, service_id, user_id, team_id, assigned_by, notes text NOT NULL DEFAULT '', created_at)`
   UNIQUE `(service_id, user_id)`
 
 ## API (draft)
@@ -87,10 +87,11 @@ Services (ADMIN, PEMBINA)
 Assignments (leader of that team, or ADMIN)
 - `GET /services/:id/teams/:teamId/candidates`
 - `POST /services/:id/teams/:teamId/assignments` body `{ userIds: [] }`
+- `PATCH /services/:id/teams/:teamId/assignments/:userId` body `{ notes }` (set or edit the assignment note)
 - `DELETE /services/:id/teams/:teamId/assignments/:userId`
 
 Views
-- `GET /me/schedule` (any logged-in user)
+- `GET /me/schedule` (any logged-in user; items include `notes`)
 - `GET /services` (any logged-in user: all services with all teams' assignments, names only, no emails)
 
 ## Frontend notes
@@ -135,6 +136,7 @@ Views
 | Service responses | `POST` and `PATCH /services` return `{ id, title, startsAt, endsAt, createdBy, createdAt }` (no `deletedAt`). `PATCH` rejects any `startsAt` in the body that is at or before now (400), even if unchanged; clients send only the fields they change. Title and `endsAt` edits on a started service still work. | Literal reading of the "Service start time" rule; one response shape |
 | Assignment errors | `INVALID_USERS` is 400 `{ statusCode, error, code, message, invalidUserIds }`; `SERVICE_ALREADY_STARTED` is 409 with the same shape minus `invalidUserIds`. | Same body shape as `PASSWORD_CHANGE_REQUIRED` |
 | Assignment check order | Body validation (global ValidationPipe) runs before the handler, so a malformed assign body is 400 even for an unknown or deleted service. Guard (403) still comes first; path-param UUIDs are checked after it (a non-UUID `:teamId` is 403 for non-admins, 400 for ADMIN). | Standard NestJS pipe order, consistent with other modules |
+| Assignment notes | `service_assignments.notes` (text, default `''`, max 1000 chars). Set per user at assign time via optional body `notes: { [userId]: string }` (keys must be in `userIds`; never overwrites an existing assignment's note), edited with `PATCH .../assignments/:userId { notes }` (`''` clears; 409 `SERVICE_ALREADY_STARTED` on started services; 404 if this team has no assignment for the user). Same access as other assignment routes: leader of that team, or ADMIN. Read via `notes` in `GET /services` assignments and `GET /me/schedule`, so every logged-in user can read them. | Leaders need to tell a volunteer something specific; no new detail endpoint, existing views carry it |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)

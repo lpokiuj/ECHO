@@ -9,6 +9,7 @@ export interface ScheduleAssignmentView {
   name: string;
   teamId: string;
   teamName: string;
+  notes: string;
 }
 
 export interface ScheduleServiceView {
@@ -26,6 +27,7 @@ export interface MyScheduleItemView {
   endsAt: Date;
   teamId: string;
   teamName: string;
+  notes: string;
 }
 
 @Injectable()
@@ -55,15 +57,16 @@ export class ScheduleService {
       .addSelect('u.name', 'name')
       .addSelect('t.id', 'teamId')
       .addSelect('t.name', 'teamName')
+      .addSelect('a.notes', 'notes')
       .where('a.serviceId IN (:...ids)', { ids: services.map((s) => s.id) })
       .orderBy('t.name', 'ASC')
       .addOrderBy('u.name', 'ASC')
       .getRawMany<ScheduleAssignmentView & { serviceId: string }>();
 
     const byService = new Map<string, ScheduleAssignmentView[]>();
-    for (const { serviceId, userId, name, teamId, teamName } of rows) {
+    for (const { serviceId, userId, name, teamId, teamName, notes } of rows) {
       const list = byService.get(serviceId) ?? [];
-      list.push({ userId, name, teamId, teamName });
+      list.push({ userId, name, teamId, teamName, notes });
       byService.set(serviceId, list);
     }
 
@@ -90,6 +93,7 @@ export class ScheduleService {
       .addSelect('s.endsAt', 'endsAt')
       .addSelect('t.id', 'teamId')
       .addSelect('t.name', 'teamName')
+      .addSelect('a.notes', 'notes')
       .where('a.userId = :userId', { userId })
       .orderBy('s.startsAt', 'ASC')
       .addOrderBy('s.title', 'ASC');

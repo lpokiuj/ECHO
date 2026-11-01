@@ -166,9 +166,9 @@ describe('Schedule views (e2e)', () => {
           startsAt: service.startsAt.toISOString(),
           endsAt: service.endsAt.toISOString(),
           assignments: [
-            { userId: bob.id, name: 'Bob', teamId: music.id, teamName: 'Music' },
-            { userId: zed.id, name: 'Zed', teamId: music.id, teamName: 'Music' },
-            { userId: amy.id, name: 'Amy', teamId: sound.id, teamName: 'Sound' },
+            { userId: bob.id, name: 'Bob', teamId: music.id, teamName: 'Music', notes: '' },
+            { userId: zed.id, name: 'Zed', teamId: music.id, teamName: 'Music', notes: '' },
+            { userId: amy.id, name: 'Amy', teamId: sound.id, teamName: 'Sound', notes: '' },
           ],
         },
       ]);
@@ -293,7 +293,7 @@ describe('Schedule views (e2e)', () => {
         .expect(200);
 
       expect(res.body[0].assignments).toEqual([
-        { userId: gone.id, name: 'Gone', teamId: team.id, teamName: team.name },
+        { userId: gone.id, name: 'Gone', teamId: team.id, teamName: team.name, notes: '' },
       ]);
     });
   });
@@ -339,6 +339,7 @@ describe('Schedule views (e2e)', () => {
           endsAt: service.endsAt.toISOString(),
           teamId: team.id,
           teamName: 'Music',
+          notes: '',
         },
       ]);
       const json = JSON.stringify(res.body);

@@ -49,3 +49,5 @@ every team. The team roster (`GET /teams/:id/members`) is ADMIN only.
 - `/me/schedule`: only own rows; deleted services hidden; `includePast` behavior.
 - `/teams/:id/members`: 401 without a token; 403 for PEMBINA, MEMBER, and a leader of that
   very team; 404 for an unknown team; ADMIN sees inactive members and the `isLeader` flag.
+## Assignment notes
+- Each `assignments[]` item in `GET /services` and each item in `GET /me/schedule` includes `notes` (string, `''` by default), readable by every logged-in user.

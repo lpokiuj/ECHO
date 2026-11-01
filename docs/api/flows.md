@@ -29,7 +29,7 @@ Group/format `startsAt` in WIB on the client. Empty array = nothing assigned.
 
 ## 3. Full service schedule
 `GET /services` (optionally `?includePast=true`) -> services each with `assignments`
-(`userId, name, teamId, teamName`). Group `assignments` by `teamName` for display (already sorted
+(`userId, name, teamId, teamName, notes`). Group `assignments` by `teamName` for display (already sorted
 by team then name). Available to every role; no emails are included.
 
 ## 4. Leader assign screen

@@ -43,7 +43,7 @@ a team still gets 403 on `GET /teams/:id/members` for their own team; e2e `test/
 ## Assignment routes (team-scoped)
 
 Applies identically to routes 20 `GET .../candidates`, 21 `POST .../assignments`,
-22 `DELETE .../assignments/:userId`. The "Leader of this team" and "Leader of another team"
+22 `DELETE .../assignments/:userId` and `PATCH .../assignments/:userId` (notes). The "Leader of this team" and "Leader of another team"
 columns are the same account (`livana`, leader of Worship) calling Worship or Usher.
 
 | Caller | `:teamId` is | Result |

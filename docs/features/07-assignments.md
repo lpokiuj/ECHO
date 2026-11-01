@@ -41,6 +41,14 @@ This is the feature the whole plan exists for. Domain rules 2 to 7 live here.
 - Re-assigning someone this team already assigned leaves the row count unchanged and
   reports `ALREADY_ASSIGNED_THIS_TEAM`.
 
+## Notes (additive)
+- `POST .../assignments` accepts optional `notes: { [userId]: string }`: keys are UUIDs present in
+  `userIds`, values strings of at most 1000 chars. Unlisted users get `''`. Invalid shape: 400.
+  An already-assigned user is skipped and keeps its note.
+- `PATCH .../assignments/:userId` body `{ notes: string }` (<= 1000, `''` clears; null, missing or
+  non-string: 400). 200 `{ serviceId, userId, teamId, notes }`. Same access as the other routes;
+  404 when this team has no assignment for the user; 409 `SERVICE_ALREADY_STARTED` on a started service.
+
 ## DELETE /services/:id/teams/:teamId/assignments/:userId
 - 204 and the row is deleted. 404 if THIS team has no assignment for that user. That
   includes the case where another team holds them; the 404 body names no team. To remove

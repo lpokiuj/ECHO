@@ -32,6 +32,9 @@ export class ServiceAssignment {
   @Column({ name: 'assigned_by', type: 'uuid' })
   assignedBy: string;
 
+  @Column({ type: 'text', default: '' })
+  notes: string;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
