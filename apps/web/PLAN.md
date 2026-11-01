@@ -1,6 +1,6 @@
 # Echo Volunteer Portal: Frontend PLAN.md (auto version)
 
-Directory: `apps/web-auto`. Built by Claude with minimal human involvement.
+Directory: `apps/web`. Built by Claude with minimal human involvement.
 A separate learning version lives in `apps/web-learn`. Never copy code between them.
 
 ## Goal

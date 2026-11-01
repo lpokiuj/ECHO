@@ -1,4 +1,4 @@
-# CLAUDE.md (apps/web-auto)
+# CLAUDE.md (apps/web)
 
 Frontend for the Echo volunteer portal, built autonomously with Vite and React. Read
 PLAN.md before any task. PLAN.md is the source of truth for scope and decisions.

@@ -1,4 +1,4 @@
-# Echo volunteer portal (web-auto)
+# Echo volunteer portal (web)
 
 Indonesian-language web app where Echo volunteers see the service schedule and leaders and
 admins manage it. Vite, React, TypeScript (strict), React Router, TanStack Query, Tailwind CSS
