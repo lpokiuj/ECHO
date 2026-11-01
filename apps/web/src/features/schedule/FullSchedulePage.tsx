@@ -187,12 +187,14 @@ function DetailButton({ service }: { service: ServiceSchedule }) {
           {t.detail}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+      <DialogContent className="grid-rows-[auto_minmax(0,1fr)] overflow-hidden max-sm:max-h-[60dvh] sm:max-h-[calc(100dvh-4rem)] sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="break-words">{service.title}</DialogTitle>
           <DialogDescription>{t.detailDescription}</DialogDescription>
         </DialogHeader>
-        <People service={service} />
+        <div className="-mx-4 min-h-0 overflow-y-auto px-4">
+          <People service={service} />
+        </div>
       </DialogContent>
     </Dialog>
   )
