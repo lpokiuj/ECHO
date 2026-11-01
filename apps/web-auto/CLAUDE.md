@@ -56,6 +56,7 @@ STOP and ask me before:
   with an explicit offset. Never parse a date string that has no timezone.
 - Never weaken, skip, or delete a test to make it pass. If a test seems wrong, stop and explain why.
 - Every acceptance criterion in PLAN.md needs a test or a Playwright check.
+- Layouts must work from 360px up: no horizontal scroll, touch targets at least 44px, dialogs that fit small screens.
 
 ## Data safety (echo_dev)
 
@@ -72,7 +73,7 @@ STOP and ask me before:
 
 - Run `npm run check` yourself and report the real output.
 - For every UI feature, run the app against the real backend and exercise the screen with
-  Playwright at 390px, 768px, and 1280px wide. Save screenshots in `.screens/` (gitignored),
+  Playwright at 3360px, 390px, 768px, and 1280px wide. Save screenshots in `.screens/` (gitignored),
   look at them, and judge them against the UI quality bar. List what you found and fixed.
   Report console errors and axe results.
 - MSW handlers copy real response examples from `docs/api/`. Never invent a response shape.

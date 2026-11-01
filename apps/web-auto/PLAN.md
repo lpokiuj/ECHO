@@ -72,6 +72,8 @@ Polish beyond this list needs my approval.
   and initials avatars used consistently.
 - Brand: none supplied. Use a neutral theme with one accent color and log the choice.
   Replace this line if I give you brand colors, a logo, or fonts.
+- Responsive: works from 360px to 1920px. No horizontal page scroll. 
+  Touch targets at least 44px tall below 1024px. Dialogs fit a 360px screen (bottom sheet or full screen on small screens). Forms are single column below 768px.
 
 ## Decisions (change them here, not in code)
 
@@ -172,6 +174,8 @@ None at the moment.
     - axe finds no serious or critical violations on any route.
     - A grep finds no user-facing text literals outside `src/lib/messages.ts`.
     - Screenshots of every route are reviewed against the quality bar and the findings listed.
+
+Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, and 1280px: no horizontal page scroll on any route it adds, and no clipped or overlapping content.
 
 ## Status
 
