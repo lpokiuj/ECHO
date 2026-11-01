@@ -7,8 +7,7 @@ const HAS_OFFSET = /(Z|[+-]\d{2}:?\d{2})$/i
 
 const dateFormat = new Intl.DateTimeFormat(LOCALE, {
   timeZone: TIME_ZONE,
-  weekday: 'long',
-  day: 'numeric',
+  day: '2-digit',
   month: 'long',
   year: 'numeric',
 })
@@ -33,9 +32,14 @@ export function parseInstant(iso: string): Date {
   return date
 }
 
-/** "Minggu, 1 November 2026" */
+/** "01 November 2026" */
 export function formatDate(iso: string): string {
   return dateFormat.format(parseInstant(iso))
+}
+
+/** A form date "YYYY-MM-DD" as "08 November 2026". */
+export function formatDateInput(date: string): string {
+  return formatDate(`${date}T12:00:00+07:00`)
 }
 
 /** "10.00" (Jakarta, 24-hour, no label) */

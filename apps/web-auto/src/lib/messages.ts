@@ -145,6 +145,7 @@ export const messages = {
       startTime: 'Jam mulai (WIB)',
       endDate: 'Tanggal selesai',
       endTime: 'Jam selesai (WIB)',
+      datePlaceholder: 'Pilih tanggal',
       timePlaceholder: '09:00',
       startLocked: 'Kegiatan sudah dimulai, jadi waktu mulai tidak dapat diubah.',
       submitCreate: 'Simpan kegiatan',

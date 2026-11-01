@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatDate,
+  formatDateInput,
   formatTime,
   formatTimeRange,
   hasEnded,
@@ -13,19 +14,22 @@ import {
 } from './dates'
 
 describe('dates (Asia/Jakarta, id-ID)', () => {
-  it('renders a known UTC instant in WIB with Indonesian day and month names', () => {
-    expect(formatDate('2026-11-01T03:00:00.000Z')).toBe('Minggu, 1 November 2026')
+  it('renders a known UTC instant in WIB as DD Month YYYY with Indonesian month names', () => {
+    expect(formatDate('2026-11-01T03:00:00.000Z')).toBe('01 November 2026')
     expect(formatTime('2026-11-01T03:00:00.000Z')).toBe('10.00 WIB')
     expect(formatTimeRange('2026-11-01T03:00:00.000Z', '2026-11-01T05:00:00.000Z')).toBe(
       '10.00 - 12.00 WIB',
     )
   })
   it('uses Indonesian month names (Desember, Agustus)', () => {
-    expect(formatDate('2026-12-06T02:00:00.000Z')).toBe('Minggu, 6 Desember 2026')
-    expect(formatDate('2026-08-17T02:00:00.000Z')).toBe('Senin, 17 Agustus 2026')
+    expect(formatDate('2026-12-06T02:00:00.000Z')).toBe('06 Desember 2026')
+    expect(formatDate('2026-08-17T02:00:00.000Z')).toBe('17 Agustus 2026')
+  })
+  it('formats a form date as DD Month YYYY', () => {
+    expect(formatDateInput('2026-11-08')).toBe('08 November 2026')
   })
   it('rolls over to the next day in WIB', () => {
-    expect(formatDate('2026-11-01T17:30:00.000Z')).toBe('Senin, 2 November 2026')
+    expect(formatDate('2026-11-01T17:30:00.000Z')).toBe('02 November 2026')
     expect(formatTime('2026-11-01T17:30:00.000Z')).toBe('00.30 WIB')
     expect(jakartaDayKey('2026-11-01T17:30:00.000Z')).toBe('2026-11-02')
   })

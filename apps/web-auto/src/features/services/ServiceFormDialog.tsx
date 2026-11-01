@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { ApiError, errorMessage, normalizeError } from '@/api/errors'
 import type { ServiceSchedule } from '@/api/types'
+import { DateField } from './DateField'
 import { FormField } from '@/features/auth/FormField'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,6 +64,8 @@ function ServiceForm({ service, onDone }: { service?: ServiceSchedule; onDone: (
   const [formError, setFormError] = useState<string | null>(null)
   const pending = create.isPending || update.isPending
   const { errors } = form.formState
+  const startDate = useWatch({ control: form.control, name: 'startDate' })
+  const endDate = useWatch({ control: form.control, name: 'endDate' })
 
   function showServerError(error: unknown) {
     const e = normalizeError(error)
@@ -126,9 +129,9 @@ function ServiceForm({ service, onDone }: { service?: ServiceSchedule; onDone: (
         {...form.register('title')}
       />
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField
+        <DateField
           id="service-start-date"
-          type="date"
+          value={startDate}
           label={f.startDate}
           error={errors.startDate?.message}
           disabled={startLocked}
@@ -146,9 +149,9 @@ function ServiceForm({ service, onDone }: { service?: ServiceSchedule; onDone: (
           disabled={startLocked}
           {...form.register('startTime')}
         />
-        <FormField
+        <DateField
           id="service-end-date"
-          type="date"
+          value={endDate}
           label={f.endDate}
           error={errors.endDate?.message}
           {...form.register('endDate')}

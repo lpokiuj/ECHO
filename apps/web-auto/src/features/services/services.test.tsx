@@ -165,6 +165,12 @@ describe('create', () => {
     expect(sink.calls).toBe(0)
   })
 
+  it('shows the chosen date as DD Month YYYY, not the browser format', async () => {
+    await openPage()
+    await fillCreate('Ibadah', ['2026-11-08', '09:00'], ['2026-11-08', '11:00'])
+    expect(screen.getAllByRole('button', { name: /08 November 2026/ })).toHaveLength(2)
+  })
+
   it('accepts exactly 150 characters', async () => {
     const sink: { body?: { title: string }; calls: number } = { calls: 0 }
     server.use(

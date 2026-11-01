@@ -44,7 +44,7 @@ describe('Full schedule', () => {
     expect(await screen.findByRole('heading', { level: 1, name: t.fullTitle })).toBeInTheDocument()
     await screen.findByTestId('schedule-table')
     const row = within(table()).getByRole('row', { name: /KEEP 1/ })
-    expect(within(row).getByText('Jumat, 20 November 2026')).toBeInTheDocument()
+    expect(within(row).getByText('20 November 2026')).toBeInTheDocument()
     // 15:26Z is 22:26 WIB.
     expect(within(row).getByText('22.26 - 00.50 WIB')).toBeInTheDocument()
     // People are not in the row; the detail button opens them grouped by team.
@@ -154,7 +154,7 @@ describe('My schedule', () => {
       name: /KEEP 1/,
     })
     expect(within(row).getByText('Sound')).toBeInTheDocument()
-    expect(within(row).getByText('Jumat, 20 November 2026')).toBeInTheDocument()
+    expect(within(row).getByText('20 November 2026')).toBeInTheDocument()
   })
 
   it('sends includePast=true only when the toggle is on', async () => {
