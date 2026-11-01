@@ -138,11 +138,11 @@ None at the moment.
    - Nav is correct for MEMBER, leader, PEMBINA, and ADMIN (a test per role).
    - Playwright: an admin-created `e2e-` user logs in, completes the forced change, and lands home.
 5. **Schedules.** Full schedule and My schedule.
-   - Full schedule lists each service with every team's people.
+   - Full schedule lists each service; a Detail button opens a dialog with every team's people.
    - The `includePast` toggle works. Ended services are hidden by default.
    - Loading, error with retry, and empty states exist.
    - A known UTC instant renders in WIB with Indonesian day and month names (unit test).
-   - Playwright: a created service and its assigned people appear. No horizontal scroll at 390px.
+   - Playwright: a created service appears, and its Detail dialog shows its teams and assigned people. No horizontal scroll at 390px.
 6. **Services management** (ADMIN, PEMBINA). Create, edit, delete with confirmation.
    - Form limits match the docs. End must be after start.
    - Date and time input converts to ISO with `+07:00` (unit test).

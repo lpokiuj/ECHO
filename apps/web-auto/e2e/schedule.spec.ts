@@ -91,10 +91,14 @@ test('full schedule shows a created service with its teams and people in WIB', a
 
   const row = itemFor(page, 1280, service.title)
   await expect(row).toBeVisible()
-  await expect(row).toContainText(team.name)
-  for (const u of users) await expect(row).toContainText(u.name)
   await expect(row).toContainText(formatDate(service.startsAt))
   await expect(row).toContainText(`09.00 - 11.00 ${messages.dates.wib}`)
+  await row.getByRole('button', { name: new RegExp(t.detail) }).click()
+  const dialog = page.getByRole('dialog', { name: service.title })
+  await expect(dialog.getByRole('region', { name: team.name })).toBeVisible()
+  for (const u of users) await expect(dialog).toContainText(u.name)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toBeHidden()
 
   // The toggle asks for past services too; the upcoming fixture stays.
   const toggle = page.getByRole('switch', { name: t.includePast })

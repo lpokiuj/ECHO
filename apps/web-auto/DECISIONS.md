@@ -202,3 +202,6 @@
 
 ### D-053 ConfirmDialog returns focus; other form dialogs not covered (feature 10, fix round 2)
 - Porting the confirm-dialog check to /services found focus not returned after Esc (state-driven dialogs have no Radix trigger). Fixed in ConfirmDialog (remember focused element, refocus on close). The users/teams/services form dialogs may share the gap; not changed (scope). Revisit: yes, check by hand. D-038 resolved (full axe restored). D-003 resolved (/design removed). Ported from design.spec: focus ring, reduced motion, hover, shell, confirm dialog, single-column form. Reversible: yes. Asked by: B.
+
+### D-054 Full schedule: Detail button replaces the Petugas column
+- No backend change: `GET /services` already returns `assignments[]` with `userId`, `name`, `teamId`, `teamName`. The Petugas column (and the people block on mobile cards) became a "Detail" button opening a dialog that lists members per team. Same button on cards so both layouts match. Updated the unit and e2e tests that expected inline people.

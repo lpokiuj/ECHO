@@ -2,7 +2,16 @@ import { useState } from 'react'
 import type { ScheduleAssignment, ServiceSchedule } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -40,16 +49,42 @@ function groupByTeam(assignments: ScheduleAssignment[]): TeamGroup[] {
 function People({ service }: { service: ServiceSchedule }) {
   const groups = groupByTeam(service.assignments)
   if (groups.length === 0) {
-    return <span className="text-muted-foreground">{t.noAssignees}</span>
+    return <p className="text-muted-foreground">{t.noAssignees}</p>
   }
   return (
-    <ul className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4">
       {groups.map((g) => (
-        <li key={g.teamId} className="break-words">
-          <span className="font-medium">{g.teamName}:</span> {g.names.join(', ')}
-        </li>
+        <section key={g.teamId} aria-label={g.teamName}>
+          <h3 className="font-medium break-words">{g.teamName}</h3>
+          <ul className="mt-1 list-disc pl-5">
+            {g.names.map((name, i) => (
+              <li key={`${i}-${name}`} className="break-words">
+                {name}
+              </li>
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
+  )
+}
+
+function DetailButton({ service }: { service: ServiceSchedule }) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" aria-label={`${t.detail} ${service.title}`}>
+          {t.detail}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="break-words">{service.title}</DialogTitle>
+          <DialogDescription>{t.detailDescription}</DialogDescription>
+        </DialogHeader>
+        <People service={service} />
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -66,7 +101,7 @@ function ServiceTable({ services }: { services: ServiceSchedule[] }) {
             <TableHead>{t.columns.service}</TableHead>
             <TableHead>{t.columns.date}</TableHead>
             <TableHead>{t.columns.time}</TableHead>
-            <TableHead>{t.columns.people}</TableHead>
+            <TableHead>{t.columns.detail}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,8 +112,8 @@ function ServiceTable({ services }: { services: ServiceSchedule[] }) {
               </TableCell>
               <TableCell className="align-top">{formatDate(s.startsAt)}</TableCell>
               <TableCell className="align-top">{formatTimeRange(s.startsAt, s.endsAt)}</TableCell>
-              <TableCell className="align-top whitespace-normal">
-                <People service={s} />
+              <TableCell className="align-top">
+                <DetailButton service={s} />
               </TableCell>
             </TableRow>
           ))}
@@ -108,7 +143,9 @@ function ServiceCards({ services }: { services: ServiceSchedule[] }) {
                 <br />
                 {formatTimeRange(s.startsAt, s.endsAt)}
               </p>
-              <People service={s} />
+              <div>
+                <DetailButton service={s} />
+              </div>
             </CardContent>
           </Card>
         </li>

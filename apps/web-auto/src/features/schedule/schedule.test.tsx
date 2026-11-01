@@ -44,15 +44,22 @@ describe('Full schedule', () => {
     expect(await screen.findByRole('heading', { level: 1, name: t.fullTitle })).toBeInTheDocument()
     await screen.findByTestId('schedule-table')
     const row = within(table()).getByRole('row', { name: /KEEP 1/ })
-    expect(within(row).getByText('Sound:')).toBeInTheDocument()
-    expect(within(row).getByText(/Agner/)).toBeInTheDocument()
-    expect(within(row).getByText('Worship:')).toBeInTheDocument()
-    expect(within(row).getByText(/Giana/)).toBeInTheDocument()
     expect(within(row).getByText('Jumat, 20 November 2026')).toBeInTheDocument()
     // 15:26Z is 22:26 WIB.
     expect(within(row).getByText('22.26 - 00.50 WIB')).toBeInTheDocument()
-    // The same data is also rendered as cards for narrow screens.
-    expect(within(cards()).getByText('Giana', { exact: false })).toBeInTheDocument()
+    // People are not in the row; the detail button opens them grouped by team.
+    expect(within(row).queryByText(/Agner/)).toBeNull()
+    await userEvent.click(within(row).getByRole('button', { name: new RegExp(t.detail) }))
+    const dialog = await screen.findByRole('dialog', { name: 'KEEP 1' })
+    const sound = within(dialog).getByRole('region', { name: 'Sound' })
+    expect(within(sound).getByText('Agner')).toBeInTheDocument()
+    const worship = within(dialog).getByRole('region', { name: 'Worship' })
+    expect(within(worship).getByText('Giana')).toBeInTheDocument()
+    await userEvent.keyboard('{Escape}')
+    // The same button is rendered in the cards for narrow screens.
+    expect(within(cards()).getAllByRole('button', { name: new RegExp(t.detail) })).not.toHaveLength(
+      0,
+    )
   })
 
   it('says when nobody is assigned', async () => {
@@ -60,7 +67,8 @@ describe('Full schedule', () => {
     server.use(http.get('*/api/services', () => HttpResponse.json(empty)))
     renderApp('/schedule', { token: true })
     await screen.findByTestId('schedule-table')
-    expect(within(table()).getByText(t.noAssignees)).toBeInTheDocument()
+    await userEvent.click(within(table()).getByRole('button', { name: new RegExp(t.detail) }))
+    expect(await screen.findByText(t.noAssignees)).toBeInTheDocument()
   })
 
   it('hides ended services by default and shows them with the toggle', async () => {
