@@ -48,7 +48,7 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       to: '/assign',
       label: messages.nav.assign,
       icon: ClipboardCheckIcon,
-      routeExists: false,
+      routeExists: true,
     })
   }
   if (me.role === 'ADMIN' || me.role === 'PEMBINA') {

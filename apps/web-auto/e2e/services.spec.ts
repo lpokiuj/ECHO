@@ -177,6 +177,9 @@ for (const width of widths) {
     page,
     request,
   }) => {
+    // Five axe runs over a list that grows with every leftover e2e- service (~5s each at 140
+    // services, slower in parallel), so the default 30s is not enough.
+    test.setTimeout(180_000)
     const errors = collectErrors(page)
     const service = await createE2eService(request, 45)
     await seedSession(page, await adminToken(request))

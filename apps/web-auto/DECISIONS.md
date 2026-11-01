@@ -114,3 +114,23 @@
 
 ### D-026 Services page naming and layout (feature 6)
 - Nav "Kegiatan", heading "Kelola Kegiatan"; `RequireRole` guard shows a no-access page for other roles; list hides ended services by default (include-past toggle); 404 on edit/delete = "already gone" toast + refetch; form is a dialog (bottom-aligned below 640px). The 44px field check is skipped at 1280px (Button/Input are 40px from 1024px). Reversible: yes. Asked by: B, accepted.
+
+## Feature 7: Leader assign screen
+
+### D-027 Assign screen is for leaders only
+- Options: (a) leaders only (PLAN table); (b) ADMIN too (needs GET /teams + unplanned scope); (c) later. Choice: (a). ADMIN typing /assign sees the no-access page. Reversible: yes. Asked by: B.
+
+### D-028 Checkbox via shadcn view, radix-ui umbrella
+- Choice: write src/components/ui/checkbox.tsx from `shadcn view checkbox`, imports from the installed `radix-ui` package. No new package. Reversible: yes. Asked by: B.
+
+### D-029 Started-service Playwright check mocks GET /services time
+- The API can't create a past service. Choice: MSW unit test plus a Playwright check that mocks only the GET /services start time (POST stays real). Listed in FINAL_REPORT as partly mock-only. Reversible: yes. Asked by: B.
+
+### D-030 SECURITY: service/team ids in URL search params
+- Only non-secret uuids (never token/email/name). Choice: allowed. Reversible: yes. Asked by: B.
+
+### D-031 Assign screen details (feature 7)
+- `/assign?service=&team=` holds uuids only; unknown values fall back to the first service/team. Service list is `GET /services` without past, started-but-not-ended services shown with "(Sudah dimulai)". `fillMessage()` helper fills `{placeholder}` templates in messages.ts. Started notice is a token-styled `role="note"` div (no Alert component). Reversible: yes. Asked by: B.
+
+### D-032 services.spec timeout raised (fix round 1)
+- `services screens at Npx` runs axe 5 times over a list that grows with leftover e2e- services (138 at the time); timeout raised to 180s. No assertion changed. Leftover growth (~9 services per run) should be revisited in feature 10. Revisit? yes. Reversible: yes. Asked by: B (DR-A).

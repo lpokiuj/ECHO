@@ -5,4 +5,5 @@ export const PATHS = {
   mySchedule: '/my-schedule',
   fullSchedule: '/schedule',
   services: '/services',
+  assign: '/assign',
 } as const

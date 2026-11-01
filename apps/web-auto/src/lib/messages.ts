@@ -167,6 +167,55 @@ export const messages = {
       gone: 'Kegiatan sudah tidak ada. Daftar telah dimuat ulang.',
     },
   },
+  assign: {
+    title: 'Penugasan',
+    description: 'Pilih kegiatan dan bidang, lalu tugaskan relawan dari bidang Anda.',
+    serviceLabel: 'Kegiatan',
+    teamLabel: 'Bidang',
+    selectService: 'Pilih kegiatan',
+    selectTeam: 'Pilih bidang',
+    noServicesTitle: 'Belum ada kegiatan mendatang',
+    noServicesDescription: 'Penugasan bisa dilakukan setelah ada kegiatan yang dijadwalkan.',
+    candidatesLabel: 'Daftar relawan bidang',
+    columns: { name: 'Relawan', status: 'Status', actions: 'Aksi' },
+    assignedBadge: 'Sudah ditugaskan',
+    startedBadge: 'Sudah dimulai',
+    selectedCount: '{count} dipilih',
+    assignAction: 'Tugaskan',
+    assignActionCount: 'Tugaskan ({count})',
+    unassignAction: 'Batalkan',
+    unassignAria: 'Batalkan penugasan {name}',
+    startedNotice: 'Kegiatan ini sudah dimulai, sehingga penugasan tidak dapat diubah.',
+    emptyTitle: 'Belum ada relawan aktif',
+    emptyDescription: 'Bidang ini belum memiliki relawan aktif yang bisa ditugaskan.',
+    loadErrorTitle: 'Relawan gagal dimuat',
+    loadErrorDescription: 'Daftar relawan tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.',
+    noAccessTitle: 'Tidak ada akses',
+    noAccessDescription: 'Halaman ini hanya untuk Ketua Bidang.',
+    result: {
+      title: 'Hasil penugasan',
+      added: 'Ditambahkan ({count})',
+      skipped: 'Dilewati ({count})',
+      noneAdded: 'Tidak ada relawan yang ditambahkan.',
+      unknownPerson: 'Relawan',
+      reasonThisTeam: 'Sudah ditugaskan oleh bidang ini.',
+      reasonOtherTeam: 'Sudah ditugaskan oleh bidang {team}.',
+      dismiss: 'Tutup hasil',
+    },
+    confirmUnassign: {
+      title: 'Batalkan penugasan ini?',
+      description: '{name} tidak lagi bertugas di {service} untuk bidang {team}.',
+      action: 'Batalkan penugasan',
+    },
+    toast: {
+      added: '{count} relawan berhasil ditugaskan.',
+      partial: '{added} relawan ditugaskan, {skipped} dilewati.',
+      noneAdded: 'Tidak ada relawan yang ditugaskan. Lihat alasan di bawah.',
+      unassigned: 'Penugasan berhasil dibatalkan.',
+      alreadyRemoved: 'Penugasan sudah tidak ada. Daftar telah dimuat ulang.',
+      serviceGone: 'Kegiatan sudah tidak ada. Daftar telah dimuat ulang.',
+    },
+  },
   roles: {
     ADMIN: 'Admin',
     PEMBINA: 'Pembina',
@@ -254,3 +303,10 @@ export const messages = {
     },
   },
 } as const
+
+/** Fills `{name}` placeholders in a message template. */
+export function fillMessage(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
+    key in values ? String(values[key]) : match,
+  )
+}

@@ -2,6 +2,8 @@
 import { ApiError, fromResponse, networkError } from './errors'
 import { expireSession, emit, getToken, setToken } from './session'
 import type {
+  AssignResult,
+  Candidate,
   ChangePasswordRequest,
   HealthResponse,
   LoginRequest,
@@ -111,4 +113,30 @@ export function updateService(id: string, body: UpdateServiceBody): Promise<Serv
 
 export function deleteService(id: string): Promise<void> {
   return request<void>(`/services/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+function assignmentsPath(serviceId: string, teamId: string): string {
+  return `/services/${encodeURIComponent(serviceId)}/teams/${encodeURIComponent(teamId)}`
+}
+
+export function getCandidates(serviceId: string, teamId: string): Promise<Candidate[]> {
+  return request<Candidate[]>(`${assignmentsPath(serviceId, teamId)}/candidates`)
+}
+
+export function assignUsers(
+  serviceId: string,
+  teamId: string,
+  userIds: string[],
+): Promise<AssignResult> {
+  return request<AssignResult>(`${assignmentsPath(serviceId, teamId)}/assignments`, {
+    method: 'POST',
+    body: { userIds },
+  })
+}
+
+export function unassignUser(serviceId: string, teamId: string, userId: string): Promise<void> {
+  return request<void>(
+    `${assignmentsPath(serviceId, teamId)}/assignments/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  )
 }

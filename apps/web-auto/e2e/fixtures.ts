@@ -122,13 +122,14 @@ export async function createE2eTeam(
   return adminCall(request, 'post', '/teams', { name: `e2e-${randomSuffix()}` }, [201])
 }
 
-/** Adds a user to a team as admin (PUT /teams/:id/members/:userId). */
+/** Adds a user to a team as admin, optionally as its leader (PUT /teams/:id/members/:userId). */
 export async function addTeamMember(
   request: APIRequestContext,
   teamId: string,
   userId: string,
+  isLeader = false,
 ): Promise<void> {
-  await adminCall(request, 'put', `/teams/${teamId}/members/${userId}`, { isLeader: false }, [200])
+  await adminCall(request, 'put', `/teams/${teamId}/members/${userId}`, { isLeader }, [200])
 }
 
 /** Assigns users to a service for a team as admin (ADMIN may use any team). */

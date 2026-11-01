@@ -1,5 +1,6 @@
 import { Outlet, createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/AppShell'
+import { AssignPage } from '@/features/assign/AssignPage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { DesignPage } from '@/features/design/DesignPage'
@@ -9,7 +10,13 @@ import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
 import { MySchedulePage } from '@/features/schedule/MySchedulePage'
 import { ServicesPage } from '@/features/services/ServicesPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
-import { PublicOnly, RequireAuth, RequireRole, RequirePasswordChange } from './guards'
+import {
+  PublicOnly,
+  RequireAuth,
+  RequireLeader,
+  RequireRole,
+  RequirePasswordChange,
+} from './guards'
 import { PATHS } from './paths'
 import { SessionEvents } from './SessionEvents'
 
@@ -56,6 +63,10 @@ export const routes = [
               {
                 element: <RequireRole roles={['ADMIN', 'PEMBINA']} />,
                 children: [{ path: PATHS.services.slice(1), element: <ServicesPage /> }],
+              },
+              {
+                element: <RequireLeader />,
+                children: [{ path: PATHS.assign.slice(1), element: <AssignPage /> }],
               },
               // Dev-only (DECISIONS D-003): remove this route and the nav link in feature 10.
               { path: 'design', element: <DesignPage /> },

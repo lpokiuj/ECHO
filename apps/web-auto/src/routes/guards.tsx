@@ -83,3 +83,16 @@ export function RequireRole({ roles }: { roles: readonly UserRole[] }) {
     />
   )
 }
+
+/** UX only: the assign screen is for users with any isLeader membership. The backend still answers 403. */
+export function RequireLeader() {
+  const me = useMe()
+  if (!me.data) return <Outlet />
+  if (me.data.memberships.some((m) => m.isLeader)) return <Outlet />
+  return (
+    <ErrorState
+      title={messages.assign.noAccessTitle}
+      description={messages.assign.noAccessDescription}
+    />
+  )
+}

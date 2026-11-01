@@ -90,3 +90,25 @@ export interface CreateServiceBody {
 
 /** Any non-empty subset. Send only what changed. */
 export type UpdateServiceBody = Partial<CreateServiceBody>
+
+/** GET /services/:id/teams/:teamId/candidates item (assignments.md). */
+export interface Candidate {
+  userId: string
+  name: string
+  assigned: boolean
+}
+
+export type SkippedReason = 'ALREADY_ASSIGNED_THIS_TEAM' | 'ALREADY_ASSIGNED_OTHER_TEAM'
+
+export interface SkippedEntry {
+  userId: string
+  reason: SkippedReason
+  /** Only with ALREADY_ASSIGNED_OTHER_TEAM. */
+  heldByTeam?: { id: string; name: string }
+}
+
+/** POST /services/:id/teams/:teamId/assignments, 200. */
+export interface AssignResult {
+  assigned: string[]
+  skipped: SkippedEntry[]
+}

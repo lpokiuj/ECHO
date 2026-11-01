@@ -78,3 +78,8 @@
 ## Feature 6 done
 - B sessions for feature 6: 1 (Agent/sonnet, plan then implement). Fix rounds: 0. B sessions total: 8.
 - Verified by me: `npm run check` pass (15 files, 136 tests); `npm run e2e` 73 passed; package.json/lock unchanged; no skip/only/any/ts-ignore/hex. Viewed 2 screenshots (form errors 360, list 1280): fine.
+- Feature 6 commit hash: a453ac4. Next: feature 7 with a fresh B (plan phase).
+
+## Feature 7 done
+- B sessions for feature 7: 1 (Agent/sonnet, plan then implement via SendMessage). Fix rounds: 1 (services.spec timeout under growing leftover data). B sessions total: 9.
+- Verified by me: `npm run check` pass (16 files, 158 tests); `npm run e2e` 78 passed (after fix); package.json/lock unchanged; no skip/only/any/ts-ignore/hex. Viewed 2 screenshots (assign result 360, 1280): fine; at 360 the service Select truncates the date ("1 Desember 20...") - minor, revisit in feature 10.

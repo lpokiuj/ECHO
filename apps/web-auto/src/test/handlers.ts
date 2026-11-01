@@ -167,3 +167,43 @@ export const SERVICE_ERROR_BODIES = {
     statusCode: 400,
   },
 }
+
+// Bodies copied verbatim from ../api/docs/api/assignments.md.
+export const CANDIDATES_EXAMPLE = [
+  { userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28', name: 'Enji', assigned: true },
+  { userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da', name: 'Giana', assigned: false },
+  { userId: 'f269b9ce-a215-46c8-a444-0aaced5232f9', name: 'Livana', assigned: false },
+  { userId: '73fbd314-9793-4bf3-b217-4ab94b7be54f', name: 'Lukas', assigned: false },
+]
+export const ASSIGN_ALL_ASSIGNED = {
+  assigned: ['be218193-9844-482b-b44d-575c49d2e16f', '85c483d5-d17f-495d-a088-78f652357e4d'],
+  skipped: [],
+}
+export const ASSIGN_IDEMPOTENT = {
+  assigned: [],
+  skipped: [
+    { userId: 'be218193-9844-482b-b44d-575c49d2e16f', reason: 'ALREADY_ASSIGNED_THIS_TEAM' },
+  ],
+}
+export const ASSIGN_PARTIAL = {
+  assigned: ['cdcac924-5fa6-45c0-9a0e-3b84845ca1e5'],
+  skipped: [
+    {
+      userId: 'be218193-9844-482b-b44d-575c49d2e16f',
+      reason: 'ALREADY_ASSIGNED_OTHER_TEAM',
+      heldByTeam: { id: 'd582b5a4-4814-4e8b-9f2a-f21c8a956e35', name: 'docs-example-team-a' },
+    },
+  ],
+}
+export const INVALID_USERS_BODY = {
+  statusCode: 400,
+  error: 'Bad Request',
+  code: 'INVALID_USERS',
+  message: 'Some users are not active members of this team',
+  invalidUserIds: ['85c483d5-d17f-495d-a088-78f652357e4d'],
+}
+export const ASSIGNMENT_NOT_FOUND = {
+  message: 'Assignment not found',
+  error: 'Not Found',
+  statusCode: 404,
+}
