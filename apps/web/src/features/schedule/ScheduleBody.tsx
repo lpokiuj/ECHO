@@ -6,6 +6,8 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
 import { Button } from '@/components/ui/button'
+import { Pagination } from '@/components/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 import { messages } from '@/lib/messages'
 
 interface ScheduleBodyProps<T> {
@@ -27,6 +29,7 @@ export function ScheduleBody<T>({
   children,
 }: ScheduleBodyProps<T>) {
   const { data, isPending, isError, error, refetch, isRefetching } = query
+  const pager = usePagination(data ?? [], { resetKey: includePast })
   return (
     <div aria-live="polite">
       {isPending ? (
@@ -52,7 +55,10 @@ export function ScheduleBody<T>({
           }
         />
       ) : (
-        children(data)
+        <>
+          {children(pager.pageItems)}
+          <Pagination {...pager} />
+        </>
       )}
     </div>
   )

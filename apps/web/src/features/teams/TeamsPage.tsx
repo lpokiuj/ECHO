@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '@/api/errors'
 import type { Team } from '@/api/types'
+import { Pagination } from '@/components/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
@@ -108,6 +110,7 @@ function TeamCards({ teams, onRename }: { teams: Team[]; onRename: (team: Team) 
 export function TeamsPage() {
   useDocumentTitle(t.title)
   const { data, isPending, isError, error, refetch, isRefetching } = useTeams()
+  const pager = usePagination(data ?? [])
   const [formOpen, setFormOpen] = useState(false)
   const [renaming, setRenaming] = useState<Team | undefined>()
 
@@ -151,8 +154,9 @@ export function TeamsPage() {
           />
         ) : (
           <>
-            <TeamTable teams={data} onRename={openRename} />
-            <TeamCards teams={data} onRename={openRename} />
+            <TeamTable teams={pager.pageItems} onRename={openRename} />
+            <TeamCards teams={pager.pageItems} onRename={openRename} />
+            <Pagination {...pager} />
           </>
         )}
       </div>

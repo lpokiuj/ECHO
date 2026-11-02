@@ -4,3 +4,7 @@
 
 ## Error codes and role on team membership (feature 9)
 - `PUT /teams/:id/members/:userId` 400s (PEMBINA as leader, inactive user) and `POST/PATCH /teams` 409 (duplicate name) have no `code` or field name; the roster has no `role` per member. The frontend maps by request context. Request: add error `code`s, and `role` to the roster rows. Priority: low.
+
+
+## Server-side pagination (later)
+- Every list endpoint returns the whole collection and the web app paginates client-side (10 per page). If lists grow large, server pagination (page/limit plus a total) will be needed on `GET /users`, `/teams`, `/teams/:id/members`, `/services` and `/me/schedule`. Not needed now.

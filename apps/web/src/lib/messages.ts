@@ -59,6 +59,13 @@ export const messages = {
     loading: 'Memuat…',
     back: 'Kembali ke beranda',
   },
+  pagination: {
+    label: 'Navigasi halaman',
+    previous: 'Sebelumnya',
+    next: 'Berikutnya',
+    status: (page: number, total: number) => `Halaman ${page} dari ${total}`,
+    total: (count: number) => `${count} data`,
+  },
   dates: { wib: 'WIB' },
   schedule: {
     fullTitle: 'Jadwal Lengkap',

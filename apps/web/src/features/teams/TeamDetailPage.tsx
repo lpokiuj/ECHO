@@ -8,9 +8,11 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
+import { Pagination } from '@/components/Pagination'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
+import { usePagination } from '@/hooks/usePagination'
 import { fillMessage, messages } from '@/lib/messages'
 import { PATHS } from '@/routes/paths'
 import { AddMemberDialog } from './AddMemberDialog'
@@ -27,6 +29,7 @@ export function TeamDetailPage() {
   const members = useTeamMembers(teamId)
   const put = usePutMember(teamId)
   const remove = useRemoveMember(teamId)
+  const pager = usePagination(members.data ?? [])
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<TeamMember | undefined>()
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
@@ -131,17 +134,18 @@ export function TeamDetailPage() {
         ) : (
           <>
             <MemberTable
-              members={data}
+              members={pager.pageItems}
               busyUserId={busyUserId}
               onToggleLeader={(m) => void toggleLeader(m)}
               onRemove={setRemoving}
             />
             <MemberCards
-              members={data}
+              members={pager.pageItems}
               busyUserId={busyUserId}
               onToggleLeader={(m) => void toggleLeader(m)}
               onRemove={setRemoving}
             />
+            <Pagination {...pager} />
           </>
         )}
       </div>

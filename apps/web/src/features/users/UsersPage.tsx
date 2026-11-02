@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { errorMessage, normalizeError } from '@/api/errors'
 import type { User } from '@/api/types'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
+import { Pagination } from '@/components/Pagination'
+import { usePagination } from '@/hooks/usePagination'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
@@ -174,6 +176,7 @@ export function UsersPage() {
 
   const { data, isPending, isError, error, refetch, isRefetching } = query
   const meId = me.data?.id
+  const pager = usePagination(data ?? [])
 
   return (
     <>
@@ -206,8 +209,19 @@ export function UsersPage() {
           />
         ) : (
           <>
-            <UserTable users={data} meId={meId} onEdit={openEdit} onReset={setResetting} />
-            <UserCards users={data} meId={meId} onEdit={openEdit} onReset={setResetting} />
+            <UserTable
+              users={pager.pageItems}
+              meId={meId}
+              onEdit={openEdit}
+              onReset={setResetting}
+            />
+            <UserCards
+              users={pager.pageItems}
+              meId={meId}
+              onEdit={openEdit}
+              onReset={setResetting}
+            />
+            <Pagination {...pager} />
           </>
         )}
       </div>

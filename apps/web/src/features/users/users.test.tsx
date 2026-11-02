@@ -405,4 +405,36 @@ describe('reset password', () => {
       status = 403
     }
   })
+
+  describe('pagination', () => {
+    const many = Array.from({ length: 25 }, (_, i) => ({
+      ...USER_ADMIN,
+      id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`,
+      name: `Pengguna ${String(i + 1).padStart(2, '0')}`,
+      email: `pengguna${i + 1}@example.com`,
+    }))
+
+    it('shows 10 users per page and moves with the pager', async () => {
+      server.use(http.get('*/api/users', () => HttpResponse.json(many)))
+      renderApp('/users', { token: true })
+      await screen.findByTestId('users-table')
+      expect(within(table()).getAllByRole('row')).toHaveLength(11) // header + 10
+      const nav = screen.getByRole('navigation', { name: messages.pagination.label })
+      expect(within(nav).getByText(new RegExp(messages.pagination.status(1, 3)))).toBeTruthy()
+      await user().click(within(nav).getByRole('button', { name: messages.pagination.next }))
+      expect(await within(table()).findByText('Pengguna 11', { selector: 'p' })).toBeTruthy()
+      await user().click(within(nav).getByRole('button', { name: messages.pagination.next }))
+      expect(within(table()).getAllByRole('row')).toHaveLength(6) // header + 5
+      expect(within(nav).getByRole('button', { name: messages.pagination.next })).toHaveProperty(
+        'disabled',
+        true,
+      )
+    })
+
+    it('has no pager when everything fits on one page', async () => {
+      renderApp('/users', { token: true })
+      await screen.findByTestId('users-table')
+      expect(screen.queryByTestId('pagination')).toBeNull()
+    })
+  })
 })
