@@ -21,7 +21,10 @@ export function UserMenu({ me, compact = false }: { me: MeResponse; compact?: bo
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-auto min-h-11 max-w-full justify-start gap-2 px-2">
+        <Button
+          variant="ghost"
+          className={`hover:bg-accent dark:hover:bg-accent hover:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground h-auto min-h-11 max-w-full cursor-pointer justify-start gap-2 rounded-md px-2 transition-colors ${compact ? '' : 'w-full'}`}
+        >
           <UserAvatar name={me.name} />
           <span className={`min-w-0 truncate text-base ${compact ? 'max-sm:sr-only' : ''}`}>
             {me.name}
