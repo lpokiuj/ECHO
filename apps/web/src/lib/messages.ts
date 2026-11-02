@@ -78,6 +78,7 @@ export const messages = {
     detail: 'Detail',
     detailDescription: 'Relawan yang bertugas pada kegiatan ini, per bidang.',
     team: 'Bidang',
+    memberCount: '{count} relawan',
     notesLabel: 'Catatan',
     editNote: 'Ubah catatan',
     editNoteAria: 'Ubah catatan {name}',
