@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
         '/api': { target, changeOrigin: true, rewrite: (path) => path.replace(/^\/api/, '') },
       },
     },
+    // `vite preview` serves the built app for the laptop POC; allow only the Cloudflare quick-tunnel host
+    preview: {
+      allowedHosts: ['.trycloudflare.com'],
+    },
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],

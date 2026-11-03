@@ -33,3 +33,12 @@ CLAUDE.md and PLAN.md. Read the ones for the app you work in before any task.
   against the hoisted `msw 3.x`. It is cosmetic; the real fix is moving the API to vitest 5.
 - A bare `vitest` in `apps/api` runs both the `unit` and `e2e` projects (e2e needs
   `NODE_ENV=test` and the test database). Use `npm test` and `npm run test:e2e`.
+
+## Laptop POC hosting
+`./scripts/poc-up.sh` serves the app publicly from this laptop: db, migrations, API (`:3000`),
+built web via `vite preview` (`:5173`, proxies `/api`) and a Cloudflare quick tunnel. It prints
+the URL (random `*.trycloudflare.com`, changes every run) and stays in the foreground; Ctrl+C
+stops everything except the db. Logs go to `.poc-logs/`. Needs Docker Desktop (WSL integration)
+and `cloudflared`. Before a rerun, kill old instances: `pkill -f "dist/main"; pkill -f "vite
+preview"; pkill cloudflared`. It does not seed; run `npm run seed -w @echo/api` only on a fresh
+db. `preview.allowedHosts` in `apps/web/vite.config.ts` only allows `.trycloudflare.com`.

@@ -36,3 +36,6 @@ test-results/
 
 # Claude Code local settings
 **/.claude/settings.local.json
+
+# Laptop POC logs (scripts/poc-up.sh)
+.poc-logs/
