@@ -6,6 +6,7 @@ export const PATHS = {
   fullSchedule: '/schedule',
   services: '/services',
   assign: '/assign',
+  attendance: '/attendance',
   users: '/users',
   teams: '/teams',
   team: (id: string) => `/teams/${encodeURIComponent(id)}`,

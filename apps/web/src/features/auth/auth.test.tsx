@@ -208,13 +208,19 @@ describe('navigation per role (rendered)', () => {
     const nav = screen.getAllByRole('navigation', { name: messages.nav.label })[0]!
     const links = within(nav).getAllByRole('link')
     // Home and the two schedules exist (feature 5), services for ADMIN and PEMBINA (feature 6),
-    // the assign screen for leaders (feature 7), the users page for ADMIN (feature 8), the teams page for ADMIN (feature 9).
+    // the assign screen for leaders (feature 7), the users page for ADMIN (feature 8), the teams page for ADMIN (feature 9),
+    // the attendance page for everyone (feature 12).
     const manages = key === 'pembina' || key === 'admin'
     const leads = key === 'leader'
     const admin = key === 'admin'
-    expect(links).toHaveLength(3 + (manages ? 1 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
+    expect(links).toHaveLength(4 + (manages ? 1 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
     expect(within(nav).queryByRole('link', { name: messages.nav.assign }) !== null).toBe(leads)
-    const names = [messages.nav.home, messages.nav.mySchedule, messages.nav.fullSchedule]
+    const names = [
+      messages.nav.home,
+      messages.nav.mySchedule,
+      messages.nav.fullSchedule,
+      messages.nav.attendance,
+    ]
     for (const name of names) {
       expect(within(nav).getByRole('link', { name })).toBeInTheDocument()
     }

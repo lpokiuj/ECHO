@@ -4,6 +4,7 @@ import {
   CalendarDaysIcon,
   CalendarIcon,
   SettingsIcon,
+  UserCheckIcon,
   UserCogIcon,
   UsersIcon,
   type LucideIcon,
@@ -39,6 +40,13 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       routeExists: true,
     },
   ]
+  items.push({
+    id: 'attendance',
+    to: '/attendance',
+    label: messages.nav.attendance,
+    icon: UserCheckIcon,
+    routeExists: true,
+  })
   if (me.memberships.some((m) => m.isLeader)) {
     items.push({
       id: 'assign',

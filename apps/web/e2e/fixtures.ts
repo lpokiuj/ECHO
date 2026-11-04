@@ -119,6 +119,31 @@ export async function createE2eService(
   return service
 }
 
+/**
+ * Creates an `e2e-` service that starts `seconds` from now and lasts two hours. The API only
+ * accepts a future start, so a "started" service means creating this and waiting.
+ */
+export async function createStartingSoonService(
+  request: APIRequestContext,
+  seconds = 45,
+): Promise<CreatedService> {
+  const title = `e2e-${randomSuffix()}`
+  const start = new Date(Date.now() + seconds * 1000)
+  const service = await adminCall<CreatedService>(
+    request,
+    'post',
+    '/services',
+    {
+      title,
+      startsAt: start.toISOString(),
+      endsAt: new Date(start.getTime() + 2 * 3_600_000).toISOString(),
+    },
+    [201],
+  )
+  recordCreated('service', service.id)
+  return service
+}
+
 /** Creates an `e2e-` team as admin (POST /teams). */
 export async function createE2eTeam(
   request: APIRequestContext,

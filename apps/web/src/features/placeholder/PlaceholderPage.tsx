@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { PageHeader } from '@/components/PageHeader'
 import { RoleBadge } from '@/components/RoleBadge'
 import { Button } from '@/components/ui/button'
+import { HomeRecap } from '@/features/attendance/HomeRecap'
 import { useMe } from '@/features/auth/useMe'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { messages } from '@/lib/messages'
@@ -34,6 +35,11 @@ export function PlaceholderPage() {
           <Link to={PATHS.fullSchedule}>{messages.nav.fullSchedule}</Link>
         </Button>
       </nav>
+      {me ? (
+        <div className="mt-8">
+          <HomeRecap me={me} />
+        </div>
+      ) : null}
     </>
   )
 }

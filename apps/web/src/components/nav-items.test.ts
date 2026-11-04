@@ -8,16 +8,28 @@ const ids = (me: MeResponse) => buildNavItems(me).map((i) => i.id)
 
 describe('buildNavItems (full intended set)', () => {
   it('MEMBER: schedules only', () => {
-    expect(ids(asMe(ME_BY_ROLE.member))).toEqual(['home', 'mySchedule', 'fullSchedule'])
+    expect(ids(asMe(ME_BY_ROLE.member))).toEqual([
+      'home',
+      'mySchedule',
+      'fullSchedule',
+      'attendance',
+    ])
   })
   it('leader (any isLeader membership): adds assign', () => {
-    expect(ids(asMe(ME_BY_ROLE.leader))).toEqual(['home', 'mySchedule', 'fullSchedule', 'assign'])
+    expect(ids(asMe(ME_BY_ROLE.leader))).toEqual([
+      'home',
+      'mySchedule',
+      'fullSchedule',
+      'attendance',
+      'assign',
+    ])
   })
   it('PEMBINA: adds services, no admin items', () => {
     expect(ids(asMe(ME_BY_ROLE.pembina))).toEqual([
       'home',
       'mySchedule',
       'fullSchedule',
+      'attendance',
       'services',
     ])
   })
@@ -26,6 +38,7 @@ describe('buildNavItems (full intended set)', () => {
       'home',
       'mySchedule',
       'fullSchedule',
+      'attendance',
       'services',
       'users',
       'teams',
@@ -36,6 +49,7 @@ describe('buildNavItems (full intended set)', () => {
       'home',
       'mySchedule',
       'fullSchedule',
+      'attendance',
       'services',
       'users',
       'teams',

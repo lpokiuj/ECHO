@@ -16,6 +16,10 @@ const KNOWN_CODES: readonly ErrorCode[] = [
   'PASSWORD_CHANGE_REQUIRED',
   'INVALID_USERS',
   'SERVICE_ALREADY_STARTED',
+  'ALREADY_ASSIGNED',
+  'SERVICE_NOT_STARTED',
+  'CANNOT_MARK_SELF',
+  'HAS_ATTENDANCE_RECORDS',
 ]
 
 /** Thrown by the API client. It carries no backend message text. */

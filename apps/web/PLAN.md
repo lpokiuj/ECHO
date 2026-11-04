@@ -24,10 +24,10 @@ Routes live at the root (no `/volunteer` prefix).
 
 | Who                                                  | Screens                                                   |
 | ---------------------------------------------------- | --------------------------------------------------------- |
-| Everyone logged in                                   | Login, forced password change, My schedule, Full schedule |
-| Team leader (any `isLeader` membership in `GET /me`) | + Assign screen for each team they lead                   |
-| PEMBINA, ADMIN                                       | + Services management                                     |
-| ADMIN                                                | + Users, Teams and membership                             |
+| Everyone logged in                                   | Login, forced password change, My schedule, Full schedule (+ "Saya tidak bisa hadir" toggle on upcoming services), Kehadiran (own absence count; recording if designated absent-taker) |
+| Team leader (any `isLeader` membership in `GET /me`) | + Assign screen for each team they lead (candidates show unavailable members; absent-taker picker), "Rekap bidang" for the teams they lead on the home page |
+| PEMBINA, ADMIN                                       | + Services management; "Rekap bidang" for every team on the home page |
+| ADMIN                                                | + Users, Teams and membership; designation and recording for any team on Kehadiran |
 
 The UI hides what a role can't use, but the backend is the authority. Every 403 must be
 handled with a clear message, never a blank screen.
@@ -92,6 +92,8 @@ Polish beyond this list needs my approval.
 | Contract              | One API client module and one types module. If an OpenAPI spec exists, types are generated from it and never hand-edited.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | A backend change touches one place                                                                                                |
 | Assignment notes | Optional per-person note (max 1000). Entered in the assign screen only for selected candidates and sent with `POST .../assignments`; read by everyone in the Jadwal Lengkap detail and on Jadwal Saya; edited in the detail by the leader of that team only (not ADMIN, though the API allows it), and only before the service starts. | Matches the product rule: leaders own notes, everyone reads them |
 | Pagination | Client-side, because the API returns whole arrays. `usePagination` (`src/hooks`) slices 10 rows per page, no size selector; the page lives in the URL as `?page=N` (1 omitted, invalid values clamped). `<Pagination>` (`src/components`) shows Sebelumnya/Berikutnya and is hidden for 10 rows or fewer. The includePast toggle resets to page 1. Applies to users, teams, team members, full schedule, my schedule and services; not the assign candidates. |
+| Availability | The toggle \"Saya tidak bisa hadir\" lives in the Jadwal Lengkap detail dialog, shown only on upcoming services where the caller is not assigned. It reads `unavailable` from `GET /services`; `GET /me/unavailability` is not used. Unavailable candidates are listed, flagged and not selectable; an `UNAVAILABLE` skip shows its own reason. | `/services` already carries the flag; Jadwal Saya items are always assigned |
+| Attendance | New page Kehadiran (`/attendance`, everyone). Sections: own count (`GET /me/absences`), recording (takers: services where `isAbsentTaker` is true for them; ADMIN: every team), The recap ("Rekap bidang", `GET /teams/:id/absences`) is not on Kehadiran: it is on the home page for team leaders (their teams), PEMBINA and ADMIN (every team, team list from `GET /teams`). The member list for recording comes from `/services` assignments (the candidates endpoint is leader-only). The API has no read of recorded absences per service, so switches are session-local and the page says so (docs/backend-requests.md). The absent-taker picker sits on the Penugasan screen (leaders) and on Kehadiran (ADMIN), and is not locked by the service start. | Taker may be a plain MEMBER |
 | Hosting               | A static build served with a fallback to `index.html`. Undecided and out of scope.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Informational                                                                                                                     |
 | Scaffold              | Vite `react-ts` template, TypeScript 6 (strict) with the `@/` alias for `src/`. Dev server on port 5173, `/api` proxied to `API_PROXY_TARGET` (default `http://localhost:3000`, prefix stripped). Playwright runs chromium only, with a `webServer` that starts `npm run dev` and reuses a running one. Vitest covers `src/**/*.test.{ts,tsx}` only. ESLint (flat config) forbids `any`, bare `@ts-ignore` and `alert`/`confirm`/`prompt`. Prettier ignores PLAN.md and CLAUDE.md. | Feature 1 choices, recorded so later features follow them |
 shadcn style | Radix, not the Base UI default. Read init --help for how to choose Radix non-interactively. If the CLI can't, hand-write the components on Radix primitives. | The CLI's default style changed to Base UI, which isn't approved.
@@ -177,7 +179,22 @@ None at the moment.
     - A grep finds no user-facing text literals outside `src/lib/messages.ts`.
     - Screenshots of every route are reviewed against the quality bar and the findings listed.
 
-Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, and 1280px: no horizontal page scroll on any route it adds, and no clipped or overlapping content.
+11. **Availability.** Toggle on Jadwal Lengkap, unavailable candidates, UNAVAILABLE skip reason.
+    - The toggle PUTs/DELETEs, shows a toast, and the badge follows the refetched `unavailable`.
+    - No toggle on started services or services the caller is assigned to.
+    - `ALREADY_ASSIGNED` and `SERVICE_ALREADY_STARTED` show Indonesian messages and refetch.
+    - Unavailable candidates are shown flagged, disabled, and never sent.
+    - An `UNAVAILABLE` skip shows its reason in the result panel.
+    - 360px: no horizontal scroll, 44px targets.
+12. **Attendance.** Kehadiran page and the absent-taker picker.
+    - A leader or ADMIN designates a taker from the assigned members; the badge updates.
+    - The taker records and clears absences on started services; own row disabled; `SERVICE_NOT_STARTED`, `CANNOT_MARK_SELF`, `INVALID_USERS` and 403 map to Indonesian messages.
+    - Absensi saya shows the count and list with empty and error states.
+    - Leaders and ADMIN see per-member counts (table above 768px, cards below).
+    - `HAS_ATTENDANCE_RECORDS` is mapped on unassign.
+    - 360px: no horizontal scroll, 44px targets; axe finds no serious or critical violations.
+
+Every UI feature (2 to 9, 11, 12) must also pass, in Playwright at 360px, 390px, 768px, and 1280px: no horizontal page scroll on any route it adds, and no clipped or overlapping content.
 
 ## Status
 
@@ -191,6 +208,8 @@ Every UI feature (2 to 9) must also pass, in Playwright at 360px, 390px, 768px, 
 - [x] 8. Admin users
 - [x] 9. Admin teams and membership
 - [x] 10. Hardening
+- [ ] 11. Availability
+- [ ] 12. Attendance
 
 ## Notes for later features (orchestrator, feature 2)
 

@@ -25,6 +25,7 @@ import { formatDate, isFuture } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
 import { CandidateList, type NoteMap } from './CandidateList'
 import { ResultPanel, type AssignOutcome } from './ResultPanel'
+import { TakerPicker } from './TakerPicker'
 import { useAssign, useCandidates, useUnassign } from './useAssign'
 
 const t = messages.assign
@@ -56,7 +57,7 @@ function Workspace({ service, team }: WorkspaceProps) {
   const busy = assign.isPending || unassign.isPending
   const locked = started || busy
   const list = candidates.data ?? []
-  const unassigned = list.filter((c) => !c.assigned)
+  const unassigned = list.filter((c) => !c.assigned && !c.unavailable)
   // Only ids that are still selectable candidates are ever sent.
   const ids = unassigned.map((c) => c.userId).filter((id) => selected.has(id))
 
@@ -89,7 +90,9 @@ function Workspace({ service, team }: WorkspaceProps) {
           reason:
             entry.reason === 'ALREADY_ASSIGNED_OTHER_TEAM'
               ? fillMessage(t.result.reasonOtherTeam, { team: entry.heldByTeam?.name ?? '' })
-              : t.result.reasonThisTeam,
+              : entry.reason === 'UNAVAILABLE'
+                ? t.result.reasonUnavailable
+                : t.result.reasonThisTeam,
         })),
       })
       if (result.skipped.length === 0) {
@@ -177,7 +180,9 @@ function Workspace({ service, team }: WorkspaceProps) {
             candidates={list}
             selected={selected}
             notes={notes}
-            onNoteChange={(userId, value) => setNotes((current) => ({ ...current, [userId]: value }))}
+            onNoteChange={(userId, value) =>
+              setNotes((current) => ({ ...current, [userId]: value }))
+            }
             locked={locked}
             lockReasonId={started ? noticeId : undefined}
             onToggle={onToggle}
@@ -185,6 +190,17 @@ function Workspace({ service, team }: WorkspaceProps) {
           />
         )}
       </div>
+      {list.some((c) => c.assigned) ? (
+        <TakerPicker
+          serviceId={service.id}
+          teamId={team.teamId}
+          idPrefix="assign"
+          members={list.filter((c) => c.assigned).map((c) => ({ userId: c.userId, name: c.name }))}
+          currentId={
+            service.assignments.find((a) => a.teamId === team.teamId && a.isAbsentTaker)?.userId
+          }
+        />
+      ) : null}
       <ConfirmDialog
         open={removing !== undefined}
         onOpenChange={(open) => {

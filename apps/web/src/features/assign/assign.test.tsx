@@ -6,6 +6,8 @@ import { fillMessage, messages } from '@/lib/messages'
 import {
   ASSIGNMENT_NOT_FOUND,
   ASSIGN_IDEMPOTENT,
+  ASSIGN_UNAVAILABLE,
+  ATTENDANCE_ERROR_BODIES,
   ASSIGN_PARTIAL,
   CANDIDATES_EXAMPLE,
   ERROR_BODIES,
@@ -369,4 +371,102 @@ describe('access', () => {
       expect(spy.candidateCalls).toBe(0)
     },
   )
+})
+
+describe('availability on the assign screen', () => {
+  const withUnavailable = CANDIDATES_EXAMPLE.map((c) =>
+    c.userId === GIANA!.userId ? { ...c, unavailable: true } : c,
+  )
+
+  it('shows an unavailable member flagged and not selectable, and never sends them', async () => {
+    const spy = setup({ candidates: () => HttpResponse.json(withUnavailable) })
+    await openPage()
+    const box = table().getByRole('checkbox', { name: GIANA!.name })
+    expect(box).toBeDisabled()
+    expect(table().getByText(t.unavailableBadge)).toBeInTheDocument()
+    const u = user()
+    await u.click(box)
+    await pick(u, LUKAS!.name)
+    await u.click(assignButton())
+    await waitFor(() => expect(spy.assignCalls).toBe(1))
+    expect(spy.bodies).toEqual([{ userIds: [LUKAS!.userId] }])
+  })
+
+  it('shows the UNAVAILABLE skip reason in the result panel', async () => {
+    setup({
+      assign: () =>
+        HttpResponse.json({
+          ...ASSIGN_UNAVAILABLE,
+          skipped: [{ ...ASSIGN_UNAVAILABLE.skipped[0]!, userId: GIANA!.userId }],
+        }),
+    })
+    await openPage()
+    const u = user()
+    await pick(u, GIANA!.name)
+    await u.click(assignButton())
+    const panel = await screen.findByTestId('assign-result')
+    expect(panel).toHaveTextContent(t.result.reasonUnavailable)
+    expect(panel).toHaveTextContent(GIANA!.name)
+  })
+})
+
+describe('absent-taker designation', () => {
+  it('sends the chosen assigned member and confirms', async () => {
+    setup()
+    const bodies: unknown[] = []
+    server.use(
+      http.put('*/api/services/:id/teams/:teamId/absent-taker', async ({ request }) => {
+        bodies.push(await request.json())
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    await openPage()
+    const u = user()
+    await screen.findByText(t.taker.none)
+    await u.click(screen.getByRole('combobox', { name: t.taker.label }))
+    await u.click(await screen.findByRole('option', { name: ENJI!.name }))
+    await u.click(screen.getByRole('button', { name: t.taker.save }))
+    await waitFor(() => expect(bodies).toEqual([{ userId: ENJI!.userId }]))
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(t.taker.saved))
+  })
+
+  it('maps INVALID_USERS and 403 to Indonesian messages', async () => {
+    setup()
+    server.use(
+      http.put('*/api/services/:id/teams/:teamId/absent-taker', () =>
+        HttpResponse.json(INVALID_USERS_BODY, { status: 400 }),
+      ),
+    )
+    await openPage()
+    const u = user()
+    await u.click(await screen.findByRole('combobox', { name: t.taker.label }))
+    await u.click(await screen.findByRole('option', { name: ENJI!.name }))
+    await u.click(screen.getByRole('button', { name: t.taker.save }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(t.taker.invalid))
+    server.use(
+      http.put('*/api/services/:id/teams/:teamId/absent-taker', () =>
+        HttpResponse.json(ERROR_BODIES.forbidden, { status: 403 }),
+      ),
+    )
+    await u.click(await screen.findByRole('combobox', { name: t.taker.label }))
+    await u.click(await screen.findByRole('option', { name: ENJI!.name }))
+    await u.click(screen.getByRole('button', { name: t.taker.save }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(messages.errors.forbidden))
+  })
+
+  it('maps HAS_ATTENDANCE_RECORDS when unassigning', async () => {
+    setup({
+      unassign: () =>
+        HttpResponse.json(ATTENDANCE_ERROR_BODIES.hasAttendanceRecords, { status: 409 }),
+    })
+    await openPage()
+    const u = user()
+    await u.click(
+      table().getByRole('button', { name: fillMessage(t.unassignAria, { name: ENJI!.name }) }),
+    )
+    await u.click(await screen.findByRole('button', { name: t.confirmUnassign.action }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(messages.errors.codes.HAS_ATTENDANCE_RECORDS),
+    )
+  })
 })

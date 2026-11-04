@@ -42,6 +42,14 @@ interface RowProps extends Omit<CandidateListProps, 'candidates'> {
 function NameCell({ candidate, ...rest }: RowProps) {
   const { selected, locked, lockReasonId, onToggle } = rest
   if (candidate.assigned) return <span className="min-w-0 break-words">{candidate.name}</span>
+  if (candidate.unavailable) {
+    return (
+      <label className="flex min-h-11 w-full items-center gap-3">
+        <Checkbox checked={false} disabled aria-describedby={`unavailable-${candidate.userId}`} />
+        <span className="min-w-0 break-words">{candidate.name}</span>
+      </label>
+    )
+  }
   return (
     <div className="w-full">
       <label className="flex min-h-11 w-full cursor-pointer items-center gap-3">
@@ -80,7 +88,18 @@ function NoteField({ candidate, selected, notes, onNoteChange, locked }: RowProp
 }
 
 function Status({ candidate }: { candidate: Candidate }) {
-  return candidate.assigned ? <Badge variant="secondary">{t.assignedBadge}</Badge> : null
+  if (candidate.assigned) return <Badge variant="secondary">{t.assignedBadge}</Badge>
+  if (candidate.unavailable) {
+    return (
+      <>
+        <Badge variant="outline">{t.unavailableBadge}</Badge>
+        <span id={`unavailable-${candidate.userId}`} className="sr-only">
+          {t.unavailableHint}
+        </span>
+      </>
+    )
+  }
+  return null
 }
 
 function UnassignButton({ candidate, locked, lockReasonId, onUnassign }: RowProps) {

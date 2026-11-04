@@ -1,6 +1,7 @@
 import { Outlet, createBrowserRouter } from 'react-router'
 import { AppShell } from '@/components/AppShell'
 import { AssignPage } from '@/features/assign/AssignPage'
+import { AttendancePage } from '@/features/attendance/AttendancePage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { ErrorPage } from '@/features/errors/ErrorPage'
@@ -63,6 +64,7 @@ export const routes = [
               { index: true, element: <PlaceholderPage /> },
               { path: PATHS.mySchedule.slice(1), element: <MySchedulePage /> },
               { path: PATHS.fullSchedule.slice(1), element: <FullSchedulePage /> },
+              { path: PATHS.attendance.slice(1), element: <AttendancePage /> },
               {
                 element: <RequireRole roles={['ADMIN', 'PEMBINA']} />,
                 children: [{ path: PATHS.services.slice(1), element: <ServicesPage /> }],

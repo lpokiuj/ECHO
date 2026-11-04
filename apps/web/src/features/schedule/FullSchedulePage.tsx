@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/table'
 import { Textarea } from '@/components/ui/textarea'
 import { useMe } from '@/features/auth/useMe'
+import { AvailabilityToggle } from './AvailabilityToggle'
 import { useUpdateNote } from '@/features/assign/useAssign'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { formatDate, formatTimeRange, hasEnded, isFuture } from '@/lib/dates'
@@ -126,7 +127,14 @@ function Person({
     <li className="py-3 break-words first:pt-0 last:pb-0">
       <div className="flex items-center gap-3">
         <UserAvatar name={member.name} />
-        <span className="min-w-0 flex-1 font-medium">{member.name}</span>
+        <span className="min-w-0 flex-1 font-medium">
+          {member.name}
+          {member.isAbsentTaker ? (
+            <Badge variant="outline" className="ml-2">
+              {messages.assign.taker.badge}
+            </Badge>
+          ) : null}
+        </span>
         {canEdit && !editing ? (
           <Button
             variant="outline"
@@ -222,6 +230,9 @@ function DetailButton({ service }: { service: ServiceSchedule }) {
           <DialogDescription>{t.detailDescription}</DialogDescription>
         </DialogHeader>
         <div className="-mx-4 min-h-0 overflow-y-auto px-4">
+          <div className="mb-4">
+            <AvailabilityToggle service={service} />
+          </div>
           <People service={service} />
         </div>
       </DialogContent>
@@ -230,7 +241,8 @@ function DetailButton({ service }: { service: ServiceSchedule }) {
 }
 
 function EndedBadge({ service }: { service: ServiceSchedule }) {
-  return hasEnded(service.endsAt) ? <Badge variant="secondary">{t.ended}</Badge> : null
+  if (hasEnded(service.endsAt)) return <Badge variant="secondary">{t.ended}</Badge>
+  return service.unavailable ? <Badge variant="outline">{messages.availability.badge}</Badge> : null
 }
 
 function ServiceTable({ services }: { services: ServiceSchedule[] }) {

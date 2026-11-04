@@ -1,7 +1,14 @@
 // The one module for API data types. Hand-written from ../../docs/api/ (no OpenAPI spec).
 export type UserRole = 'ADMIN' | 'PEMBINA' | 'MEMBER'
 
-export type ErrorCode = 'PASSWORD_CHANGE_REQUIRED' | 'INVALID_USERS' | 'SERVICE_ALREADY_STARTED'
+export type ErrorCode =
+  | 'PASSWORD_CHANGE_REQUIRED'
+  | 'INVALID_USERS'
+  | 'SERVICE_ALREADY_STARTED'
+  | 'ALREADY_ASSIGNED'
+  | 'SERVICE_NOT_STARTED'
+  | 'CANNOT_MARK_SELF'
+  | 'HAS_ATTENDANCE_RECORDS'
 
 export interface Membership {
   teamId: string
@@ -53,6 +60,8 @@ export interface ScheduleAssignment {
   teamName: string
   /** Set by the team leader, `""` when none. Visible to every logged-in user. */
   notes: string
+  /** This person records their team's absences (attendance.md). */
+  isAbsentTaker: boolean
 }
 
 /** GET /services item: a service with everyone assigned across teams. */
@@ -61,6 +70,8 @@ export interface ServiceSchedule {
   title: string
   startsAt: string
   endsAt: string
+  /** The caller marked this service unavailable (availability.md). */
+  unavailable: boolean
   assignments: ScheduleAssignment[]
 }
 
@@ -74,6 +85,9 @@ export interface MyScheduleItem {
   teamName: string
   /** Note on the caller's assignment, `""` when none. */
   notes: string
+  /** Documented in the field table of schedule.md but missing from its example; read defensively. */
+  unavailable?: boolean
+  isAbsentTaker?: boolean
 }
 
 /** POST /services and PATCH /services/:id response. */
@@ -100,9 +114,12 @@ export interface Candidate {
   userId: string
   name: string
   assigned: boolean
+  /** The member marked this service unavailable: shown, not selectable. */
+  unavailable: boolean
 }
 
-export type SkippedReason = 'ALREADY_ASSIGNED_THIS_TEAM' | 'ALREADY_ASSIGNED_OTHER_TEAM'
+export type SkippedReason =
+  'ALREADY_ASSIGNED_THIS_TEAM' | 'ALREADY_ASSIGNED_OTHER_TEAM' | 'UNAVAILABLE'
 
 export interface SkippedEntry {
   userId: string
@@ -180,4 +197,17 @@ export interface RemovedAssignment {
 
 export interface RemoveMemberResult {
   removedAssignments: RemovedAssignment[]
+}
+
+/** GET /me/absences (attendance.md). */
+export interface MyAbsences {
+  count: number
+  items: { serviceId: string; title: string; startsAt: string }[]
+}
+
+/** GET /teams/:teamId/absences item (attendance.md). */
+export interface TeamAbsenceRow {
+  userId: string
+  name: string
+  count: number
 }

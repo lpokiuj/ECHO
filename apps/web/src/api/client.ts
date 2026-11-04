@@ -15,11 +15,13 @@ import type {
   UpdateUserBody,
   User,
   MemberUpsertResult,
+  MyAbsences,
   MyScheduleItem,
   RemoveMemberResult,
   Service,
   ServiceSchedule,
   Team,
+  TeamAbsenceRow,
   TeamMember,
   UpdateServiceBody,
 } from './types'
@@ -215,4 +217,55 @@ export function putTeamMember(
 
 export function removeTeamMember(teamId: string, userId: string): Promise<RemoveMemberResult> {
   return request<RemoveMemberResult>(memberPath(teamId, userId), { method: 'DELETE' })
+}
+
+// --- Availability (availability.md) and attendance (attendance.md) ---
+
+function serviceTeamPath(serviceId: string, teamId: string): string {
+  return assignmentsPath(serviceId, teamId)
+}
+
+export function setUnavailable(serviceId: string): Promise<void> {
+  return request<void>(`/services/${encodeURIComponent(serviceId)}/unavailability`, {
+    method: 'PUT',
+  })
+}
+
+export function clearUnavailable(serviceId: string): Promise<void> {
+  return request<void>(`/services/${encodeURIComponent(serviceId)}/unavailability`, {
+    method: 'DELETE',
+  })
+}
+
+export function designateAbsentTaker(
+  serviceId: string,
+  teamId: string,
+  userId: string,
+): Promise<void> {
+  return request<void>(`${serviceTeamPath(serviceId, teamId)}/absent-taker`, {
+    method: 'PUT',
+    body: { userId },
+  })
+}
+
+export function recordAbsence(serviceId: string, teamId: string, userId: string): Promise<void> {
+  return request<void>(
+    `${serviceTeamPath(serviceId, teamId)}/absences/${encodeURIComponent(userId)}`,
+    { method: 'PUT' },
+  )
+}
+
+export function clearAbsence(serviceId: string, teamId: string, userId: string): Promise<void> {
+  return request<void>(
+    `${serviceTeamPath(serviceId, teamId)}/absences/${encodeURIComponent(userId)}`,
+    { method: 'DELETE' },
+  )
+}
+
+export function getMyAbsences(): Promise<MyAbsences> {
+  return request<MyAbsences>('/me/absences')
+}
+
+export function getTeamAbsences(teamId: string): Promise<TeamAbsenceRow[]> {
+  return request<TeamAbsenceRow[]>(`/teams/${encodeURIComponent(teamId)}/absences`)
 }

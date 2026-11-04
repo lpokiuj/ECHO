@@ -75,6 +75,7 @@ export const SERVICES_EXAMPLE = [
     title: 'Sunday Service',
     startsAt: '2026-11-01T03:00:00.000Z',
     endsAt: '2026-11-01T05:00:00.000Z',
+    unavailable: false,
     assignments: [
       {
         userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28',
@@ -82,6 +83,7 @@ export const SERVICES_EXAMPLE = [
         teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
         teamName: 'Worship',
         notes: '',
+        isAbsentTaker: false,
       },
     ],
   },
@@ -90,6 +92,7 @@ export const SERVICES_EXAMPLE = [
     title: 'KEEP 1',
     startsAt: '2026-11-20T15:26:31.938Z',
     endsAt: '2026-11-20T17:50:31.938Z',
+    unavailable: false,
     assignments: [
       {
         userId: '8bbc624a-3766-40b0-a32c-321f33524dc4',
@@ -97,6 +100,7 @@ export const SERVICES_EXAMPLE = [
         teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
         teamName: 'Sound',
         notes: '',
+        isAbsentTaker: false,
       },
       {
         userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da',
@@ -104,6 +108,7 @@ export const SERVICES_EXAMPLE = [
         teamId: '681e9003-157a-4f26-9b69-a39af059d88b',
         teamName: 'Worship',
         notes: '',
+        isAbsentTaker: false,
       },
     ],
   },
@@ -118,6 +123,7 @@ export const MY_SCHEDULE_EXAMPLE = [
     teamId: '77256f56-93fc-46e9-b360-ca69f8b3263a',
     teamName: 'Sound',
     notes: '',
+    isAbsentTaker: false,
   },
 ]
 
@@ -174,11 +180,36 @@ export const SERVICE_ERROR_BODIES = {
 
 // Bodies copied verbatim from ../../docs/api/assignments.md.
 export const CANDIDATES_EXAMPLE = [
-  { userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28', name: 'Enji', assigned: true },
-  { userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da', name: 'Giana', assigned: false },
-  { userId: 'f269b9ce-a215-46c8-a444-0aaced5232f9', name: 'Livana', assigned: false },
-  { userId: '73fbd314-9793-4bf3-b217-4ab94b7be54f', name: 'Lukas', assigned: false },
+  {
+    userId: 'aafeafcb-ef7f-4b60-bbcf-70d762f8ff28',
+    name: 'Enji',
+    assigned: true,
+    unavailable: false,
+  },
+  {
+    userId: 'db93ae8c-9da7-4be1-bcc8-2c72c12033da',
+    name: 'Giana',
+    assigned: false,
+    unavailable: false,
+  },
+  {
+    userId: 'f269b9ce-a215-46c8-a444-0aaced5232f9',
+    name: 'Livana',
+    assigned: false,
+    unavailable: false,
+  },
+  {
+    userId: '73fbd314-9793-4bf3-b217-4ab94b7be54f',
+    name: 'Lukas',
+    assigned: false,
+    unavailable: false,
+  },
 ]
+// Skip entry copied from ../../docs/api/assignments.md (no heldByTeam).
+export const ASSIGN_UNAVAILABLE = {
+  assigned: [],
+  skipped: [{ userId: 'be218193-9844-482b-b44d-575c49d2e16f', reason: 'UNAVAILABLE' }],
+}
 export const ASSIGN_ALL_ASSIGNED = {
   assigned: ['be218193-9844-482b-b44d-575c49d2e16f', '85c483d5-d17f-495d-a088-78f652357e4d'],
   skipped: [],
@@ -339,4 +370,34 @@ export const TEAM_ERROR_BODIES = {
     statusCode: 400,
   },
   forbidden: ERROR_BODIES.forbidden,
+}
+
+// Bodies copied verbatim from ../../docs/api/attendance.md and availability.md.
+export const MY_ABSENCES_EXAMPLE = {
+  count: 2,
+  items: [
+    { serviceId: '<serviceId>', title: 'Sunday Service', startsAt: '2026-11-01T03:00:00.000Z' },
+  ],
+}
+export const TEAM_ABSENCES_EXAMPLE = [
+  { userId: '<userId-amy>', name: 'Amy', count: 1 },
+  { userId: '<userId-bob>', name: 'Bob', count: 0 },
+]
+// The doc gives this shape for ALREADY_ASSIGNED; the other coded 409s share it.
+const conflict = (code: string) => ({
+  statusCode: 409,
+  error: 'Conflict',
+  code,
+  message: '...',
+})
+export const ATTENDANCE_ERROR_BODIES = {
+  alreadyAssigned: conflict('ALREADY_ASSIGNED'),
+  serviceNotStarted: conflict('SERVICE_NOT_STARTED'),
+  hasAttendanceRecords: conflict('HAS_ATTENDANCE_RECORDS'),
+  cannotMarkSelf: {
+    statusCode: 400,
+    error: 'Bad Request',
+    code: 'CANNOT_MARK_SELF',
+    message: '...',
+  },
 }

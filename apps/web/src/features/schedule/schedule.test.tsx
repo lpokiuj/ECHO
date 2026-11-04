@@ -4,6 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fillMessage, messages } from '@/lib/messages'
 import {
+  ATTENDANCE_ERROR_BODIES,
   ERROR_BODIES,
   INCLUDE_PAST_BAD,
   ME_BY_ROLE,
@@ -15,7 +16,11 @@ import {
 import { renderApp } from '@/test/render'
 import { server } from '@/test/setup'
 
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
+vi.mock('sonner', () => ({ toast, Toaster: () => null }))
+
 const t = messages.schedule
+const av = messages.availability
 // "Now" is after the first example service (ends 2026-11-01T05:00Z) and before the second.
 const NOW = new Date('2026-11-01T06:00:00.000Z')
 
@@ -320,3 +325,88 @@ async function waitForButton(dialog: HTMLElement) {
     name: fillMessage(messages.schedule.editNoteAria, { name: 'Giana' }),
   })
 }
+
+describe('availability toggle', () => {
+  // Giana is assigned to KEEP 1 (upcoming); Sunday Service started. The caller is a stranger.
+  const UPCOMING = SERVICES_EXAMPLE[1]!
+
+  async function openDetail(title: string) {
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    const row = within(table()).getByRole('row', { name: new RegExp(title) })
+    await userEvent.click(within(row).getByRole('button', { name: new RegExp(t.detail) }))
+    return screen.findByRole('dialog', { name: title })
+  }
+
+  beforeEach(() => {
+    toast.success.mockClear()
+    toast.error.mockClear()
+  })
+
+  it('marks and unmarks the caller unavailable', async () => {
+    let unavailable = false
+    const calls: string[] = []
+    server.use(
+      http.get('*/api/services', () =>
+        HttpResponse.json(SERVICES_EXAMPLE.map((s) => ({ ...s, unavailable }))),
+      ),
+      http.put('*/api/services/:id/unavailability', () => {
+        calls.push('PUT')
+        unavailable = true
+        return new HttpResponse(null, { status: 204 })
+      }),
+      http.delete('*/api/services/:id/unavailability', () => {
+        calls.push('DELETE')
+        unavailable = false
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    const dialog = await openDetail(UPCOMING.title)
+    const toggle = within(dialog).getByRole('switch')
+    await userEvent.click(toggle)
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(av.marked))
+    await waitFor(() => expect(toggle).toBeChecked())
+    await userEvent.click(toggle)
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(av.unmarked))
+    expect(calls).toEqual(['PUT', 'DELETE'])
+  })
+
+  it('has no toggle for a service that started', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(SERVICES_EXAMPLE)))
+    const dialog = await openDetail('Sunday Service')
+    expect(within(dialog).queryByRole('switch')).toBeNull()
+  })
+
+  it('maps ALREADY_ASSIGNED and SERVICE_ALREADY_STARTED', async () => {
+    server.use(
+      http.get('*/api/services', () => HttpResponse.json(SERVICES_EXAMPLE)),
+      http.put('*/api/services/:id/unavailability', () =>
+        HttpResponse.json(ATTENDANCE_ERROR_BODIES.alreadyAssigned, { status: 409 }),
+      ),
+    )
+    const dialog = await openDetail(UPCOMING.title)
+    await userEvent.click(within(dialog).getByRole('switch'))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith(messages.errors.codes.ALREADY_ASSIGNED),
+    )
+    server.use(
+      http.put('*/api/services/:id/unavailability', () =>
+        HttpResponse.json(ERROR_BODIES.serviceStarted, { status: 409 }),
+      ),
+    )
+    await userEvent.click(within(dialog).getByRole('switch'))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(av.startedGone))
+  })
+
+  it('is hidden when the caller is already assigned', async () => {
+    const me = ME_BY_ROLE.member
+    const assigned = SERVICES_EXAMPLE.map((s) => ({
+      ...s,
+      assignments: [...s.assignments, { ...s.assignments[0]!, userId: me.id }],
+    }))
+    server.use(http.get('*/api/services', () => HttpResponse.json(assigned)))
+    const dialog = await openDetail(UPCOMING.title)
+    expect(within(dialog).queryByRole('switch')).toBeNull()
+    expect(within(dialog).getByText(av.assignedNote)).toBeInTheDocument()
+  })
+})

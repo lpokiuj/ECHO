@@ -4,7 +4,7 @@ import { server } from '@/test/setup'
 import { ERROR_BODIES, respond } from '@/test/handlers'
 import { messages } from '@/lib/messages'
 import { getMe } from './client'
-import { errorMessage } from './errors'
+import { errorMessage, fromResponse } from './errors'
 
 async function failWith(status: number, body: unknown): Promise<unknown> {
   server.use(http.get('*/api/me', () => respond(status, body)))
@@ -69,5 +69,18 @@ describe('error normalization', () => {
 
   it('falls back to generic for non-ApiError values', () => {
     expect(errorMessage(new Error('boom'))).toBe(messages.states.genericError)
+  })
+})
+
+describe('attendance and availability codes', () => {
+  it.each([
+    ['ALREADY_ASSIGNED', 409],
+    ['SERVICE_NOT_STARTED', 409],
+    ['HAS_ATTENDANCE_RECORDS', 409],
+    ['CANNOT_MARK_SELF', 400],
+  ] as const)('maps %s to its Indonesian text', (code, status) => {
+    const error = fromResponse(status, { statusCode: status, error: 'x', code, message: '...' })
+    expect(error.code).toBe(code)
+    expect(errorMessage(error)).toBe(messages.errors.codes[code])
   })
 })
