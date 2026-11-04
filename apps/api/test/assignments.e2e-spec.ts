@@ -265,9 +265,9 @@ describe('Assignments (e2e)', () => {
         .set(await headersFor(leaderA))
         .expect(200);
       expect(res.body).toEqual([
-        { userId: amy.id, name: 'Amy', assigned: false },
-        { userId: leaderA.id, name: 'Leader A', assigned: false },
-        { userId: zed.id, name: 'Zed', assigned: false },
+        { userId: amy.id, name: 'Amy', assigned: false, unavailable: false },
+        { userId: leaderA.id, name: 'Leader A', assigned: false, unavailable: false },
+        { userId: zed.id, name: 'Zed', assigned: false, unavailable: false },
       ]);
     });
 
@@ -302,6 +302,7 @@ describe('Assignments (e2e)', () => {
         userId: x.id,
         name: 'X',
         assigned: true,
+        unavailable: false,
       });
       expect(
         forA.body.find((c: { userId: string }) => c.userId === leaderA.id)
@@ -486,6 +487,7 @@ describe('Assignments (e2e)', () => {
         userId: x.id,
         name: 'X',
         assigned: false,
+        unavailable: false,
       });
       const claim = await request(http())
         .post(assignPath(service.id, teamB.id))

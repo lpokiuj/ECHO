@@ -107,7 +107,6 @@ describe('Teams (e2e)', () => {
     const routes = (teamId: string, userId: string) =>
       [
         ['post', '/teams'],
-        ['get', '/teams'],
         ['patch', `/teams/${teamId}`],
         ['put', `/teams/${teamId}/members/${userId}`],
         ['delete', `/teams/${teamId}/members/${userId}`],
@@ -136,6 +135,22 @@ describe('Teams (e2e)', () => {
         }
       },
     );
+
+    it('GET /teams: 200 for ADMIN and PEMBINA, 403 for MEMBER and a team leader', async () => {
+      const team = await createTeam();
+      const leader = await createUser();
+      await addMember(team.id, leader.id, true);
+      const pembina = await createUser({ role: UserRole.PEMBINA });
+      const ok = [await adminToken(), bearer(await tokenFor(pembina))];
+      for (const h of ok)
+        await request(http()).get('/teams').set(h).expect(200);
+      const no = [
+        bearer(await tokenFor(await createUser())),
+        bearer(await tokenFor(leader)),
+      ];
+      for (const h of no)
+        await request(http()).get('/teams').set(h).expect(403);
+    });
 
     it('returns 403 for a leader of that same team', async () => {
       const team = await createTeam();
@@ -210,7 +225,11 @@ describe('Teams (e2e)', () => {
       ['not a string', 5],
     ])('rejects a %s name with 400', async (_label, name) => {
       const headers = await adminToken();
-      await request(http()).post('/teams').set(headers).send({ name }).expect(400);
+      await request(http())
+        .post('/teams')
+        .set(headers)
+        .send({ name })
+        .expect(400);
       const team = await createTeam();
       await request(http())
         .patch(`/teams/${team.id}`)
@@ -249,10 +268,7 @@ describe('Teams (e2e)', () => {
       await createTeam('Audio');
       await createTeam('Multimedia');
       const headers = await adminToken();
-      const res = await request(http())
-        .get('/teams')
-        .set(headers)
-        .expect(200);
+      const res = await request(http()).get('/teams').set(headers).expect(200);
       expect(res.body.map((t: Team) => t.name)).toEqual([
         'Audio',
         'Multimedia',
@@ -413,7 +429,11 @@ describe('Teams (e2e)', () => {
   });
 
   describe('DELETE /teams/:id/members/:userId (rule 9)', () => {
-    const del = (headers: Record<string, string>, teamId: string, userId: string) =>
+    const del = (
+      headers: Record<string, string>,
+      teamId: string,
+      userId: string,
+    ) =>
       request(http()).delete(`/teams/${teamId}/members/${userId}`).set(headers);
 
     it('removes the member and returns the empty list when nothing is assigned', async () => {
@@ -525,8 +545,11 @@ describe('Teams (e2e)', () => {
       const gone = await createService(admin.id, 3 * DAY, 'Gone', new Date());
       await assign(gone.id, user.id, team.id, admin.id);
 
-      const res = await del(bearer(await tokenFor(admin)), team.id, user.id)
-        .expect(200);
+      const res = await del(
+        bearer(await tokenFor(admin)),
+        team.id,
+        user.id,
+      ).expect(200);
       expect(res.body.removedAssignments).toEqual([]);
       expect(await assignmentsOf(gone.id)).toHaveLength(0);
     });

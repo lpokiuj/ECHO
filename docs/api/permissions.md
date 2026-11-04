@@ -30,7 +30,7 @@ regardless of role.
 | 12 | `PATCH /users/:id` | 401 | 403 | 403 | 403 | ok |
 | 13 | `POST /users/:id/reset-password` | 401 | 403 | 403 | 403 | ok |
 | 14 | `POST /teams` | 401 | 403 | 403 | 403 | ok |
-| 15 | `GET /teams` | 401 | 403 | 403 | 403 | ok |
+| 15 | `GET /teams` | 401 | 403 | 403 | ok | ok |
 | 16 | `GET /teams/:id/members` | 401 | 403 | 403 | 403 | ok |
 | 17 | `PATCH /teams/:id` | 401 | 403 | 403 | 403 | ok |
 | 18 | `PUT /teams/:id/members/:userId` | 401 | 403 | 403 | 403 | ok |
@@ -60,6 +60,20 @@ columns are the same account (`livana`, leader of Worship) calling Worship or Us
 
 Leadership is read from the database on every request. Demoting a leader (verified live):
 the next call is 403 even with the same token.
+
+## Availability and attendance routes (added later, verified by e2e only)
+
+| Endpoint | No token | MEMBER | Leader | PEMBINA | ADMIN |
+|---|---|---|---|---|---|
+| `PUT/DELETE /services/:id/unavailability` | 401 | ok (self) | ok (self) | ok (self) | ok (self) |
+| `GET /me/unavailability`, `GET /me/absences` | 401 | ok | ok | ok | ok |
+| `PUT /services/:id/teams/:teamId/absent-taker` | 401 | 403 | leader of that team only | 403 | ok |
+| `PUT/DELETE .../teams/:teamId/absences/:userId` | 401 | taker of that team only, else 403 | taker only (a leader who is not the taker gets 403) | 403 | ok |
+| `GET /teams/:teamId/absences` | 401 | 403 | leader of that team only | ok (any team) | ok |
+
+Same unknown-team rule as above for the leader routes (non-admin 403, ADMIN 404). The taker check
+for the absence routes is done in the service after path-uuid validation, before the 404s.
+That makes 8 new routes: 30 in total.
 
 ## Cells not verified
 None of the cells above is unverified. Not covered by this matrix: behaviour after the

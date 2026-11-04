@@ -10,8 +10,8 @@ export class ScheduleController {
   constructor(private readonly schedule: ScheduleService) {}
 
   @Get('services')
-  listServices(@Query() query: ScheduleQueryDto) {
-    return this.schedule.listServices(query.includePast === 'true');
+  listServices(@CurrentUser() user: User, @Query() query: ScheduleQueryDto) {
+    return this.schedule.listServices(user.id, query.includePast === 'true');
   }
 
   @Get('me/schedule')

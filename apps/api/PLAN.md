@@ -65,8 +65,10 @@ A leader of team B can:
 - `team_members(team_id, user_id, is_leader, created_at)` PK `(team_id, user_id)`
 - `services(id uuid, title, starts_at, ends_at, created_by, created_at, deleted_at)`
   CHECK `(ends_at > starts_at)`
-- `service_assignments(id uuid, service_id, user_id, team_id, assigned_by, notes text NOT NULL DEFAULT '', created_at)`
-  UNIQUE `(service_id, user_id)`
+- `service_assignments(id uuid, service_id, user_id, team_id, assigned_by, notes text NOT NULL DEFAULT '', is_absent_taker boolean NOT NULL DEFAULT false, created_at)`
+  UNIQUE `(service_id, user_id)`; partial UNIQUE `(service_id, team_id) WHERE is_absent_taker`
+- `service_unavailability(service_id, user_id, created_at)` PK `(service_id, user_id)`
+- `service_absences(service_id, user_id, team_id, recorded_by, created_at)` PK `(service_id, user_id)`, FK `(service_id, user_id)` to `service_assignments`
 
 ## API (draft)
 
@@ -77,7 +79,7 @@ Auth
 
 Admin (ADMIN)
 - `POST /users`, `GET /users`, `PATCH /users/:id`, `POST /users/:id/reset-password`
-- `POST /teams`, `GET /teams`, `PATCH /teams/:id`
+- `POST /teams`, `GET /teams` (ADMIN and PEMBINA, read-only for the web recap), `PATCH /teams/:id`
 - `PUT /teams/:id/members/:userId` (body: `is_leader`), `DELETE /teams/:id/members/:userId`
 - `GET /teams/:id/members`
 
@@ -93,6 +95,14 @@ Assignments (leader of that team, or ADMIN)
 Views
 - `GET /me/schedule` (any logged-in user; items include `notes`)
 - `GET /services` (any logged-in user: all services with all teams' assignments, names only, no emails)
+
+Availability (any logged-in user, self only)
+- `PUT/DELETE /services/:id/unavailability`, `GET /me/unavailability`
+
+Attendance
+- `PUT /services/:id/teams/:teamId/absent-taker` (leader of that team, ADMIN)
+- `PUT/DELETE /services/:id/teams/:teamId/absences/:userId` (that team's absent-taker, ADMIN)
+- `GET /me/absences`, `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN)
 
 ## Frontend notes
 - Read `X-Access-Token` from every authenticated response and store it; it renews the
@@ -137,12 +147,19 @@ Views
 | Assignment errors | `INVALID_USERS` is 400 `{ statusCode, error, code, message, invalidUserIds }`; `SERVICE_ALREADY_STARTED` is 409 with the same shape minus `invalidUserIds`. | Same body shape as `PASSWORD_CHANGE_REQUIRED` |
 | Assignment check order | Body validation (global ValidationPipe) runs before the handler, so a malformed assign body is 400 even for an unknown or deleted service. Guard (403) still comes first; path-param UUIDs are checked after it (a non-UUID `:teamId` is 403 for non-admins, 400 for ADMIN). | Standard NestJS pipe order, consistent with other modules |
 | Assignment notes | `service_assignments.notes` (text, default `''`, max 1000 chars). Set per user at assign time via optional body `notes: { [userId]: string }` (keys must be in `userIds`; never overwrites an existing assignment's note), edited with `PATCH .../assignments/:userId { notes }` (`''` clears; 409 `SERVICE_ALREADY_STARTED` on started services; 404 if this team has no assignment for the user). Same access as other assignment routes: leader of that team, or ADMIN. Read via `notes` in `GET /services` assignments and `GET /me/schedule`, so every logged-in user can read them. | Leaders need to tell a volunteer something specific; no new detail endpoint, existing views carry it |
+| Availability | Default is available (no row). A member marks an upcoming service unavailable with `PUT /services/:id/unavailability` (204, idempotent; `DELETE` likewise; both 409 `SERVICE_ALREADY_STARTED` once started). Marking while assigned is 409 `ALREADY_ASSIGNED`. Assign skips unavailable users with `skipped` reason `UNAVAILABLE`; candidates, `GET /services` and `GET /me/schedule` carry `unavailable`. `GET /me/unavailability` returns upcoming, non-deleted service ids. | Members control their own availability; no silent schedule changes |
+| Availability race | Assign (INSERT ... SELECT with `NOT EXISTS` unavailability) and PUT (INSERT with `NOT EXISTS` assignment) each run in a transaction that first takes `pg_advisory_xact_lock(hashtextextended('<service>:<user>', 0))` (sorted for batches). | `NOT EXISTS` alone is not race-free under READ COMMITTED; never both rows for (service, user) |
+| Absent-taker | One per team per service (`is_absent_taker`, partial unique index). Leader of the team or ADMIN designates with `PUT .../absent-taker {userId}` at any time; target must be assigned by that team (400 `INVALID_USERS`). Designation is serialized with an advisory lock and replaces the previous taker in one transaction. | Matches the confirmed spec; no two takers |
+| Recording absences | `PUT/DELETE .../absences/:userId` by the team's taker or ADMIN (403 otherwise, checked before the 404s; ADMIN can record for past services with no taker). 409 `SERVICE_NOT_STARTED` before `starts_at`. Target must be assigned by that team (400 `INVALID_USERS`). Taker cannot mark themselves (400 `CANNOT_MARK_SELF`). PUT/DELETE idempotent. | Only recorded absences count |
+| Miss counter | Derived: `COUNT(*)` over `service_absences`. `GET /me/absences` -> `{count, items:[{serviceId,title,startsAt}]}` newest first; `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN) -> `[{userId,name,count}]` for active members, counted across all teams. Soft-deleted services still count. | No stored counter, no drift |
+| Absences vs unassign | The composite FK from `service_absences` to the assignment row is RESTRICT. Unassign and member removal that would delete such an assignment answer 409 `HAS_ATTENDANCE_RECORDS` and change nothing (reachable only if a started service is moved to the future). Unassigning a taker (pre-start) clears the role. | History is never silently erased |
+| Attendance check order | Path-uuid pipes (400) run first, then the taker/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
 - Self-registration and self-service password reset
 - Overlapping-service warnings for the same volunteer
-- Availability, swap requests, attendance, reports
+- Swap requests, reports
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
 - Frontend, public site
 - Service notes (a notes field on services)
@@ -165,6 +182,8 @@ starts. If a feature has none, ask the user for them before implementing.
 6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: ../../docs/features/06-services.md
 7. Assignments (done). Criteria: ../../docs/features/07-assignments.md
 8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: ../../docs/features/08-schedule-views.md
+9. Availability (done). Criteria: ../../docs/features/09-availability.md
+10. Attendance (done). Criteria: ../../docs/features/10-attendance.md
 
 ## Status
 - [x] 1. Scaffold
@@ -175,3 +194,5 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 6. Services
 - [x] 7. Assignments
 - [x] 8. Schedule views
+- [x] 9. Availability
+- [x] 10. Attendance

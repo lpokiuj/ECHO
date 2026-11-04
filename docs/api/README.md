@@ -15,11 +15,13 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | [teams.md](teams.md) | Teams, membership, leader flag |
 | [services.md](services.md) | Create / edit / soft-delete services |
 | [assignments.md](assignments.md) | Candidates, assign, unassign (leader screen) |
+| [availability.md](availability.md) | `PUT/DELETE /services/:id/unavailability`, `GET /me/unavailability` |
+| [attendance.md](attendance.md) | Absent-taker, absences, miss counts |
 | [schedule.md](schedule.md) | `GET /services` (full schedule), `GET /me/schedule` |
 | [flows.md](flows.md) | Exact call order for each screen, plus **Gotchas** |
 | [permissions.md](permissions.md) | Endpoint x role matrix |
 
-22 routes in total (see the count per file in `permissions.md`).
+30 routes in total (22 before availability and attendance added 8; see `permissions.md`).
 
 ## Run the API locally
 
@@ -125,7 +127,7 @@ status first, then on `code` when present. `message` is **a string or an array o
 | 404 bare | `{"message":"Not Found","statusCode":404}` (no `error` key) |
 | Unknown route | `{"message":"Cannot GET /nope","error":"Not Found","statusCode":404}` |
 | 409 | `{"message":"Email already in use","error":"Conflict","statusCode":409}` |
-| Coded errors (only 3 exist) | `PASSWORD_CHANGE_REQUIRED` (403), `INVALID_USERS` (400, adds `invalidUserIds`), `SERVICE_ALREADY_STARTED` (409) |
+| Coded errors | `PASSWORD_CHANGE_REQUIRED` (403), `INVALID_USERS` (400, adds `invalidUserIds`), `CANNOT_MARK_SELF` (400), `SERVICE_ALREADY_STARTED`, `SERVICE_NOT_STARTED`, `ALREADY_ASSIGNED`, `HAS_ATTENDANCE_RECORDS` (all 409) |
 
 Because keys differ (`error` is sometimes missing), read `statusCode` / HTTP status, not `error`.
 Unhandled server errors would be a 500 `{"statusCode":500,"message":"Internal server error"}`
@@ -156,8 +158,8 @@ name.
 | Name | Values | Used in |
 |---|---|---|
 | `UserRole` | `ADMIN`, `PEMBINA`, `MEMBER` | `role` on users, `/me` |
-| Skip reason | `ALREADY_ASSIGNED_THIS_TEAM`, `ALREADY_ASSIGNED_OTHER_TEAM` | `skipped[].reason` |
-| Error `code` | `PASSWORD_CHANGE_REQUIRED`, `INVALID_USERS`, `SERVICE_ALREADY_STARTED` | error bodies |
+| Skip reason | `ALREADY_ASSIGNED_THIS_TEAM`, `ALREADY_ASSIGNED_OTHER_TEAM`, `UNAVAILABLE` | `skipped[].reason` |
+| Error `code` | `PASSWORD_CHANGE_REQUIRED`, `INVALID_USERS`, `SERVICE_ALREADY_STARTED`, `ALREADY_ASSIGNED`, `SERVICE_NOT_STARTED`, `CANNOT_MARK_SELF`, `HAS_ATTENDANCE_RECORDS` | error bodies |
 
 "Team leader" is **not** a role: it is `isLeader: true` on a team membership (see `GET /me` ->
 `memberships`). A person can lead one team and be a plain member of another. A PEMBINA can never

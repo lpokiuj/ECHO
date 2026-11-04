@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions, envFilePath } from './database/data-source.js';
+import { AttendanceModule } from './attendance/attendance.module.js';
 import { AssignmentsModule } from './assignments/assignments.module.js';
+import { AvailabilityModule } from './availability/availability.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HealthModule } from './health/health.module.js';
 import { ScheduleModule } from './schedule/schedule.module.js';
@@ -16,6 +18,8 @@ import { UsersModule } from './users/users.module.js';
     TypeOrmModule.forRoot(dataSourceOptions),
     AssignmentsModule,
     AuthModule,
+    AvailabilityModule,
+    AttendanceModule,
     HealthModule,
     ScheduleModule,
     ServicesModule,

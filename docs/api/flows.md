@@ -32,6 +32,20 @@ Group/format `startsAt` in WIB on the client. Empty array = nothing assigned.
 (`userId, name, teamId, teamName, notes`). Group `assignments` by `teamName` for display (already sorted
 by team then name). Available to every role; no emails are included.
 
+## 3b. Availability (member)
+`GET /services` gives `unavailable` per service for the caller. Toggle with
+`PUT` / `DELETE /services/{id}/unavailability` (204). `409 ALREADY_ASSIGNED` means ask the leader to
+unassign first; `409 SERVICE_ALREADY_STARTED` hides the toggle. `GET /me/unavailability` lists the
+marked upcoming ids. On the leader screen, candidates with `unavailable: true` are shown but not
+selectable; a batch containing one returns it in `skipped` with `reason: "UNAVAILABLE"`.
+
+## 3c. Attendance
+Leader: `PUT /services/{id}/teams/{teamId}/absent-taker {userId}` (pick from the assigned
+candidates). Taker, after start: `PUT` / `DELETE .../absences/{userId}` per absent volunteer
+(`SERVICE_NOT_STARTED` before). Member: `GET /me/absences` for `{count, items}`. Leader/ADMIN:
+`GET /teams/{teamId}/absences` for each member's miss count. ADMIN can record for any past
+service. See [attendance.md](attendance.md).
+
 ## 4. Leader assign screen
 Inputs: a service (from `GET /services`) and a team where `/me` says `isLeader: true`.
 
@@ -129,3 +143,7 @@ other teams stay.
 15. Tokens are not revoked: a password change or reset does not log out other devices.
 16. `GET /services` items have `id`; `GET /me/schedule` items have `serviceId`.
 17. Deleting users or teams is not possible; deactivate users instead.
+18. **Unavailable users are skipped, not rejected**: `reason: "UNAVAILABLE"` in `skipped`, and the
+    candidate keeps `unavailable: true` until they unmark themselves.
+19. **Absences are history**: removing a member or unassigning someone with a recorded absence is
+    `409 HAS_ATTENDANCE_RECORDS`.

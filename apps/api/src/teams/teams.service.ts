@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
+import { mapAttendanceFkError } from '../attendance/attendance-errors.js';
 import { User, UserRole } from '../users/entities/user.entity.js';
 import { TeamMember } from './entities/team-member.entity.js';
 import { Team } from './entities/team.entity.js';
@@ -100,6 +101,15 @@ export class TeamsService {
   // Rule 9: one transaction removes the membership and that team's assignments
   // for the user on future services. Past assignments stay.
   removeMember(
+    teamId: string,
+    userId: string,
+  ): Promise<{ removedAssignments: RemovedAssignment[] }> {
+    return this.runRemoveMember(teamId, userId).catch((err: unknown) => {
+      throw mapAttendanceFkError(err);
+    });
+  }
+
+  private runRemoveMember(
     teamId: string,
     userId: string,
   ): Promise<{ removedAssignments: RemovedAssignment[] }> {

@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -16,6 +17,10 @@ import { User } from '../../users/entities/user.entity.js';
 // enforces it, so assigning must use INSERT ... ON CONFLICT, never check-then-insert.
 @Entity({ name: 'service_assignments' })
 @Unique('service_assignments_service_user_key', ['serviceId', 'userId'])
+@Index('service_assignments_one_taker_idx', ['serviceId', 'teamId'], {
+  unique: true,
+  where: '"is_absent_taker"',
+})
 export class ServiceAssignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -34,6 +39,10 @@ export class ServiceAssignment {
 
   @Column({ type: 'text', default: '' })
   notes: string;
+
+  // At most one per (service, team): enforced by the partial unique index
+  @Column({ name: 'is_absent_taker', type: 'boolean', default: false })
+  isAbsentTaker: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

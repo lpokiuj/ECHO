@@ -165,10 +165,11 @@ describe('Schedule views (e2e)', () => {
           title: 'Sunday',
           startsAt: service.startsAt.toISOString(),
           endsAt: service.endsAt.toISOString(),
+          unavailable: false,
           assignments: [
-            { userId: bob.id, name: 'Bob', teamId: music.id, teamName: 'Music', notes: '' },
-            { userId: zed.id, name: 'Zed', teamId: music.id, teamName: 'Music', notes: '' },
-            { userId: amy.id, name: 'Amy', teamId: sound.id, teamName: 'Sound', notes: '' },
+            { userId: bob.id, name: 'Bob', teamId: music.id, teamName: 'Music', notes: '', isAbsentTaker: false },
+            { userId: zed.id, name: 'Zed', teamId: music.id, teamName: 'Music', notes: '', isAbsentTaker: false },
+            { userId: amy.id, name: 'Amy', teamId: sound.id, teamName: 'Sound', notes: '', isAbsentTaker: false },
           ],
         },
       ]);
@@ -293,7 +294,7 @@ describe('Schedule views (e2e)', () => {
         .expect(200);
 
       expect(res.body[0].assignments).toEqual([
-        { userId: gone.id, name: 'Gone', teamId: team.id, teamName: team.name, notes: '' },
+        { userId: gone.id, name: 'Gone', teamId: team.id, teamName: team.name, notes: '', isAbsentTaker: false },
       ]);
     });
   });
@@ -340,6 +341,7 @@ describe('Schedule views (e2e)', () => {
           teamId: team.id,
           teamName: 'Music',
           notes: '',
+          unavailable: false,
         },
       ]);
       const json = JSON.stringify(res.body);

@@ -28,7 +28,7 @@ Create a team. Body `{ "name": string }`: trimmed, 1-100 chars.
 | 409 | Name already used | `{"message":"Team name already in use","error":"Conflict","statusCode":409}` |
 
 ## GET /teams
-**200** all teams ordered by name, no pagination.
+**200** all teams ordered by name, no pagination. Access: ADMIN and PEMBINA (read-only, for the attendance recap); everyone else 403.
 ```json
 [{"id":"a3ff8b91-dc3a-4175-af7b-1ac7c5b58bdb","name":"Multimedia"},{"id":"aba2c1ed-b318-467b-8388-e97b051dec22","name":"Music"}, ...]
 ```

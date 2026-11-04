@@ -25,6 +25,8 @@ export class TeamsController {
     return this.teams.create(dto.name);
   }
 
+  // PEMBINA may list teams (names only) to read the attendance recap
+  @Roles(UserRole.ADMIN, UserRole.PEMBINA)
   @Get()
   findAll() {
     return this.teams.findAll();
@@ -36,10 +38,7 @@ export class TeamsController {
   }
 
   @Patch(':id')
-  rename(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: TeamNameDto,
-  ) {
+  rename(@Param('id', ParseUUIDPipe) id: string, @Body() dto: TeamNameDto) {
     return this.teams.rename(id, dto.name);
   }
 

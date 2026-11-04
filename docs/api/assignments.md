@@ -31,10 +31,10 @@ Works for started/past services too (read only). Ordered by name.
 
 **200**
 ```json
-[{"userId":"aafeafcb-ef7f-4b60-bbcf-70d762f8ff28","name":"Enji","assigned":true},
- {"userId":"db93ae8c-9da7-4be1-bcc8-2c72c12033da","name":"Giana","assigned":false},
- {"userId":"f269b9ce-a215-46c8-a444-0aaced5232f9","name":"Livana","assigned":false},
- {"userId":"73fbd314-9793-4bf3-b217-4ab94b7be54f","name":"Lukas","assigned":false}]
+[{"userId":"aafeafcb-ef7f-4b60-bbcf-70d762f8ff28","name":"Enji","assigned":true,"unavailable":false},
+ {"userId":"db93ae8c-9da7-4be1-bcc8-2c72c12033da","name":"Giana","assigned":false,"unavailable":false},
+ {"userId":"f269b9ce-a215-46c8-a444-0aaced5232f9","name":"Livana","assigned":false,"unavailable":false},
+ {"userId":"73fbd314-9793-4bf3-b217-4ab94b7be54f","name":"Lukas","assigned":false,"unavailable":false}]
 ```
 
 | Field | Type | |
@@ -42,6 +42,7 @@ Works for started/past services too (read only). Ordered by name.
 | `userId` | uuid | |
 | `name` | string | no email |
 | `assigned` | boolean | already assigned by **this** team |
+| `unavailable` | boolean | the member marked this service unavailable; show but do not allow selecting. Assigning them is skipped with `UNAVAILABLE` |
 
 Errors: 400 (bad `:id`), 401, 403, `404 {"message":"Service not found",...}`, `404 {"message":"Team not found",...}` (ADMIN only).
 
@@ -86,7 +87,8 @@ Partial success (one free, one taken by another team):
 
 A person can be assigned to a service by only one team. The first successful assignment wins,
 decided by the database, so two leaders racing for the same person get exactly one winner. The
-rest of a batch still succeeds. `assigned` plus `skipped` lists every submitted id once, except in
+rest of a batch still succeeds. A user who marked the service unavailable is skipped too:
+`{"userId":"...","reason":"UNAVAILABLE"}` (no `heldByTeam`). `assigned` plus `skipped` lists every submitted id once, except in
 the rare case an assignment was removed between the insert and the lookup (that id then appears in
 neither list) **(code)**.
 
@@ -140,3 +142,4 @@ cannot.
 | 404 | Service or team unknown | `Service not found` / `Team not found` |
 | 404 | **This team** has no assignment for that user (includes: another team holds them; already removed) | `{"message":"Assignment not found","error":"Not Found","statusCode":404}` (names no team) |
 | 409 | Service already started | `SERVICE_ALREADY_STARTED`, same body as above (returned even if nothing was assigned) |
+| 409 | A recorded absence points at this assignment (see [attendance.md](attendance.md)) | `{"statusCode":409,"error":"Conflict","code":"HAS_ATTENDANCE_RECORDS","message":"..."}`; nothing is removed |
