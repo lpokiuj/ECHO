@@ -4,7 +4,18 @@ import { errorMessage } from '@/api/errors'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
+import type { TeamAbsenceRow } from '@/api/types'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -21,14 +32,76 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { formatDate } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
-import { useTeamAbsences } from './useAttendance'
+import { useMemberAbsences, useTeamAbsences } from './useAttendance'
 
 const t = messages.attendance.recap
 
 export interface TeamOption {
   teamId: string
   teamName: string
+}
+
+function DetailButton({ teamId, row }: { teamId: string; row: TeamAbsenceRow }) {
+  const [open, setOpen] = useState(false)
+  const q = useMemberAbsences(teamId, row.userId, open)
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="min-h-11"
+          aria-label={fillMessage(t.detailAria, { name: row.name })}
+        >
+          {t.detail}
+          <Badge variant="secondary">{row.count}</Badge>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="grid-rows-[auto_minmax(0,1fr)] overflow-hidden max-sm:max-h-[80dvh] sm:max-h-[calc(100dvh-4rem)] sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="break-words">
+            {fillMessage(t.detailTitle, { name: row.name })}
+          </DialogTitle>
+          <DialogDescription>{t.detailDescription}</DialogDescription>
+        </DialogHeader>
+        <div className="-mx-4 min-h-0 overflow-y-auto px-4" aria-live="polite">
+          {q.isPending ? (
+            <ListSkeleton rows={2} />
+          ) : q.data === undefined ? (
+            <ErrorState
+              title={t.detailError}
+              description={errorMessage(q.error)}
+              onRetry={() => void q.refetch()}
+              retrying={q.isRefetching}
+            />
+          ) : q.data.items.length === 0 ? (
+            <p className="text-muted-foreground">{t.detailEmpty}</p>
+          ) : (
+            <Table aria-label={fillMessage(t.detailTitle, { name: row.name })}>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t.detailColumns.service}</TableHead>
+                  <TableHead>{t.detailColumns.date}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {q.data.items.map((item) => (
+                  <TableRow key={item.serviceId}>
+                    <TableCell className="font-medium whitespace-normal">
+                      <span className="break-words">{item.title}</span>
+                    </TableCell>
+                    <TableCell className="whitespace-normal">{formatDate(item.startsAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 /** Per-member miss counts for a team the viewer leads (or any team for ADMIN). */
@@ -81,6 +154,7 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
                   <TableRow>
                     <TableHead>{t.columns.name}</TableHead>
                     <TableHead>{t.columns.count}</TableHead>
+                    <TableHead>{t.columns.detail}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -88,6 +162,9 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
                     <TableRow key={row.userId}>
                       <TableCell className="font-medium whitespace-normal">{row.name}</TableCell>
                       <TableCell>{fillMessage(t.countValue, { count: row.count })}</TableCell>
+                      <TableCell>
+                        <DetailButton teamId={teamId} row={row} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -101,9 +178,10 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
               {q.data.map((row) => (
                 <li key={row.userId}>
                   <Card>
-                    <CardContent className="flex items-center justify-between gap-3">
+                    <CardContent className="flex flex-wrap items-center justify-between gap-3">
                       <span className="min-w-0 font-medium break-words">{row.name}</span>
                       <span>{fillMessage(t.countValue, { count: row.count })}</span>
+                      <DetailButton teamId={teamId} row={row} />
                     </CardContent>
                   </Card>
                 </li>

@@ -266,6 +266,12 @@ export function getMyAbsences(): Promise<MyAbsences> {
   return request<MyAbsences>('/me/absences')
 }
 
+export function getMemberAbsences(teamId: string, userId: string): Promise<MyAbsences> {
+  return request<MyAbsences>(
+    `/teams/${encodeURIComponent(teamId)}/absences/${encodeURIComponent(userId)}`,
+  )
+}
+
 export function getTeamAbsences(teamId: string): Promise<TeamAbsenceRow[]> {
   return request<TeamAbsenceRow[]>(`/teams/${encodeURIComponent(teamId)}/absences`)
 }

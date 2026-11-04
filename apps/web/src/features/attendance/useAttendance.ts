@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   clearAbsence,
   designateAbsentTaker,
+  getMemberAbsences,
   getMyAbsences,
   getTeamAbsences,
   recordAbsence,
@@ -22,6 +23,15 @@ export function useTeamAbsences(teamId: string) {
     queryKey: teamAbsencesKey(teamId),
     queryFn: () => getTeamAbsences(teamId),
     enabled: teamId !== '',
+    retry: false,
+  })
+}
+
+export function useMemberAbsences(teamId: string, userId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['member-absences', teamId, userId],
+    queryFn: () => getMemberAbsences(teamId, userId),
+    enabled,
     retry: false,
   })
 }
@@ -54,6 +64,7 @@ export function useRecordAbsence(serviceId: string, teamId: string) {
       const refreshes = [
         client.invalidateQueries({ queryKey: MY_ABSENCES_KEY }),
         client.invalidateQueries({ queryKey: teamAbsencesKey(teamId) }),
+        client.invalidateQueries({ queryKey: ['member-absences', teamId] }),
       ]
       if (error) {
         const status = normalizeError(error).status

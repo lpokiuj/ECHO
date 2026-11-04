@@ -210,6 +210,23 @@ describe('team recap', () => {
     expect(within(screen.getByTestId('recap-cards')).getByText('Bob')).toBeInTheDocument()
   })
 
+  it('opens a detail dialog listing the services a member missed', async () => {
+    setup({ me: ME_BY_ROLE.leader })
+    server.use(
+      http.get('*/api/teams/:teamId/absences/:userId', () =>
+        HttpResponse.json(MY_ABSENCES_EXAMPLE),
+      ),
+    )
+    renderApp('/', { token: true })
+    const table = await screen.findByTestId('recap-table')
+    await userEvent.click(
+      within(table).getByRole('button', { name: fillMessage(t.recap.detailAria, { name: 'Amy' }) }),
+    )
+    const dialog = await screen.findByRole('dialog')
+    expect(await within(dialog).findByText('Sunday Service')).toBeInTheDocument()
+    expect(within(dialog).getByText(t.recap.detailColumns.date)).toBeInTheDocument()
+  })
+
   it('is no longer on the attendance page for a leader', async () => {
     setup({ me: ME_BY_ROLE.leader })
     await open()
