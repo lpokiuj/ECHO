@@ -22,6 +22,8 @@ export interface TeamAbsenceCountView {
   count: number;
 }
 
+export type MemberAbsencesView = MyAbsencesView;
+
 @Injectable()
 export class AttendanceService {
   constructor(
@@ -167,6 +169,24 @@ export class AttendanceService {
       name: r.name,
       count: Number(r.count),
     }));
+  }
+
+  // Services one active member of the team missed (all teams, deleted services included)
+  async memberAbsences(
+    teamId: string,
+    userId: string,
+  ): Promise<MemberAbsencesView> {
+    if (!(await this.teams.existsBy({ id: teamId }))) {
+      throw new NotFoundException('Team not found');
+    }
+    const member: unknown[] = await this.dataSource.query(
+      `SELECT 1 FROM team_members tm
+       JOIN users u ON u.id = tm.user_id AND u.is_active
+       WHERE tm.team_id = $1 AND tm.user_id = $2`,
+      [teamId, userId],
+    );
+    if (member.length === 0) throw new NotFoundException('Member not found');
+    return this.mine(userId);
   }
 
   // ADMIN, or the team's designated absent-taker for this service. Checked

@@ -65,4 +65,13 @@ export class AttendanceController {
   teamCounts(@Param('teamId', ParseUUIDPipe) teamId: string) {
     return this.attendance.teamCounts(teamId);
   }
+
+  @UseGuards(TeamRecapGuard)
+  @Get('teams/:teamId/absences/:userId')
+  memberAbsences(
+    @Param('teamId', ParseUUIDPipe) teamId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    return this.attendance.memberAbsences(teamId, userId);
+  }
 }

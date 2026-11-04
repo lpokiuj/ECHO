@@ -510,6 +510,34 @@ describe('Attendance (e2e)', () => {
         .expect(404);
     });
 
+    it('GET /teams/:teamId/absences/:userId lists the services a member missed', async () => {
+      const { admin, service, team, leader, taker, amy, bob } = await world();
+      await request(http())
+        .put(absencePath(service.id, team.id, amy.id))
+        .set(await headersFor(taker))
+        .expect(204);
+      const lh = await headersFor(leader);
+      const res = await request(http())
+        .get(`/teams/${team.id}/absences/${amy.id}`)
+        .set(lh)
+        .expect(200);
+      expect(res.body.count).toBe(1);
+      expect(res.body.items[0]).toMatchObject({ serviceId: service.id });
+      const none = await request(http())
+        .get(`/teams/${team.id}/absences/${bob.id}`)
+        .set(await headersFor(admin))
+        .expect(200);
+      expect(none.body).toEqual({ count: 0, items: [] });
+      await request(http())
+        .get(`/teams/${team.id}/absences/${amy.id}`)
+        .set(await headersFor(taker))
+        .expect(403);
+      await request(http())
+        .get(`/teams/${team.id}/absences/${UNKNOWN_ID}`)
+        .set(lh)
+        .expect(404);
+    });
+
     it("counts a member's absences from every team", async () => {
       const { admin, service, team, taker, amy } = await world();
       await request(http())

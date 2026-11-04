@@ -103,6 +103,7 @@ Attendance
 - `PUT /services/:id/teams/:teamId/absent-taker` (leader of that team, ADMIN)
 - `PUT/DELETE /services/:id/teams/:teamId/absences/:userId` (that team's absent-taker, ADMIN)
 - `GET /me/absences`, `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN)
+- `GET /teams/:teamId/absences/:userId` (same access): the services one active member of the team missed
 
 ## Frontend notes
 - Read `X-Access-Token` from every authenticated response and store it; it renews the
@@ -151,7 +152,7 @@ Attendance
 | Availability race | Assign (INSERT ... SELECT with `NOT EXISTS` unavailability) and PUT (INSERT with `NOT EXISTS` assignment) each run in a transaction that first takes `pg_advisory_xact_lock(hashtextextended('<service>:<user>', 0))` (sorted for batches). | `NOT EXISTS` alone is not race-free under READ COMMITTED; never both rows for (service, user) |
 | Absent-taker | One per team per service (`is_absent_taker`, partial unique index). Leader of the team or ADMIN designates with `PUT .../absent-taker {userId}` at any time; target must be assigned by that team (400 `INVALID_USERS`). Designation is serialized with an advisory lock and replaces the previous taker in one transaction. | Matches the confirmed spec; no two takers |
 | Recording absences | `PUT/DELETE .../absences/:userId` by the team's taker or ADMIN (403 otherwise, checked before the 404s; ADMIN can record for past services with no taker). 409 `SERVICE_NOT_STARTED` before `starts_at`. Target must be assigned by that team (400 `INVALID_USERS`). Taker cannot mark themselves (400 `CANNOT_MARK_SELF`). PUT/DELETE idempotent. | Only recorded absences count |
-| Miss counter | Derived: `COUNT(*)` over `service_absences`. `GET /me/absences` -> `{count, items:[{serviceId,title,startsAt}]}` newest first; `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN) -> `[{userId,name,count}]` for active members, counted across all teams. Soft-deleted services still count. | No stored counter, no drift |
+| Miss counter | Derived: `COUNT(*)` over `service_absences`. `GET /me/absences` -> `{count, items:[{serviceId,title,startsAt}]}` newest first; `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN) -> `[{userId,name,count}]` for active members, counted across all teams. Soft-deleted services still count. `GET /teams/:teamId/absences/:userId` -> same `{count, items}` shape as `/me/absences` for one active member of that team (404 otherwise); it backs the web recap Detail button. | No stored counter, no drift |
 | Absences vs unassign | The composite FK from `service_absences` to the assignment row is RESTRICT. Unassign and member removal that would delete such an assignment answer 409 `HAS_ATTENDANCE_RECORDS` and change nothing (reachable only if a started service is moved to the future). Unassigning a taker (pre-start) clears the role. | History is never silently erased |
 | Attendance check order | Path-uuid pipes (400) run first, then the taker/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
 

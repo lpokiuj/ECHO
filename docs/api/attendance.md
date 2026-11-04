@@ -12,6 +12,7 @@ rows. Only recorded absences count; if the taker never submits, nothing is count
 | `DELETE /services/:id/teams/:teamId/absences/:userId` | same | 204, idempotent |
 | `GET /me/absences` | any logged-in user | 200 `{count, items}` |
 | `GET /teams/:teamId/absences` | leader of `:teamId`, PEMBINA, ADMIN | 200 array |
+| `GET /teams/:teamId/absences/:userId` | leader of `:teamId`, PEMBINA, ADMIN | 200 `{count, items}` |
 
 ## PUT .../absent-taker
 Designates `userId` and, in one transaction, clears the previous taker of that team for the
@@ -52,6 +53,11 @@ Newest service first. Soft-deleted services **still count**.
 ```
 Active members of the team ordered by name, with their lifetime miss count across **all** teams.
 404 `Team not found` for ADMIN on an unknown team; 403 for any non-leader.
+
+## GET /teams/:teamId/absences/:userId
+Same shape and order as `GET /me/absences`, for one active member of the team (absences from
+**all** teams, soft-deleted services included). 404 `Team not found` (ADMIN, unknown team) or
+`Member not found` (not an active member of that team); 403 for any non-leader.
 
 ## Other effects
 - `GET /services` assignments carry `isAbsentTaker: boolean`.
