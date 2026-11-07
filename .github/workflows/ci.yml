@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, unit tests, API e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: echo
+          POSTGRES_PASSWORD: ci_password
+          # Tests run only against a database whose name ends in _test
+          POSTGRES_DB: echo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U echo -d echo_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # No .env files in CI (they are gitignored); the API reads process.env.
+      NODE_ENV: test
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: echo
+      DB_PASSWORD: ci_password
+      DB_NAME: echo_test
+      JWT_SECRET: ci-only-secret-at-least-32-characters-long
+      JWT_EXPIRES_IN: 15m
+      DEFAULT_USER_PASSWORD: ci-default-pass-123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: API lint
+        run: npm run lint -w @echo/api
+      - name: API unit tests
+        run: npm test -w @echo/api
+      - name: Migrate test database
+        run: npm run migration:run:test -w @echo/api
+      - name: API e2e tests
+        run: npm run test:e2e -w @echo/api
+      - name: Web check (typecheck, lint, unit tests)
+        run: npm run check -w @echo/web
+      - name: Build
+        run: npm run build
