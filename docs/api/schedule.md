@@ -74,7 +74,7 @@ Only the caller's own assignments.
 **200**
 ```json
 [
-  { "serviceId": "00adcf97-63e1-4dc6-a319-46fe3f93e922", "title": "KEEP 1", "startsAt": "2026-11-20T15:26:31.938Z", "endsAt": "2026-11-20T17:50:31.938Z", "teamId": "77256f56-93fc-46e9-b360-ca69f8b3263a", "teamName": "Sound", "notes": "", "isAbsentTaker": false }
+  { "serviceId": "00adcf97-63e1-4dc6-a319-46fe3f93e922", "title": "KEEP 1", "startsAt": "2026-11-20T15:26:31.938Z", "endsAt": "2026-11-20T17:50:31.938Z", "teamId": "77256f56-93fc-46e9-b360-ca69f8b3263a", "teamName": "Sound", "notes": "", "unavailable": false }
 ]
 ```
 
