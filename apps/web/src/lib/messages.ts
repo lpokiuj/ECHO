@@ -434,9 +434,9 @@ export const messages = {
       selectTeam: 'Pilih bidang',
       membersLabel: 'Relawan bidang',
       absentToggle: 'Tidak hadir',
+      presentToggle: 'Hadir',
       absentAria: 'Tandai {name} tidak hadir',
-      recordedNote:
-        'Penanda hanya menyimpan perubahan yang Anda buat di halaman ini. Catatan sebelumnya tidak ditampilkan di sini.',
+      statusErrorTitle: 'Catatan ketidakhadiran gagal dimuat',
       selfDisabled: 'Anda tidak dapat mencatat diri sendiri.',
       notStartedNotice: 'Pencatatan dibuka setelah kegiatan dimulai.',
       emptyTitle: 'Belum ada kegiatan untuk dicatat',

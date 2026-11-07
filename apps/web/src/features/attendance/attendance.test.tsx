@@ -50,18 +50,26 @@ beforeEach(() => {
 })
 afterEach(() => vi.useRealTimers())
 
-function setup(options: { me?: typeof ME; services?: unknown[]; mine?: () => Response } = {}) {
+function setup(
+  options: { me?: typeof ME; services?: unknown[]; mine?: () => Response; recorded?: string[] } = {},
+) {
   const calls: string[] = []
+  const recorded = new Set(options.recorded ?? [])
   server.use(
     handlers.me(undefined, options.me ?? ME),
     http.get('*/api/services', () => HttpResponse.json(options.services ?? SERVICES_EXAMPLE)),
     http.get('*/api/me/absences', () => options.mine?.() ?? HttpResponse.json(MY_ABSENCES_EXAMPLE)),
     http.get('*/api/teams/:teamId/absences', () => HttpResponse.json(TEAM_ABSENCES_EXAMPLE)),
+    http.get('*/api/services/:id/teams/:teamId/absences', () =>
+      HttpResponse.json({ userIds: [...recorded] }),
+    ),
     http.put('*/api/services/:id/teams/:teamId/absences/:userId', ({ params }) => {
+      recorded.add(String(params.userId))
       calls.push(`PUT ${String(params.userId)}`)
       return new HttpResponse(null, { status: 204 })
     }),
     http.delete('*/api/services/:id/teams/:teamId/absences/:userId', ({ params }) => {
+      recorded.delete(String(params.userId))
       calls.push(`DELETE ${String(params.userId)}`)
       return new HttpResponse(null, { status: 204 })
     }),
@@ -114,7 +122,27 @@ describe('recording absences', () => {
     await waitFor(() => expect(peer).not.toBeChecked())
     expect(calls).toEqual(['PUT peer-1', 'DELETE peer-1'])
     expect(toast.success).toHaveBeenCalledWith(fillMessage(t.record.recorded, { name: PEER.name }))
-    expect(screen.getByText(t.record.recordedNote)).toBeInTheDocument()
+  })
+
+  it('shows absences already recorded on the server after a reload', async () => {
+    setup({ services: [takerService()], recorded: [PEER.userId] })
+    await open()
+    const peer = await screen.findByRole('switch', {
+      name: fillMessage(t.record.absentAria, { name: PEER.name }),
+    })
+    expect(peer).toBeChecked()
+  })
+
+  it('shows an error with retry when the recorded absences cannot be read', async () => {
+    setup({ services: [takerService()] })
+    server.use(
+      http.get('*/api/services/:id/teams/:teamId/absences', () =>
+        HttpResponse.json(ERROR_BODIES.forbidden, { status: 403 }),
+      ),
+    )
+    await open()
+    expect(await screen.findByText(t.record.statusErrorTitle)).toBeInTheDocument()
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
   })
 
   it('shows a notice and disables the switches before the service starts', async () => {

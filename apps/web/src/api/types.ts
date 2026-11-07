@@ -205,6 +205,11 @@ export interface MyAbsences {
   items: { serviceId: string; title: string; startsAt: string }[]
 }
 
+/** GET /services/:id/teams/:teamId/absences (attendance.md): users already recorded absent. */
+export interface ServiceTeamAbsences {
+  userIds: string[]
+}
+
 /** GET /teams/:teamId/absences item (attendance.md). */
 export interface TeamAbsenceRow {
   userId: string

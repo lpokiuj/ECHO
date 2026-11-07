@@ -19,7 +19,7 @@ import { TakerPicker } from '@/features/assign/TakerPicker'
 import { useServices } from '@/features/schedule/useSchedule'
 import { formatDate, isFuture } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
-import { useRecordAbsence } from './useAttendance'
+import { useRecordAbsence, useServiceTeamAbsences } from './useAttendance'
 
 const t = messages.attendance.record
 
@@ -59,8 +59,8 @@ export function slotsFor(me: MeResponse, services: ServiceSchedule[]): Slot[] {
 
 function AbsenceRows({ slot, meId }: { slot: Slot; meId: string }) {
   const record = useRecordAbsence(slot.service.id, slot.teamId)
-  // Session-local: the API has no read of recorded absences for a service.
-  const [absent, setAbsent] = useState<ReadonlySet<string>>(new Set())
+  const recorded = useServiceTeamAbsences(slot.service.id, slot.teamId)
+  const absent = new Set(recorded.data?.userIds ?? [])
   const sending = useRef(false)
   const started = !isFuture(slot.service.startsAt)
   const members = slot.service.assignments.filter((a) => a.teamId === slot.teamId)
@@ -70,12 +70,6 @@ function AbsenceRows({ slot, meId }: { slot: Slot; meId: string }) {
     sending.current = true
     try {
       await record.mutateAsync({ userId, absent: next })
-      setAbsent((cur) => {
-        const set = new Set(cur)
-        if (next) set.add(userId)
-        else set.delete(userId)
-        return set
-      })
       toast.success(fillMessage(next ? t.recorded : t.cleared, { name }))
     } catch (error) {
       const e = normalizeError(error)
@@ -93,8 +87,16 @@ function AbsenceRows({ slot, meId }: { slot: Slot; meId: string }) {
           <p>{t.notStartedNotice}</p>
         </div>
       ) : null}
-      <p className="text-muted-foreground mb-3 text-base">{t.recordedNote}</p>
-      {members.length === 0 ? (
+      {recorded.isPending ? (
+        <ListSkeleton rows={members.length || 3} />
+      ) : recorded.data === undefined ? (
+        <ErrorState
+          title={t.statusErrorTitle}
+          description={errorMessage(recorded.error)}
+          onRetry={() => void recorded.refetch()}
+          retrying={recorded.isRefetching}
+        />
+      ) : members.length === 0 ? (
         <p className="text-muted-foreground">{t.noMembers}</p>
       ) : (
         <ul aria-label={t.membersLabel} className="flex flex-col divide-y rounded-lg border">
@@ -112,7 +114,7 @@ function AbsenceRows({ slot, meId }: { slot: Slot; meId: string }) {
                     htmlFor={id}
                     className="flex min-h-11 cursor-pointer items-center gap-3 text-base"
                   >
-                    {t.absentToggle}
+                    {absent.has(m.userId) ? t.absentToggle : t.presentToggle}
                     <Switch
                       id={id}
                       aria-label={fillMessage(t.absentAria, { name: m.name })}

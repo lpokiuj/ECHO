@@ -16,6 +16,7 @@ import type {
   User,
   MemberUpsertResult,
   MyAbsences,
+  ServiceTeamAbsences,
   MyScheduleItem,
   RemoveMemberResult,
   Service,
@@ -260,6 +261,13 @@ export function clearAbsence(serviceId: string, teamId: string, userId: string):
     `${serviceTeamPath(serviceId, teamId)}/absences/${encodeURIComponent(userId)}`,
     { method: 'DELETE' },
   )
+}
+
+export function getServiceTeamAbsences(
+  serviceId: string,
+  teamId: string,
+): Promise<ServiceTeamAbsences> {
+  return request<ServiceTeamAbsences>(`${serviceTeamPath(serviceId, teamId)}/absences`)
 }
 
 export function getMyAbsences(): Promise<MyAbsences> {

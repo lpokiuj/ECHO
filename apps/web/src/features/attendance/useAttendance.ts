@@ -4,6 +4,7 @@ import {
   designateAbsentTaker,
   getMemberAbsences,
   getMyAbsences,
+  getServiceTeamAbsences,
   getTeamAbsences,
   recordAbsence,
 } from '@/api/client'
@@ -13,6 +14,18 @@ import { SERVICES_KEY } from '@/features/schedule/useSchedule'
 
 export const MY_ABSENCES_KEY = ['my-absences'] as const
 export const teamAbsencesKey = (teamId: string) => ['team-absences', teamId] as const
+
+export const serviceTeamAbsencesKey = (serviceId: string, teamId: string) =>
+  ['service-team-absences', serviceId, teamId] as const
+
+/** Users the team already recorded absent for this service (taker, leader, ADMIN). */
+export function useServiceTeamAbsences(serviceId: string, teamId: string) {
+  return useQuery({
+    queryKey: serviceTeamAbsencesKey(serviceId, teamId),
+    queryFn: () => getServiceTeamAbsences(serviceId, teamId),
+    retry: false,
+  })
+}
 
 export function useMyAbsences() {
   return useQuery({ queryKey: MY_ABSENCES_KEY, queryFn: getMyAbsences, retry: false })
@@ -62,6 +75,7 @@ export function useRecordAbsence(serviceId: string, teamId: string) {
       absent ? recordAbsence(serviceId, teamId, userId) : clearAbsence(serviceId, teamId, userId),
     onSettled: (_data, error) => {
       const refreshes = [
+        client.invalidateQueries({ queryKey: serviceTeamAbsencesKey(serviceId, teamId) }),
         client.invalidateQueries({ queryKey: MY_ABSENCES_KEY }),
         client.invalidateQueries({ queryKey: teamAbsencesKey(teamId) }),
         client.invalidateQueries({ queryKey: ['member-absences', teamId] }),

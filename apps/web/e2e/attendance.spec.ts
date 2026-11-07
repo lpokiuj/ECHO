@@ -98,6 +98,8 @@ test('leader designates the taker, the taker records an absence after the start'
   }).toPass({ timeout: 120_000, intervals: [5_000] })
   await peerSwitch.click()
   await expect(peerSwitch).toBeChecked()
+  await tk.page.reload()
+  await expect(peerSwitch).toBeChecked()
 
   // The peer sees one absence; the leader's recap shows the count.
   const p = await session(browser, s.peer)
