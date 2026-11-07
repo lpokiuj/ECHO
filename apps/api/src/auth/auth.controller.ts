@@ -1,4 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { LoginThrottlerGuard } from './login-throttler.guard.js';
 import { AuthService } from './auth.service.js';
 import { AllowPasswordChange } from './decorators/allow-password-change.js';
 import { CurrentUser } from './decorators/current-user.js';
@@ -12,6 +13,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Public()
+  @UseGuards(LoginThrottlerGuard)
   @Post('auth/login')
   @HttpCode(200)
   login(@Body() dto: LoginDto) {

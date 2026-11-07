@@ -106,6 +106,61 @@ describe('Auth (e2e)', () => {
       expect(bodies[1]).toEqual(bodies[0]);
       expect(bodies[2]).toEqual(bodies[0]);
     });
+
+    it('matches the email ignoring case', async () => {
+      const user = await createUser({ email: 'mixed@echo.test' });
+      await request(http())
+        .post('/auth/login')
+        .send({ email: 'Mixed@Echo.TEST', password: PASSWORD })
+        .expect(200);
+      expect(user.email).toBe('mixed@echo.test');
+    });
+
+    it('sends security headers (helmet)', async () => {
+      const res = await request(http()).get('/health').expect(200);
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-powered-by']).toBeUndefined();
+    });
+  });
+
+  describe('startup config and login rate limit', () => {
+    const saved = { ...process.env };
+    afterEach(() => {
+      process.env.JWT_SECRET = saved.JWT_SECRET;
+      process.env.LOGIN_RATE_LIMIT = saved.LOGIN_RATE_LIMIT;
+    });
+
+    it('refuses to start with a JWT_SECRET under 32 characters', async () => {
+      process.env.JWT_SECRET = 'too-short-secret';
+      await expect(
+        Test.createTestingModule({ imports: [AppModule] }).compile(),
+      ).rejects.toThrow(/JWT_SECRET must be at least 32 characters/);
+    });
+
+    it('answers 429 after the limit, per email, and only on login', async () => {
+      process.env.LOGIN_RATE_LIMIT = '3';
+      const ref = await Test.createTestingModule({
+        imports: [AppModule],
+      }).compile();
+      const limited = ref.createNestApplication();
+      configureApp(limited);
+      await limited.init();
+      try {
+        const server = limited.getHttpServer();
+        const attempt = (email: string) =>
+          request(server)
+            .post('/auth/login')
+            .send({ email, password: 'wrong-password' });
+        for (let i = 0; i < 3; i++) await attempt('a@echo.test').expect(401);
+        await attempt('a@echo.test').expect(429);
+        // Case variants share the bucket; another email does not
+        await attempt('A@ECHO.test').expect(429);
+        await attempt('b@echo.test').expect(401);
+        await request(server).get('/health').expect(200);
+      } finally {
+        await limited.close();
+      }
+    });
   });
 
   describe('access control', () => {

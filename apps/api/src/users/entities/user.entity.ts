@@ -1,4 +1,5 @@
 import {
+  Check,
   Column,
   CreateDateColumn,
   Entity,
@@ -11,6 +12,8 @@ export enum UserRole {
   MEMBER = 'MEMBER',
 }
 
+// With the unique constraint on email, this makes emails unique ignoring case
+@Check('users_email_lowercase_chk', '"email" = lower("email")')
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')

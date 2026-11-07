@@ -140,6 +140,36 @@ describe('Users (e2e)', () => {
       expect(res.body.role).toBe(UserRole.PEMBINA);
     });
 
+    it('stores the email in lowercase and rejects a case variant with 409', async () => {
+      const { token } = await adminToken();
+      const res = await request(http())
+        .post('/users')
+        .set(bearer(token))
+        .send({ name: 'Case', email: 'Case.Person@Echo.test' })
+        .expect(201);
+      expect(res.body.email).toBe('case.person@echo.test');
+      await request(http())
+        .post('/users')
+        .set(bearer(token))
+        .send({ name: 'Case 2', email: 'CASE.PERSON@echo.test' })
+        .expect(409);
+      await loginWith('Case.Person@ECHO.test', defaultPassword).expect(200);
+    });
+
+    it('lowercases the email on update and the database refuses uppercase', async () => {
+      const { token } = await adminToken();
+      const user = await createUser();
+      const res = await request(http())
+        .patch(`/users/${user.id}`)
+        .set(bearer(token))
+        .send({ email: 'New.Name@Echo.test' })
+        .expect(200);
+      expect(res.body.email).toBe('new.name@echo.test');
+      await expect(
+        dataSource.query(`UPDATE users SET email = 'UP@echo.test' WHERE id = $1`, [user.id]),
+      ).rejects.toThrow(/users_email_lowercase_chk/);
+    });
+
     it('409 on duplicate email', async () => {
       const { token } = await adminToken();
       const existing = await createUser();

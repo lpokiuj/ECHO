@@ -24,6 +24,8 @@ export default defineConfig({
           globalSetup: ['./test/global-setup.ts'],
           // All e2e files share one database, so they must not run in parallel
           fileParallelism: false,
+          // Most files log in many times from one IP; the throttle test sets its own limit
+          env: { LOGIN_RATE_LIMIT: '100000' },
         },
       },
     ],

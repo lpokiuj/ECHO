@@ -139,7 +139,7 @@ other teams stay.
 11. **Unknown properties are silently ignored** (a typo in a field name does not fail).
 12. **`PUT /teams/:id/members/:userId` without `isLeader` sets it to `false`.**
 13. **Names are not trimmed** on users; titles and team names are.
-14. Login email matching is case-sensitive; `Authorization` scheme must be exactly `Bearer`.
+14. Login email matching is case-insensitive (emails are stored lowercase); `Authorization` scheme must be exactly `Bearer`.
 15. Tokens are not revoked: a password change or reset does not log out other devices.
 16. `GET /services` items have `id`; `GET /me/schedule` items have `serviceId`.
 17. Deleting users or teams is not possible; deactivate users instead.

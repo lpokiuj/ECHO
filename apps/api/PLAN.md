@@ -121,6 +121,8 @@ Attendance
 | Schema changes | Migrations only (details in CLAUDE.md) | Reproducible, reviewable |
 | Auth | JWT carries the user id only. The auth guard loads the user from the DB on every request and checks `is_active`, `role`, and `must_change_password`. Lifetime from env `JWT_EXPIRES_IN`, default `15m`, renewed on every request via the `X-Access-Token` response header (sliding idle timeout). No refresh tokens in v1. | Role, deactivation, and leadership changes take effect immediately |
 | Passwords | Hashed (bcrypt). Minimum 8 characters. Admin creates accounts with a temp password, `must_change_password = true`. Admin resets. | No email service in v1 |
+| Login hardening | `POST /auth/login` is rate limited with `@nestjs/throttler`: 5 attempts per 15 minutes per IP and email (env `LOGIN_RATE_LIMIT`, e2e sets a high value), then 429. `helmet` defaults on every response. `JWT_SECRET` must be 32+ characters or the app refuses to start. Password minimum stays 8. The per-user temp password idea is deferred. | The API is exposed through a public tunnel |
+| Email case | Emails are stored lowercase (trimmed and lowercased in the service on create, update and login). Migration `LowercaseEmails` lowercases existing rows and adds CHECK `email = lower(email)`; with the unique constraint this makes emails unique ignoring case (a `lower(email)` index cannot be expressed in the entity, so it would show as schema drift). | `Michael@x.com` and `michael@x.com` were separate accounts |
 | IDs | uuid | No guessable ids |
 | Databases | Two databases on one Postgres container: `echo_dev` and `echo_test` (rules in CLAUDE.md) | Tests wipe data, which must never touch dev data |
 | Lists | No pagination in v1 | Small organization |
@@ -164,7 +166,7 @@ Attendance
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
 - Frontend, public site
 - Service notes (a notes field on services)
-- Login rate limiting and brute-force lockout
+- Account lockout and a global (non-login) rate limit
 - Token revocation: changing a password does not log out other devices, and a leaked
   token works until it expires (15 minutes after last use)
 
@@ -175,16 +177,16 @@ None at the moment.
 Acceptance criteria for each feature are added to ../../docs/features/NN-*.md before its session
 starts. If a feature has none, ask the user for them before implementing.
 
-1. Scaffold (done). Criteria: ../../docs/features/01-scaffold.md
-2. Entities + seed (done). Criteria: ../../docs/features/02-entities-seed.md
-3. Auth (done). Criteria: ../../docs/features/03-auth.md
-4. User management (done). Criteria: ../../docs/features/04-users.md
-5. Teams + membership + leader flag (done). Criteria: ../../docs/features/05-teams.md
-6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: ../../docs/features/06-services.md
-7. Assignments (done). Criteria: ../../docs/features/07-assignments.md
-8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: ../../docs/features/08-schedule-views.md
-9. Availability (done). Criteria: ../../docs/features/09-availability.md
-10. Attendance (done). Criteria: ../../docs/features/10-attendance.md
+1. Scaffold (done). Criteria: ../../docs/archive/features/01-scaffold.md
+2. Entities + seed (done). Criteria: ../../docs/archive/features/02-entities-seed.md
+3. Auth (done). Criteria: ../../docs/archive/features/03-auth.md
+4. User management (done). Criteria: ../../docs/archive/features/04-users.md
+5. Teams + membership + leader flag (done). Criteria: ../../docs/archive/features/05-teams.md
+6. Services CRUD with soft delete (ADMIN, PEMBINA) (done). Criteria: ../../docs/archive/features/06-services.md
+7. Assignments (done). Criteria: ../../docs/archive/features/07-assignments.md
+8. Schedule views: `/me/schedule`, `/services`, `/teams/:id/members` (ADMIN only) (done). Criteria: ../../docs/archive/features/08-schedule-views.md
+9. Availability (done). Criteria: ../../docs/archive/features/09-availability.md
+10. Attendance (done). Criteria: ../../docs/archive/features/10-attendance.md
 
 ## Status
 - [x] 1. Scaffold

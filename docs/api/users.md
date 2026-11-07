@@ -11,7 +11,7 @@ Returned by `POST /users`, `GET /users`, `PATCH /users/:id`. The password hash i
 |---|---|---|
 | `id` | uuid | |
 | `name` | string | |
-| `email` | string | unique |
+| `email` | string | unique, case-insensitive; always returned in lowercase |
 | `role` | `ADMIN` \| `PEMBINA` \| `MEMBER` | |
 | `mustChangePassword` | boolean | `true` for new and reset accounts |
 | `isActive` | boolean | `false` = cannot log in; existing tokens get 401 immediately |

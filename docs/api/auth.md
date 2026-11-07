@@ -10,7 +10,7 @@ Exchange email + password for an access token.
 
 | Field | Type | Required | Rules |
 |---|---|---|---|
-| `email` | string | yes | valid email; **case-sensitive match** (`ADMIN@echo.local` fails for `admin@echo.local`) |
+| `email` | string | yes | valid email; **case-insensitive match** (`ADMIN@echo.local` logs in as `admin@echo.local`) |
 | `password` | string | yes | length >= 1 |
 
 - **Success:** `200`. No `X-Access-Token` header on this response; use `accessToken` from the body.
@@ -23,6 +23,7 @@ Exchange email + password for an access token.
 |---|---|---|
 | 400 | Missing/invalid fields | `{"message":["email must be an email","password must be longer than or equal to 1 characters"],"error":"Bad Request","statusCode":400}` |
 | 400 | Malformed JSON | see README |
+| 429 | Too many attempts: more than 5 (`LOGIN_RATE_LIMIT`) on the same email from the same IP within 15 minutes. Wait 15 minutes from the first attempt | `{"statusCode":429,"message":"ThrottlerException: Too Many Requests"}` (plus a `Retry-After` header) |
 | 401 | Unknown email, wrong password, **or deactivated user** (indistinguishable on purpose) | `{"message":"Unauthorized","statusCode":401}` |
 
 Login succeeds even when `mustChangePassword` is true; call `GET /me` next to find out.

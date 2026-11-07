@@ -12,6 +12,7 @@ import { TeamMember } from '../teams/entities/team-member.entity.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { User, UserRole } from './entities/user.entity.js';
+import { normalizeEmail } from './normalize-email.js';
 
 const UNIQUE_VIOLATION = '23505';
 
@@ -35,7 +36,7 @@ export class UsersService {
     try {
       const { id } = await this.users.save({
         name: dto.name,
-        email: dto.email,
+        email: normalizeEmail(dto.email),
         role: dto.role ?? UserRole.MEMBER,
         passwordHash: await bcrypt.hash(this.defaultPassword, 10),
         mustChangePassword: true,
@@ -75,7 +76,13 @@ export class UsersService {
     }
     try {
       const hasChanges = Object.values(dto).some((v) => v !== undefined);
-      if (hasChanges) await this.users.update(id, dto);
+      if (hasChanges) {
+        const { email, ...rest } = dto;
+        await this.users.update(id, {
+          ...rest,
+          ...(email !== undefined && { email: normalizeEmail(email) }),
+        });
+      }
     } catch (err) {
       throw this.mapError(err);
     }

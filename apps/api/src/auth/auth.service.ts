@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { TeamMember } from '../teams/entities/team-member.entity.js';
 import { User } from '../users/entities/user.entity.js';
+import { normalizeEmail } from '../users/normalize-email.js';
 
 // Compared against when the email is unknown, so timing does not reveal it
 const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', 10);
@@ -29,7 +30,7 @@ export class AuthService {
     const user = await this.users
       .createQueryBuilder('u')
       .addSelect('u.passwordHash')
-      .where('u.email = :email', { email })
+      .where('u.email = :email', { email: normalizeEmail(email) })
       .getOne();
     const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
     if (!user || !ok || !user.isActive) throw new UnauthorizedException();

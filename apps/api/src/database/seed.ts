@@ -9,7 +9,7 @@ assertSeedAllowed(process.env);
 await dataSource.initialize();
 try {
   await runSeed(dataSource, SEED_DATA, {
-    adminEmail: process.env.ADMIN_EMAIL!,
+    adminEmail: process.env.ADMIN_EMAIL!.trim().toLowerCase(),
     adminPassword: process.env.ADMIN_PASSWORD!,
     userPassword: process.env.SEED_USER_PASSWORD ?? 'password123',
   });
