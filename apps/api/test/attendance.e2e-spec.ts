@@ -415,6 +415,95 @@ describe('Attendance (e2e)', () => {
     });
   });
 
+  describe('recorded absences for a service and team', () => {
+    const readPath = (s: string, t: string) =>
+      `/services/${s}/teams/${t}/absences`;
+
+    it('returns the recorded user ids to the taker, the leader and ADMIN', async () => {
+      const { admin, service, team, leader, taker, amy, bob } = await world();
+      const h = await headersFor(taker);
+      await request(http())
+        .put(absencePath(service.id, team.id, amy.id))
+        .set(h)
+        .expect(204);
+      for (const u of [taker, leader, admin]) {
+        const res = await request(http())
+          .get(readPath(service.id, team.id))
+          .set(await headersFor(u))
+          .expect(200);
+        expect(res.body).toEqual({ userIds: [amy.id] });
+      }
+      await request(http())
+        .put(absencePath(service.id, team.id, bob.id))
+        .set(h)
+        .expect(204);
+      const res = await request(http())
+        .get(readPath(service.id, team.id))
+        .set(h)
+        .expect(200);
+      expect(new Set<string>(res.body.userIds)).toEqual(new Set([amy.id, bob.id]));
+    });
+
+    it('returns an empty list when nothing is recorded, and works before the start', async () => {
+      const { service, team, taker } = await world(2 * DAY);
+      const res = await request(http())
+        .get(readPath(service.id, team.id))
+        .set(await headersFor(taker))
+        .expect(200);
+      expect(res.body).toEqual({ userIds: [] });
+    });
+
+    it("only lists that team's absences", async () => {
+      const { admin, service, team, taker } = await world();
+      const teamB = await createTeam('Team B');
+      const leaderB = await createUser();
+      await addMember(teamB, leaderB, true);
+      const other = await createUser();
+      await addMember(teamB, other);
+      await insertAssignment(service, other, teamB, leaderB);
+      await dataSource.getRepository(ServiceAbsence).save({
+        serviceId: service.id,
+        userId: other.id,
+        teamId: teamB.id,
+        recordedBy: admin.id,
+      });
+      const res = await request(http())
+        .get(readPath(service.id, team.id))
+        .set(await headersFor(taker))
+        .expect(200);
+      expect(res.body).toEqual({ userIds: [] });
+    });
+
+    it('403 for everyone else: members, PEMBINA, another team, no token is 401', async () => {
+      const { service, team, amy } = await world();
+      const pembina = await createUser({ role: UserRole.PEMBINA });
+      const teamB = await createTeam('Team B');
+      const leaderB = await createUser();
+      await addMember(teamB, leaderB, true);
+      for (const u of [amy, pembina, leaderB]) {
+        await request(http())
+          .get(readPath(service.id, team.id))
+          .set(await headersFor(u))
+          .expect(403);
+      }
+      await request(http()).get(readPath(service.id, team.id)).expect(401);
+    });
+
+    it('400 for a malformed id; 404 for an unknown or soft-deleted service, unknown team (ADMIN)', async () => {
+      const { admin, service, team } = await world();
+      const h = await headersFor(admin);
+      await request(http()).get(readPath('nope', team.id)).set(h).expect(400);
+      await request(http()).get(readPath(service.id, 'nope')).set(h).expect(400);
+      await request(http()).get(readPath(UNKNOWN_ID, team.id)).set(h).expect(404);
+      await request(http())
+        .get(readPath(service.id, UNKNOWN_ID))
+        .set(h)
+        .expect(404);
+      await dataSource.getRepository(Service).softDelete(service.id);
+      await request(http()).get(readPath(service.id, team.id)).set(h).expect(404);
+    });
+  });
+
   describe('counts', () => {
     it('GET /me/absences derives the count, newest first, including deleted services', async () => {
       const { admin, service, team, leader, taker, amy } = await world();

@@ -55,6 +55,15 @@ export class AttendanceController {
     return this.attendance.remove(user, id, teamId, userId);
   }
 
+  @Get('services/:id/teams/:teamId/absences')
+  forServiceTeam(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('teamId', ParseUUIDPipe) teamId: string,
+  ) {
+    return this.attendance.forServiceTeam(user, id, teamId);
+  }
+
   @Get('me/absences')
   mine(@CurrentUser() user: User) {
     return this.attendance.mine(user.id);

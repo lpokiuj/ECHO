@@ -10,6 +10,7 @@ rows. Only recorded absences count; if the taker never submits, nothing is count
 | `PUT /services/:id/teams/:teamId/absent-taker` body `{"userId"}` | leader of `:teamId`, ADMIN | 204 |
 | `PUT /services/:id/teams/:teamId/absences/:userId` | that team's absent-taker, ADMIN | 204, idempotent |
 | `DELETE /services/:id/teams/:teamId/absences/:userId` | same | 204, idempotent |
+| `GET /services/:id/teams/:teamId/absences` | that team's absent-taker, leader of `:teamId`, ADMIN | 200 `{userIds}` |
 | `GET /me/absences` | any logged-in user | 200 `{count, items}` |
 | `GET /teams/:teamId/absences` | leader of `:teamId`, PEMBINA, ADMIN | 200 array |
 | `GET /teams/:teamId/absences/:userId` | leader of `:teamId`, PEMBINA, ADMIN | 200 `{count, items}` |
@@ -40,6 +41,15 @@ Concurrent designations are serialized: there is never more than one taker per t
 
 Check order: 401, malformed uuid 400 (pipes), 403, 404, `CANNOT_MARK_SELF` 400, 409, then
 `INVALID_USERS` 400 (decided by the database write).
+
+## GET /services/:id/teams/:teamId/absences
+```json
+{"userIds":["..."]}
+```
+The user ids with an absence recorded by `:teamId` for this service (empty array if none), so the
+taker screen can show them after a reload. Works before or after the service starts. 403 for anyone
+who is not the team's taker, the team's leader or ADMIN (PEMBINA included); 404 for an unknown or
+soft-deleted service, or an unknown team (ADMIN). Check order: 401, malformed uuid 400, 403, 404.
 
 ## GET /me/absences
 ```json

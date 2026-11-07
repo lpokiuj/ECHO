@@ -10,6 +10,3 @@ Open requests only. Delete an item once the API ships it.
 
 ## Server-side pagination (later)
 - Every list endpoint returns the whole collection and the web app paginates client-side (10 per page). If lists grow large, server pagination (page/limit plus a total) will be needed on `GET /users`, `/teams`, `/teams/:id/members`, `/services` and `/me/schedule`. Not needed now.
-
-## Attendance read for the taker screen (feature 12, web)
-- The taker cannot see which absences are already recorded for a service: only `GET /me/absences` and `GET /teams/:teamId/absences` (counts) exist. After a reload the Kehadiran switches start off even if absences were recorded; the web keeps them session-local and says so. Request: `GET /services/:id/teams/:teamId/absences` returning the recorded user ids (taker, leader and ADMIN). Priority: medium.

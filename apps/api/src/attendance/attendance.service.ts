@@ -22,6 +22,10 @@ export interface TeamAbsenceCountView {
   count: number;
 }
 
+export interface ServiceTeamAbsencesView {
+  userIds: string[];
+}
+
 export type MemberAbsencesView = MyAbsencesView;
 
 @Injectable()
@@ -128,6 +132,24 @@ export class AttendanceService {
     if (assigned.length === 0) this.throwNotAssigned(userId);
   }
 
+  // Absences already recorded for one service by one team, so the taker screen
+  // can show them after a reload. Leader of the team, its taker, or ADMIN.
+  async forServiceTeam(
+    caller: User,
+    serviceId: string,
+    teamId: string,
+  ): Promise<ServiceTeamAbsencesView> {
+    await this.assertCanRead(caller, serviceId, teamId);
+    await this.loadService(serviceId, teamId);
+    const rows: { user_id: string }[] = await this.dataSource.query(
+      `SELECT user_id FROM service_absences
+       WHERE service_id = $1 AND team_id = $2
+       ORDER BY user_id`,
+      [serviceId, teamId],
+    );
+    return { userIds: rows.map((r) => r.user_id) };
+  }
+
   // Soft-deleted services still count: an absence really happened
   async mine(userId: string): Promise<MyAbsencesView> {
     const rows: { service_id: string; title: string; starts_at: Date }[] =
@@ -200,6 +222,26 @@ export class AttendanceService {
     const rows: unknown[] = await this.dataSource.query(
       `SELECT 1 FROM service_assignments
        WHERE service_id = $1 AND team_id = $2 AND user_id = $3 AND is_absent_taker`,
+      [serviceId, teamId, caller.id],
+    );
+    if (rows.length === 0) throw new ForbiddenException();
+  }
+
+  // Same idea as assertCanRecord, but the team's leader may also read
+  private async assertCanRead(
+    caller: User,
+    serviceId: string,
+    teamId: string,
+  ): Promise<void> {
+    if (caller.role === UserRole.ADMIN) return;
+    const rows: unknown[] = await this.dataSource.query(
+      `SELECT 1 WHERE EXISTS (
+         SELECT 1 FROM team_members
+         WHERE team_id = $2 AND user_id = $3 AND is_leader
+       ) OR EXISTS (
+         SELECT 1 FROM service_assignments
+         WHERE service_id = $1 AND team_id = $2 AND user_id = $3 AND is_absent_taker
+       )`,
       [serviceId, teamId, caller.id],
     );
     if (rows.length === 0) throw new ForbiddenException();
