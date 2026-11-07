@@ -1,7 +1,6 @@
 # Echo Volunteer Portal: Frontend PLAN.md (auto version)
 
 Directory: `apps/web`. Built by Claude with minimal human involvement.
-A separate learning version lives in `apps/web-learn`. Never copy code between them.
 
 ## Goal
 
@@ -208,8 +207,8 @@ Every UI feature (2 to 9, 11, 12) must also pass, in Playwright at 360px, 390px,
 - [x] 8. Admin users
 - [x] 9. Admin teams and membership
 - [x] 10. Hardening
-- [ ] 11. Availability
-- [ ] 12. Attendance
+- [x] 11. Availability
+- [x] 12. Attendance
 
 ## Notes for later features (orchestrator, feature 2)
 

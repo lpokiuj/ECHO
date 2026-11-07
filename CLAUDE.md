@@ -22,9 +22,10 @@ CLAUDE.md and PLAN.md. Read the ones for the app you work in before any task.
 ## Where docs live
 - `docs/api/`: API contract, the source of truth for the frontend. Update it in the same
   commit as any endpoint change.
-- `docs/features/`: API feature specs and acceptance criteria (`NN-*.md`)
+- `docs/features/`: specs and acceptance criteria for features not built yet (`NN-*.md`)
+- `docs/audit-2026-11-07.md`: project audit with prioritized fixes and feature ideas
 - `docs/backend-requests.md`: open requests from web to API
-- `docs/archive/`: finished build logs (web DECISIONS, RUN_LOG, FINAL_REPORT); do not edit
+- `docs/archive/`: finished build logs (web DECISIONS, RUN_LOG, FINAL_REPORT) and the finished API feature specs (`archive/features/01-10`); do not edit
 - `docs/README.md` indexes all of it
 
 ## Gotchas

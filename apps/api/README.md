@@ -32,4 +32,4 @@ npm run start:dev
 
 - [docs/api/README.md](../../docs/api/README.md): API guide for frontend developers
 - [CLAUDE.md](CLAUDE.md): conventions and commands
-- [PLAN.md](PLAN.md), [docs/features/](../../docs/features/): design and feature specs
+- [PLAN.md](PLAN.md), [docs/archive/features/](../../docs/archive/features/): finished feature specs
