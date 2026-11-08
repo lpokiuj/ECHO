@@ -77,6 +77,7 @@ export const messages = {
     myDescription: 'Kegiatan pelayanan yang menjadi tugas Anda.',
     includePast: 'Tampilkan kegiatan yang sudah lewat',
     ended: 'Selesai',
+    assignedBadge: 'Anda bertugas',
     noAssignees: 'Belum ada petugas',
     detail: 'Detail',
     detailDescription: 'Relawan yang bertugas pada kegiatan ini, per bidang.',

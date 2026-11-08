@@ -410,3 +410,53 @@ describe('availability toggle', () => {
     expect(within(dialog).getByText(av.assignedNote)).toBeInTheDocument()
   })
 })
+
+describe('assigned badge', () => {
+  const me = ME_BY_ROLE.member
+  const withMe = (index: number) =>
+    SERVICES_EXAMPLE.map((s, i) =>
+      i === index
+        ? { ...s, assignments: [...s.assignments, { ...s.assignments[0]!, userId: me.id }] }
+        : s,
+    )
+  const rowOf = (title: string) => within(table()).getByRole('row', { name: new RegExp(title) })
+  const cardOf = (title: string) =>
+    within(cards()).getByRole('heading', { name: title }).closest('li')!
+
+  it('shows the badge on an assigned service in the table and the cards', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(withMe(1))))
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    expect(within(rowOf('KEEP 1')).getByText(t.assignedBadge)).toBeInTheDocument()
+    expect(within(cardOf('KEEP 1')).getByText(t.assignedBadge)).toBeInTheDocument()
+  })
+
+  it('does not show the badge on a service the caller is not assigned to', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(withMe(1))))
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    await userEvent.click(screen.getByRole('switch', { name: t.includePast }))
+    await within(table()).findByText('Sunday Service')
+    expect(within(rowOf('Sunday Service')).queryByText(t.assignedBadge)).toBeNull()
+    expect(within(cardOf('Sunday Service')).queryByText(t.assignedBadge)).toBeNull()
+  })
+
+  it('shows no badge at all when the caller is in no assignment', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(SERVICES_EXAMPLE)))
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    expect(screen.queryByText(t.assignedBadge)).toBeNull()
+  })
+
+  it('shows the badge together with Selesai on an ended assigned service', async () => {
+    server.use(http.get('*/api/services', () => HttpResponse.json(withMe(0))))
+    renderApp('/schedule', { token: true })
+    await screen.findByTestId('schedule-table')
+    await userEvent.click(screen.getByRole('switch', { name: t.includePast }))
+    await within(table()).findByText('Sunday Service')
+    for (const scope of [rowOf('Sunday Service'), cardOf('Sunday Service')]) {
+      expect(within(scope).getByText(t.assignedBadge)).toBeInTheDocument()
+      expect(within(scope).getByText(t.ended)).toBeInTheDocument()
+    }
+  })
+})

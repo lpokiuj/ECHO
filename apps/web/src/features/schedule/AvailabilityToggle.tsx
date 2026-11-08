@@ -3,10 +3,10 @@ import { toast } from 'sonner'
 import { errorMessage, normalizeError } from '@/api/errors'
 import type { ServiceSchedule } from '@/api/types'
 import { Switch } from '@/components/ui/switch'
-import { useMe } from '@/features/auth/useMe'
 import { isFuture } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
 import { useSetAvailability } from './useAvailability'
+import { useIsAssigned } from './useIsAssigned'
 
 const t = messages.availability
 
@@ -15,10 +15,9 @@ const t = messages.availability
  * when the caller is already assigned (the server would answer 409 either way).
  */
 export function AvailabilityToggle({ service }: { service: ServiceSchedule }) {
-  const me = useMe()
   const mutation = useSetAvailability(service.id)
   const sending = useRef(false)
-  const assigned = service.assignments.some((a) => a.userId === me.data?.id)
+  const assigned = useIsAssigned(service)
 
   if (!isFuture(service.startsAt)) return null
   if (assigned) return <p className="text-muted-foreground text-base">{t.assignedNote}</p>

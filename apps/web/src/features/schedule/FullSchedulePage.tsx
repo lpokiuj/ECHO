@@ -33,6 +33,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { formatDate, formatTimeRange, hasEnded, isFuture } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
 import { IncludePastToggle } from './IncludePastToggle'
+import { useIsAssigned } from './useIsAssigned'
 import { ScheduleBody } from './ScheduleBody'
 import { useServices } from './useSchedule'
 
@@ -245,6 +246,16 @@ function EndedBadge({ service }: { service: ServiceSchedule }) {
   return service.unavailable ? <Badge variant="warning">{messages.availability.badge}</Badge> : null
 }
 
+function StatusBadges({ service }: { service: ServiceSchedule }) {
+  const assigned = useIsAssigned(service)
+  return (
+    <>
+      {assigned ? <Badge variant="success">{t.assignedBadge}</Badge> : null}
+      <EndedBadge service={service} />
+    </>
+  )
+}
+
 function ServiceTable({ services }: { services: ServiceSchedule[] }) {
   return (
     <div className="hidden md:block" data-testid="schedule-table">
@@ -261,7 +272,7 @@ function ServiceTable({ services }: { services: ServiceSchedule[] }) {
           {services.map((s) => (
             <TableRow key={s.id}>
               <TableCell className="align-top font-medium whitespace-normal">
-                <span className="break-words">{s.title}</span> <EndedBadge service={s} />
+                <span className="break-words">{s.title}</span> <StatusBadges service={s} />
               </TableCell>
               <TableCell className="align-top">{formatDate(s.startsAt)}</TableCell>
               <TableCell className="align-top">{formatTimeRange(s.startsAt, s.endsAt)}</TableCell>
@@ -287,7 +298,7 @@ function ServiceCards({ services }: { services: ServiceSchedule[] }) {
         <li key={s.id}>
           <ListCard
             title={<h2 className="text-lg font-semibold break-words">{s.title}</h2>}
-            badges={<EndedBadge service={s} />}
+            badges={<StatusBadges service={s} />}
             meta={<MetaDateTime startsAt={s.startsAt} endsAt={s.endsAt} />}
             actions={<DetailButton service={s} />}
           />
