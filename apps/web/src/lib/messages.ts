@@ -444,7 +444,7 @@ export const messages = {
       notStartedNotice: 'Pencatatan dibuka setelah kegiatan dimulai.',
       emptyTitle: 'Belum ada kegiatan untuk dicatat',
       emptyDescription:
-        'Kegiatan yang sudah dimulai dan Anda tunjuk sebagai petugas absensi akan muncul di sini.',
+        'Kegiatan bidang yang Anda pimpin, atau tempat Anda menjadi petugas absensi, akan muncul di sini.',
       noMembers: 'Belum ada relawan dari bidang ini pada kegiatan tersebut.',
       recorded: '{name} dicatat tidak hadir.',
       cleared: 'Catatan ketidakhadiran {name} dihapus.',

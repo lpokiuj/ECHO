@@ -13,6 +13,8 @@ import {
   handlers,
 } from '@/test/handlers'
 import { renderApp } from '@/test/render'
+import type { MeResponse } from '@/api/types'
+import { slotsFor } from './RecordAbsences'
 import { server } from '@/test/setup'
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }))
@@ -51,7 +53,12 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 function setup(
-  options: { me?: typeof ME; services?: unknown[]; mine?: () => Response; recorded?: string[] } = {},
+  options: {
+    me?: typeof ME
+    services?: unknown[]
+    mine?: () => Response
+    recorded?: string[]
+  } = {},
 ) {
   const calls: string[] = []
   const recorded = new Set(options.recorded ?? [])
@@ -223,6 +230,92 @@ describe('recording absences', () => {
     await userEvent.click(await screen.findByRole('option', { name: PEER.name }))
     await userEvent.click(screen.getByRole('button', { name: messages.assign.taker.save }))
     await waitFor(() => expect(bodies).toEqual([{ userId: PEER.userId }]))
+  })
+})
+
+describe('leader recording', () => {
+  const LEADER = ME_BY_ROLE.leader as typeof ME
+  const OTHER = {
+    ...PEER,
+    userId: 'other-1',
+    name: 'Other Satu',
+    teamId: 'other-team',
+    teamName: 'Other',
+  }
+  const PEER_NOT_TAKER = { ...PEER, isAbsentTaker: false }
+  const led = (base = STARTED) => ({ ...base, assignments: [PEER_NOT_TAKER] })
+  const peerSwitch = () =>
+    screen.findByRole('switch', { name: fillMessage(t.record.absentAria, { name: PEER.name }) })
+
+  it('lets a leader who is not assigned record an absence on their team service', async () => {
+    const calls = setup({ me: LEADER, services: [led()] })
+    await open()
+    const peer = await peerSwitch()
+    await userEvent.click(peer)
+    await waitFor(() => expect(peer).toBeChecked())
+    expect(calls).toEqual(['PUT peer-1'])
+  })
+
+  it('shows the notice and disabled switches to a leader on a service not started yet', async () => {
+    setup({ me: LEADER, services: [led(UPCOMING)] })
+    await open()
+    expect(await screen.findByText(t.record.notStartedNotice)).toBeInTheDocument()
+    expect(await peerSwitch()).toBeDisabled()
+  })
+
+  it('does not list services of teams the leader does not lead', async () => {
+    setup({ me: LEADER, services: [{ ...STARTED, assignments: [OTHER] }] })
+    await open()
+    expect(await screen.findByText(t.record.emptyTitle)).toBeInTheDocument()
+  })
+
+  it('lists only the led team when a service has several teams', async () => {
+    setup({ me: LEADER, services: [{ ...STARTED, assignments: [PEER_NOT_TAKER, OTHER] }] })
+    await open()
+    await peerSwitch()
+    await userEvent.click(screen.getByRole('combobox', { name: t.record.serviceLabel }))
+    const options = await screen.findAllByRole('option')
+    expect(options).toHaveLength(1)
+    expect(options[0]).toHaveTextContent(TEAM.teamName)
+  })
+
+  it('gives a leader who is also the taker a single slot', async () => {
+    setup({ me: LEADER, services: [takerService()] })
+    await open()
+    await peerSwitch()
+    await userEvent.click(screen.getByRole('combobox', { name: t.record.serviceLabel }))
+    expect(await screen.findAllByRole('option')).toHaveLength(1)
+  })
+
+  it('does not let an assigned leader mark themselves', async () => {
+    setup({ me: LEADER, services: [takerService()] })
+    await open()
+    await peerSwitch()
+    expect(
+      screen.getByRole('switch', { name: fillMessage(t.record.absentAria, { name: SELF.name }) }),
+    ).toBeDisabled()
+  })
+})
+
+describe('slotsFor', () => {
+  const svc = (assignments: unknown[]) => ({ ...STARTED, assignments }) as typeof STARTED
+  const notTaker = { ...PEER, isAbsentTaker: false }
+  const other = { ...PEER, userId: 'o', teamId: 'other-team', teamName: 'Other' }
+
+  it('gives a leader the led teams only, once per service and team', () => {
+    const me = ME_BY_ROLE.leader as MeResponse
+    const slots = slotsFor(me, [svc([notTaker, { ...notTaker, userId: 'p2' }, other])] as never)
+    expect(slots.map((s) => s.teamId)).toEqual([TEAM.teamId])
+  })
+  it('does not duplicate a leader who is also the taker', () => {
+    const me = { ...(ME_BY_ROLE.leader as MeResponse), id: ME.id }
+    expect(slotsFor(me, [svc([{ ...SELF }, notTaker])] as never)).toHaveLength(1)
+  })
+  it('gives a plain non-taker member nothing and ADMIN every team', () => {
+    expect(slotsFor(ME as MeResponse, [svc([notTaker, other])] as never)).toHaveLength(0)
+    expect(
+      slotsFor(ME_BY_ROLE.admin as MeResponse, [svc([notTaker, other])] as never),
+    ).toHaveLength(2)
   })
 })
 

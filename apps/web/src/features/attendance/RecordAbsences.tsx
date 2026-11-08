@@ -32,11 +32,13 @@ interface Slot {
 }
 
 /**
- * The (service, team) pairs this person can act on. A taker sees the teams where they are the
- * taker; ADMIN sees every team that has someone assigned.
+ * The (service, team) pairs this person can act on: teams where they are the absent-taker, teams
+ * they lead (even when not assigned to the service), and, for ADMIN, every team that has someone
+ * assigned.
  */
 export function slotsFor(me: MeResponse, services: ServiceSchedule[]): Slot[] {
   const slots: Slot[] = []
+  const ledTeams = new Set(me.memberships.filter((m) => m.isLeader).map((m) => m.teamId))
   for (const service of services) {
     const seen = new Set<string>()
     for (const a of service.assignments) {
@@ -44,7 +46,7 @@ export function slotsFor(me: MeResponse, services: ServiceSchedule[]): Slot[] {
       const mine = service.assignments.some(
         (x) => x.teamId === a.teamId && x.userId === me.id && x.isAbsentTaker,
       )
-      if (me.role === 'ADMIN' || mine) {
+      if (me.role === 'ADMIN' || mine || ledTeams.has(a.teamId)) {
         seen.add(a.teamId)
         slots.push({
           key: `${service.id}:${a.teamId}`,
