@@ -6,6 +6,7 @@ import type { MeResponse, ServiceSchedule } from '@/api/types'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
+import { Section } from '@/components/Section'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -99,14 +100,14 @@ function AbsenceRows({ slot, meId }: { slot: Slot; meId: string }) {
       ) : members.length === 0 ? (
         <p className="text-muted-foreground">{t.noMembers}</p>
       ) : (
-        <ul aria-label={t.membersLabel} className="flex flex-col divide-y rounded-lg border">
+        <ul aria-label={t.membersLabel} className="flex flex-col divide-y">
           {members.map((m) => {
             const self = m.userId === meId
             const id = `absent-${m.userId}`
             return (
               <li
                 key={m.userId}
-                className="flex flex-col items-start gap-1 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span className="min-w-0 pt-3 font-medium break-words sm:py-3">{m.name}</span>
                 <div className="flex flex-col items-start sm:items-end">
@@ -146,11 +147,7 @@ export function RecordAbsences({ me }: { me: MeResponse }) {
   const members = slot ? slot.service.assignments.filter((a) => a.teamId === slot.teamId) : []
 
   return (
-    <section aria-labelledby="att-record" className="mb-10">
-      <h2 id="att-record" className="text-xl font-semibold">
-        {t.title}
-      </h2>
-      <p className="text-muted-foreground mt-1 mb-4 text-base">{t.description}</p>
+    <Section id="att-record" title={t.title} description={t.description} className="mb-6">
       <div aria-live="polite">
         {services.isPending ? (
           <ListSkeleton rows={3} />
@@ -190,6 +187,7 @@ export function RecordAbsences({ me }: { me: MeResponse }) {
                 serviceId={slot.service.id}
                 teamId={slot.teamId}
                 idPrefix="record"
+                headingLevel={3}
                 members={members.map((m) => ({ userId: m.userId, name: m.name }))}
                 currentId={members.find((m) => m.isAbsentTaker)?.userId}
               />
@@ -197,6 +195,6 @@ export function RecordAbsences({ me }: { me: MeResponse }) {
           </>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

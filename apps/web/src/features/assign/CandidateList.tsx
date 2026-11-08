@@ -1,7 +1,6 @@
 import type { Candidate } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -121,7 +120,7 @@ export function CandidateList({ candidates, ...rest }: CandidateListProps) {
   return (
     <>
       <div className="hidden md:block" data-testid="candidates-table">
-        <Table aria-label={t.candidatesLabel}>
+        <Table flush aria-label={t.candidatesLabel}>
           <TableHeader>
             <TableRow>
               <TableHead>{t.columns.name}</TableHead>
@@ -147,21 +146,20 @@ export function CandidateList({ candidates, ...rest }: CandidateListProps) {
         </Table>
       </div>
       <ul
-        className="flex flex-col gap-3 md:hidden"
+        className="flex flex-col divide-y md:hidden"
         aria-label={t.candidatesLabel}
         data-testid="candidates-cards"
       >
         {candidates.map((candidate) => (
-          <li key={candidate.userId}>
-            <Card>
-              <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 font-medium">
-                  <NameCell candidate={candidate} {...rest} />
-                  <Status candidate={candidate} />
-                </div>
-                <UnassignButton candidate={candidate} {...rest} />
-              </CardContent>
-            </Card>
+          <li
+            key={candidate.userId}
+            className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+          >
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-2 font-medium">
+              <NameCell candidate={candidate} {...rest} />
+              <Status candidate={candidate} />
+            </div>
+            <UnassignButton candidate={candidate} {...rest} />
           </li>
         ))}
       </ul>

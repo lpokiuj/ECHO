@@ -4,10 +4,10 @@ import { errorMessage } from '@/api/errors'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
+import { Section } from '@/components/Section'
 import type { TeamAbsenceRow } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -110,11 +110,7 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
   const teamId = teams.find((x) => x.teamId === picked)?.teamId ?? teams[0]?.teamId ?? ''
   const q = useTeamAbsences(teamId)
   return (
-    <section aria-labelledby="att-recap" className="mb-10">
-      <h2 id="att-recap" className="text-xl font-semibold">
-        {t.title}
-      </h2>
-      <p className="text-muted-foreground mt-1 mb-4 text-base">{t.description}</p>
+    <Section id="att-recap" title={t.title} description={t.description}>
       {teams.length > 1 ? (
         <div className="mb-4 flex max-w-sm flex-col gap-2">
           <Label htmlFor="recap-team">{t.teamLabel}</Label>
@@ -149,7 +145,7 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
         ) : (
           <>
             <div className="hidden md:block" data-testid="recap-table">
-              <Table aria-label={t.listLabel}>
+              <Table flush aria-label={t.listLabel}>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t.columns.name}</TableHead>
@@ -171,25 +167,24 @@ export function TeamRecap({ teams }: { teams: TeamOption[] }) {
               </Table>
             </div>
             <ul
-              className="flex flex-col gap-3 md:hidden"
+              className="flex flex-col divide-y md:hidden"
               aria-label={t.listLabel}
               data-testid="recap-cards"
             >
               {q.data.map((row) => (
-                <li key={row.userId}>
-                  <Card>
-                    <CardContent className="flex flex-wrap items-center justify-between gap-3">
-                      <span className="min-w-0 font-medium break-words">{row.name}</span>
-                      <span>{fillMessage(t.countValue, { count: row.count })}</span>
-                      <DetailButton teamId={teamId} row={row} />
-                    </CardContent>
-                  </Card>
+                <li
+                  key={row.userId}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 first:pt-0 last:pb-0"
+                >
+                  <span className="min-w-0 font-medium break-words">{row.name}</span>
+                  <span>{fillMessage(t.countValue, { count: row.count })}</span>
+                  <DetailButton teamId={teamId} row={row} />
                 </li>
               ))}
             </ul>
           </>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

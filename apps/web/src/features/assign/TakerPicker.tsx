@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { errorMessage, normalizeError } from '@/api/errors'
+import { Section } from '@/components/Section'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -29,10 +30,19 @@ interface TakerPickerProps {
   /** userId of the current taker, if any. */
   currentId?: string
   idPrefix: string
+  /** Heading level; 3 when nested in another Section. */
+  headingLevel?: 2 | 3
 }
 
 /** Leader or ADMIN picks the one absent-taker of a team for a service. Allowed before and after the start. */
-export function TakerPicker({ serviceId, teamId, members, currentId, idPrefix }: TakerPickerProps) {
+export function TakerPicker({
+  serviceId,
+  teamId,
+  members,
+  currentId,
+  idPrefix,
+  headingLevel = 2,
+}: TakerPickerProps) {
   const designate = useDesignateTaker(serviceId, teamId)
   const [choice, setChoice] = useState<string | undefined>()
   const sending = useRef(false)
@@ -59,12 +69,18 @@ export function TakerPicker({ serviceId, teamId, members, currentId, idPrefix }:
   }
 
   return (
-    <section className="mt-6 rounded-lg border p-4" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="text-lg font-semibold">
-        {t.title}
-      </h2>
-      <p className="text-muted-foreground mt-1 text-base">{t.description}</p>
-      <p className="mt-3 flex flex-wrap items-center gap-2" aria-live="polite">
+    <Section
+      id={`${id}-title`}
+      title={t.title}
+      description={t.description}
+      headingLevel={headingLevel}
+      className={
+        headingLevel === 2
+          ? 'mt-6'
+          : 'mt-6 rounded-none border-0 border-t bg-transparent p-0 pt-6 sm:p-0 sm:pt-6'
+      }
+    >
+      <p className="flex flex-wrap items-center gap-2" aria-live="polite">
         {current ? (
           <>
             <Badge variant="secondary">{t.badge}</Badge>
@@ -101,6 +117,6 @@ export function TakerPicker({ serviceId, teamId, members, currentId, idPrefix }:
           {t.save}
         </Button>
       </div>
-    </section>
+    </Section>
   )
 }

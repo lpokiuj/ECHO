@@ -32,4 +32,16 @@ describe('PlaceholderPage', () => {
       '/schedule',
     )
   })
+
+  it('keeps the tile link name to the title and describes it with the description', async () => {
+    server.use(handlers.me())
+    renderApp('/', { token: true })
+    const links = await screen.findByRole('navigation', { name: messages.placeholder.linksLabel })
+    expect(
+      within(links).getByRole('link', { name: messages.nav.mySchedule }),
+    ).toHaveAccessibleDescription(messages.placeholder.mineDescription)
+    expect(
+      within(links).getByRole('link', { name: messages.nav.fullSchedule }),
+    ).toHaveAccessibleDescription(messages.placeholder.fullDescription)
+  })
 })

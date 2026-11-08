@@ -10,6 +10,8 @@ export const messages = {
     description: 'Selamat datang. Lihat jadwal pelayanan Echo di sini.',
     greeting: 'Halo,',
     linksLabel: 'Buka jadwal',
+    mineDescription: 'Pelayanan yang ditugaskan kepada Anda.',
+    fullDescription: 'Semua kegiatan pelayanan Echo.',
   },
   auth: {
     loginTitle: 'Masuk',

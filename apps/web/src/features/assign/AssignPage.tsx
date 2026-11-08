@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
 import { PageHeader } from '@/components/PageHeader'
+import { Section } from '@/components/Section'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
@@ -133,63 +134,65 @@ function Workspace({ service, team }: WorkspaceProps) {
   }
 
   return (
-    <div>
-      {started ? (
-        <div
-          id={noticeId}
-          role="note"
-          className="bg-muted text-foreground mb-4 flex items-start gap-3 rounded-lg border p-4"
-        >
-          <InfoIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-          <p>{t.startedNotice}</p>
+    <>
+      <Section>
+        {started ? (
+          <div
+            id={noticeId}
+            role="note"
+            className="bg-muted text-foreground mb-4 flex items-start gap-3 rounded-lg border p-4"
+          >
+            <InfoIcon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+            <p>{t.startedNotice}</p>
+          </div>
+        ) : null}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-muted-foreground" aria-live="polite">
+            {fillMessage(t.selectedCount, { count: ids.length })}
+          </p>
+          <Button
+            className="max-sm:w-full"
+            disabled={locked || ids.length === 0}
+            loading={assign.isPending}
+            aria-describedby={started ? noticeId : undefined}
+            onClick={() => void submit()}
+          >
+            {ids.length > 0
+              ? fillMessage(t.assignActionCount, { count: ids.length })
+              : t.assignAction}
+          </Button>
         </div>
-      ) : null}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted-foreground" aria-live="polite">
-          {fillMessage(t.selectedCount, { count: ids.length })}
-        </p>
-        <Button
-          className="max-sm:w-full"
-          disabled={locked || ids.length === 0}
-          loading={assign.isPending}
-          aria-describedby={started ? noticeId : undefined}
-          onClick={() => void submit()}
-        >
-          {ids.length > 0
-            ? fillMessage(t.assignActionCount, { count: ids.length })
-            : t.assignAction}
-        </Button>
-      </div>
-      {outcome ? <ResultPanel outcome={outcome} onDismiss={() => setOutcome(undefined)} /> : null}
-      <div aria-live="polite">
-        {candidates.isPending ? (
-          <ListSkeleton rows={4} />
-        ) : candidates.data === undefined ? (
-          <ErrorState
-            title={t.loadErrorTitle}
-            description={
-              candidates.isError ? errorMessage(candidates.error) : t.loadErrorDescription
-            }
-            onRetry={() => void candidates.refetch()}
-            retrying={candidates.isRefetching}
-          />
-        ) : list.length === 0 ? (
-          <EmptyState icon={UsersIcon} title={t.emptyTitle} description={t.emptyDescription} />
-        ) : (
-          <CandidateList
-            candidates={list}
-            selected={selected}
-            notes={notes}
-            onNoteChange={(userId, value) =>
-              setNotes((current) => ({ ...current, [userId]: value }))
-            }
-            locked={locked}
-            lockReasonId={started ? noticeId : undefined}
-            onToggle={onToggle}
-            onUnassign={setRemoving}
-          />
-        )}
-      </div>
+        {outcome ? <ResultPanel outcome={outcome} onDismiss={() => setOutcome(undefined)} /> : null}
+        <div aria-live="polite">
+          {candidates.isPending ? (
+            <ListSkeleton rows={4} />
+          ) : candidates.data === undefined ? (
+            <ErrorState
+              title={t.loadErrorTitle}
+              description={
+                candidates.isError ? errorMessage(candidates.error) : t.loadErrorDescription
+              }
+              onRetry={() => void candidates.refetch()}
+              retrying={candidates.isRefetching}
+            />
+          ) : list.length === 0 ? (
+            <EmptyState icon={UsersIcon} title={t.emptyTitle} description={t.emptyDescription} />
+          ) : (
+            <CandidateList
+              candidates={list}
+              selected={selected}
+              notes={notes}
+              onNoteChange={(userId, value) =>
+                setNotes((current) => ({ ...current, [userId]: value }))
+              }
+              locked={locked}
+              lockReasonId={started ? noticeId : undefined}
+              onToggle={onToggle}
+              onUnassign={setRemoving}
+            />
+          )}
+        </div>
+      </Section>
       {list.some((c) => c.assigned) ? (
         <TakerPicker
           serviceId={service.id}
@@ -221,7 +224,7 @@ function Workspace({ service, team }: WorkspaceProps) {
         pending={unassign.isPending}
         onConfirm={() => void confirmUnassign()}
       />
-    </div>
+    </>
   )
 }
 
@@ -275,48 +278,53 @@ export function AssignPage() {
         />
       ) : (
         <>
-          <div className="mb-6 grid gap-4 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-2">
-              <Label htmlFor="assign-service">{t.serviceLabel}</Label>
-              <Select value={service.id} onValueChange={(v) => choose('service', v)}>
-                <SelectTrigger
-                  id="assign-service"
-                  className="h-auto min-h-11 w-full py-2 text-left whitespace-normal *:data-[slot=select-value]:line-clamp-2"
-                >
-                  <SelectValue placeholder={t.selectService} />
-                </SelectTrigger>
-                <SelectContent>
-                  {list.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.title}, {formatDate(s.startsAt)}
-                      {hasStarted(s) ? ` (${t.startedBadge})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex min-w-0 flex-col gap-2">
-              <Label htmlFor="assign-team">{t.teamLabel}</Label>
-              {teams.length === 1 ? (
-                <p id="assign-team" className="flex min-h-11 items-center font-medium break-words">
-                  {team.teamName}
-                </p>
-              ) : (
-                <Select value={team.teamId} onValueChange={(v) => choose('team', v)}>
-                  <SelectTrigger id="assign-team" className="w-full">
-                    <SelectValue placeholder={t.selectTeam} />
+          <Section className="mb-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex min-w-0 flex-col gap-2">
+                <Label htmlFor="assign-service">{t.serviceLabel}</Label>
+                <Select value={service.id} onValueChange={(v) => choose('service', v)}>
+                  <SelectTrigger
+                    id="assign-service"
+                    className="h-auto min-h-11 w-full py-2 text-left whitespace-normal *:data-[slot=select-value]:line-clamp-2"
+                  >
+                    <SelectValue placeholder={t.selectService} />
                   </SelectTrigger>
                   <SelectContent>
-                    {teams.map((x) => (
-                      <SelectItem key={x.teamId} value={x.teamId}>
-                        {x.teamName}
+                    {list.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.title}, {formatDate(s.startsAt)}
+                        {hasStarted(s) ? ` (${t.startedBadge})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
+              <div className="flex min-w-0 flex-col gap-2">
+                <Label htmlFor="assign-team">{t.teamLabel}</Label>
+                {teams.length === 1 ? (
+                  <p
+                    id="assign-team"
+                    className="flex min-h-11 items-center font-medium break-words"
+                  >
+                    {team.teamName}
+                  </p>
+                ) : (
+                  <Select value={team.teamId} onValueChange={(v) => choose('team', v)}>
+                    <SelectTrigger id="assign-team" className="w-full">
+                      <SelectValue placeholder={t.selectTeam} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map((x) => (
+                        <SelectItem key={x.teamId} value={x.teamId}>
+                          {x.teamName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
-          </div>
+          </Section>
           <Workspace key={`${service.id}:${team.teamId}`} service={service} team={team} />
         </>
       )}

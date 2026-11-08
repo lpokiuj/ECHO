@@ -3,6 +3,7 @@ import { errorMessage } from '@/api/errors'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
+import { Section } from '@/components/Section'
 import { Badge } from '@/components/ui/badge'
 import { formatDate } from '@/lib/dates'
 import { fillMessage, messages } from '@/lib/messages'
@@ -14,15 +15,18 @@ const t = messages.attendance.mine
 export function MyAbsencesCard() {
   const q = useMyAbsences()
   return (
-    <section aria-labelledby="att-mine" className="mb-10">
-      <h2 id="att-mine" className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold">
-        {t.title}
-        {q.data ? (
+    <Section
+      id="att-mine"
+      title={t.title}
+      action={
+        q.data ? (
           <Badge variant="info" data-testid="my-absence-count">
             {fillMessage(t.count, { count: q.data.count })}
           </Badge>
-        ) : null}
-      </h2>
+        ) : undefined
+      }
+      className="mb-6"
+    >
       <div aria-live="polite">
         {q.isPending ? (
           <ListSkeleton rows={2} />
@@ -40,11 +44,11 @@ export function MyAbsencesCard() {
             description={t.emptyDescription}
           />
         ) : (
-          <ul aria-label={t.listLabel} className="flex flex-col divide-y rounded-lg border">
+          <ul aria-label={t.listLabel} className="flex flex-col divide-y">
             {q.data.items.map((item) => (
               <li
                 key={item.serviceId}
-                className="flex min-h-11 flex-wrap items-center justify-between gap-2 px-4 py-3"
+                className="flex min-h-11 flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0"
               >
                 <span className="min-w-0 font-medium break-words">{item.title}</span>
                 <span className="text-muted-foreground">{formatDate(item.startsAt)}</span>
@@ -53,6 +57,6 @@ export function MyAbsencesCard() {
           </ul>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

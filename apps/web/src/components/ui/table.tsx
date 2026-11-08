@@ -3,11 +3,19 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-function Table({ className, ...props }: React.ComponentProps<'table'>) {
+function Table({
+  className,
+  flush = false,
+  ...props
+}: React.ComponentProps<'table'> & { flush?: boolean }) {
   return (
     <div
       data-slot="table-container"
-      className="bg-card relative w-full overflow-x-auto rounded-lg border"
+      className={cn(
+        'relative w-full overflow-x-auto rounded-lg',
+        // Inside a Section the Section is the surface, so the table drops its own border.
+        flush ? 'border-0' : 'bg-card border',
+      )}
     >
       <table
         data-slot="table"

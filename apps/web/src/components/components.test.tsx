@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { InboxIcon } from 'lucide-react'
 import { useState } from 'react'
@@ -7,6 +7,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
 import { ListCard, MetaDateTime } from '@/components/ListCard'
+import { Section } from '@/components/Section'
 import { PageHeader } from '@/components/PageHeader'
 import { RoleBadge } from '@/components/RoleBadge'
 import { initialsOf, UserAvatar } from '@/components/UserAvatar'
@@ -211,5 +212,42 @@ describe('ListCard', () => {
   it('omits the meta and actions rows when none are given', () => {
     render(<ListCard title="Judul" />)
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+})
+
+describe('Section', () => {
+  it('is a labelled region with title, description and action', () => {
+    render(
+      <Section id="sec" title="Judul" description="Satu baris." action={<Button>Aksi</Button>}>
+        <p>Isi</p>
+      </Section>,
+    )
+    const region = screen.getByRole('region', { name: 'Judul' })
+    expect(within(region).getByRole('heading', { level: 2, name: 'Judul' })).toHaveAttribute(
+      'id',
+      'sec',
+    )
+    expect(screen.getByText('Satu baris.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Aksi' })).toBeInTheDocument()
+    expect(screen.getByText('Isi')).toBeInTheDocument()
+  })
+
+  it('renders the requested heading level', () => {
+    render(
+      <Section title="Sub" headingLevel={3}>
+        <p>Isi</p>
+      </Section>,
+    )
+    expect(screen.getByRole('heading', { level: 3, name: 'Sub' })).toBeInTheDocument()
+  })
+
+  it('renders a plain div, not a region, without a title', () => {
+    render(
+      <Section>
+        <p>Isi</p>
+      </Section>,
+    )
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
+    expect(screen.getByText('Isi')).toBeInTheDocument()
   })
 })
