@@ -16,8 +16,8 @@ import { User } from '../users/entities/user.entity.js';
 import { AttendanceService } from './attendance.service.js';
 import { SetAbsentTakerDto } from './dto/set-absent-taker.dto.js';
 
-// Authorization differs per route: the leader (or ADMIN) designates the taker,
-// the taker (or ADMIN) records absences; the service checks the latter.
+// Authorization differs per route: the leader (or ADMIN) designates the taker;
+// the taker, the leader or ADMIN records absences (checked in the service).
 @Controller()
 export class AttendanceController {
   constructor(private readonly attendance: AttendanceService) {}

@@ -41,10 +41,10 @@ selectable; a batch containing one returns it in `skipped` with `reason: "UNAVAI
 
 ## 3c. Attendance
 Leader: `PUT /services/{id}/teams/{teamId}/absent-taker {userId}` (pick from the assigned
-candidates). Taker, after start: `PUT` / `DELETE .../absences/{userId}` per absent volunteer
+candidates). Taker or leader of that team, after start: `PUT` / `DELETE .../absences/{userId}` per absent volunteer
 (`SERVICE_NOT_STARTED` before). Member: `GET /me/absences` for `{count, items}`. Leader/ADMIN:
-`GET /teams/{teamId}/absences` for each member's miss count. ADMIN can record for any past
-service. See [attendance.md](attendance.md).
+`GET /teams/{teamId}/absences` for each member's miss count. Leaders and ADMIN can record for any past
+service, with or without a taker. See [attendance.md](attendance.md).
 
 ## 4. Leader assign screen
 Inputs: a service (from `GET /services`) and a team where `/me` says `isLeader: true`.

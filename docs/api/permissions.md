@@ -68,10 +68,10 @@ the next call is 403 even with the same token.
 | `PUT/DELETE /services/:id/unavailability` | 401 | ok (self) | ok (self) | ok (self) | ok (self) |
 | `GET /me/unavailability`, `GET /me/absences` | 401 | ok | ok | ok | ok |
 | `PUT /services/:id/teams/:teamId/absent-taker` | 401 | 403 | leader of that team only | 403 | ok |
-| `PUT/DELETE .../teams/:teamId/absences/:userId` | 401 | taker of that team only, else 403 | taker only (a leader who is not the taker gets 403) | 403 | ok |
+| `PUT/DELETE .../teams/:teamId/absences/:userId` | 401 | taker of that team only, else 403 | taker or leader of that team (assigned or not) | 403 | ok |
 | `GET /teams/:teamId/absences` | 401 | 403 | leader of that team only | ok (any team) | ok |
 
-Same unknown-team rule as above for the leader routes (non-admin 403, ADMIN 404). The taker check
+Same unknown-team rule as above for the leader routes (non-admin 403, ADMIN 404). The taker/leader check
 for the absence routes is done in the service after path-uuid validation, before the 404s.
 That makes 8 new routes: 30 in total.
 

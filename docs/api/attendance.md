@@ -1,14 +1,14 @@
 # Attendance (absent-taker and miss counter)
 
 For each service, each team leader (or ADMIN) designates ONE volunteer assigned by that team as the
-**absent-taker**. After the service has started, the taker (or ADMIN) records which of the team's
+**absent-taker**. After the service has started, the taker, the team leader or ADMIN records which of the team's
 volunteers did not attend. A member's miss count is **derived**: the number of recorded absence
 rows. Only recorded absences count; if the taker never submits, nothing is counted.
 
 | Route | Who | Result |
 |---|---|---|
 | `PUT /services/:id/teams/:teamId/absent-taker` body `{"userId"}` | leader of `:teamId`, ADMIN | 204 |
-| `PUT /services/:id/teams/:teamId/absences/:userId` | that team's absent-taker, ADMIN | 204, idempotent |
+| `PUT /services/:id/teams/:teamId/absences/:userId` | that team's absent-taker, leader of `:teamId`, ADMIN | 204, idempotent |
 | `DELETE /services/:id/teams/:teamId/absences/:userId` | same | 204, idempotent |
 | `GET /services/:id/teams/:teamId/absences` | that team's absent-taker, leader of `:teamId`, ADMIN | 200 `{userIds}` |
 | `GET /me/absences` | any logged-in user | 200 `{count, items}` |
@@ -23,19 +23,20 @@ Concurrent designations are serialized: there is never more than one taker per t
 (also guaranteed by a partial unique index).
 
 ## PUT / DELETE .../absences/:userId
-- Caller must be the designated taker of `:teamId` for this service, or ADMIN (so a past service
-  with no taker can still be recorded by ADMIN). Anyone else (including the leader, if not the
-  taker) gets 403.
+- Caller must be the designated taker of `:teamId` for this service, a leader of `:teamId`, or
+  ADMIN. The leader does not need to be assigned to the service, so a past service with no taker
+  can still be recorded by the leader or ADMIN. Anyone else (including the taker or leader of
+  another team, and PEMBINA) gets 403.
 - The service must have started: `409 SERVICE_NOT_STARTED` before `startsAt`.
 - The target must be assigned by that team: otherwise `400 INVALID_USERS`.
-- `400 CANNOT_MARK_SELF` when PUT targets the caller.
+- `400 CANNOT_MARK_SELF` when PUT targets the caller (taker, leader and ADMIN alike).
 - PUT of an existing absence and DELETE of a missing one are 204.
 
 | Status | Condition |
 |---|---|
 | 400 | Malformed id or body; `INVALID_USERS`; `CANNOT_MARK_SELF` |
 | 401 | |
-| 403 | Not the leader (designation) / not the taker nor ADMIN (absences). Non-admin on an unknown team is 403 |
+| 403 | Not the leader (designation) / not the taker, the leader nor ADMIN (absences). Non-admin on an unknown team is 403 |
 | 404 | Unknown or soft-deleted service; unknown team (ADMIN) |
 | 409 | `SERVICE_NOT_STARTED` |
 

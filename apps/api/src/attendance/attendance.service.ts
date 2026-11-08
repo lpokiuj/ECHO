@@ -79,7 +79,7 @@ export class AttendanceService {
     teamId: string,
     userId: string,
   ): Promise<void> {
-    await this.assertCanRecord(caller, serviceId, teamId);
+    await this.assertCanManage(caller, serviceId, teamId);
     const service = await this.loadService(serviceId, teamId);
     this.assertStarted(service);
     if (userId === caller.id) {
@@ -115,7 +115,7 @@ export class AttendanceService {
     teamId: string,
     userId: string,
   ): Promise<void> {
-    await this.assertCanRecord(caller, serviceId, teamId);
+    await this.assertCanManage(caller, serviceId, teamId);
     const service = await this.loadService(serviceId, teamId);
     this.assertStarted(service);
     const [, affected] = (await this.dataSource.query(
@@ -139,7 +139,7 @@ export class AttendanceService {
     serviceId: string,
     teamId: string,
   ): Promise<ServiceTeamAbsencesView> {
-    await this.assertCanRead(caller, serviceId, teamId);
+    await this.assertCanManage(caller, serviceId, teamId);
     await this.loadService(serviceId, teamId);
     const rows: { user_id: string }[] = await this.dataSource.query(
       `SELECT user_id FROM service_absences
@@ -211,24 +211,11 @@ export class AttendanceService {
     return this.mine(userId);
   }
 
-  // ADMIN, or the team's designated absent-taker for this service. Checked
-  // before the service is loaded so a non-taker gets 403, never a 404 hint.
-  private async assertCanRecord(
-    caller: User,
-    serviceId: string,
-    teamId: string,
-  ): Promise<void> {
-    if (caller.role === UserRole.ADMIN) return;
-    const rows: unknown[] = await this.dataSource.query(
-      `SELECT 1 FROM service_assignments
-       WHERE service_id = $1 AND team_id = $2 AND user_id = $3 AND is_absent_taker`,
-      [serviceId, teamId, caller.id],
-    );
-    if (rows.length === 0) throw new ForbiddenException();
-  }
-
-  // Same idea as assertCanRecord, but the team's leader may also read
-  private async assertCanRead(
+  // ADMIN, a leader of the team (assigned or not), or the team's designated
+  // absent-taker for this service. Guards recording, clearing and reading.
+  // Checked before the service is loaded so anyone else gets 403, never a
+  // 404 hint.
+  private async assertCanManage(
     caller: User,
     serviceId: string,
     teamId: string,

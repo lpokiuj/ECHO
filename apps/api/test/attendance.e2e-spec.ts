@@ -167,10 +167,10 @@ describe('Attendance (e2e)', () => {
       await setTaker(service, team, taker, await headersFor(admin)).expect(204);
     });
 
-    it('recording: 403 for a leader who is not the taker, a plain member and PEMBINA', async () => {
-      const { service, team, leader, amy, bob } = await world();
+    it('recording: 403 for a plain member and PEMBINA', async () => {
+      const { service, team, amy, bob } = await world();
       const pembina = await createUser({ role: UserRole.PEMBINA });
-      for (const u of [leader, amy, pembina]) {
+      for (const u of [amy, pembina]) {
         const h = await headersFor(u);
         await request(http())
           .put(absencePath(service.id, team.id, bob.id))
@@ -199,6 +199,23 @@ describe('Attendance (e2e)', () => {
         .put(absencePath(service.id, team.id, amy.id))
         .set(await headersFor(takerB))
         .expect(403);
+    });
+
+    it('recording: the leader of another team gets 403', async () => {
+      const { service, team, bob } = await world();
+      const teamB = await createTeam('Team B');
+      const leaderB = await createUser();
+      await addMember(teamB, leaderB, true);
+      const h = await headersFor(leaderB);
+      await request(http())
+        .put(absencePath(service.id, team.id, bob.id))
+        .set(h)
+        .expect(403);
+      await request(http())
+        .delete(absencePath(service.id, team.id, bob.id))
+        .set(h)
+        .expect(403);
+      expect(await absenceRows(service.id)).toHaveLength(0);
     });
 
     it('unknown team: 403 for non-admins, 404 for ADMIN; unknown service 404 for ADMIN', async () => {
@@ -358,6 +375,70 @@ describe('Attendance (e2e)', () => {
         .set(await headersFor(admin))
         .expect(204);
       expect(await absenceRows(service.id)).toHaveLength(1);
+    });
+
+    it('a leader who is not the taker records and removes an absence', async () => {
+      const { service, team, leader, amy } = await world();
+      const h = await headersFor(leader);
+      const path = absencePath(service.id, team.id, amy.id);
+      await request(http()).put(path).set(h).expect(204);
+      await request(http()).put(path).set(h).expect(204);
+      const rows = await absenceRows(service.id);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        userId: amy.id,
+        teamId: team.id,
+        recordedBy: leader.id,
+      });
+      await request(http()).delete(path).set(h).expect(204);
+      await request(http()).delete(path).set(h).expect(204);
+      expect(await absenceRows(service.id)).toHaveLength(0);
+    });
+
+    it('a leader can record on a past service that has no taker', async () => {
+      const { service, team, leader, amy } = await world();
+      await dataSource
+        .getRepository(ServiceAssignment)
+        .update({ serviceId: service.id }, { isAbsentTaker: false });
+      await request(http())
+        .put(absencePath(service.id, team.id, amy.id))
+        .set(await headersFor(leader))
+        .expect(204);
+      expect(await absenceRows(service.id)).toHaveLength(1);
+    });
+
+    it('a leader gets 409 SERVICE_NOT_STARTED before the start', async () => {
+      const { service, team, leader, amy } = await world(2 * DAY);
+      const h = await headersFor(leader);
+      for (const m of ['put', 'delete'] as const) {
+        const res = await request(http())
+          [m](absencePath(service.id, team.id, amy.id))
+          .set(h)
+          .expect(409);
+        expect(res.body.code).toBe('SERVICE_NOT_STARTED');
+      }
+    });
+
+    it('a leader gets INVALID_USERS for a user not assigned by the team', async () => {
+      const { service, team, leader } = await world();
+      const loner = await createUser();
+      const res = await request(http())
+        .put(absencePath(service.id, team.id, loner.id))
+        .set(await headersFor(leader))
+        .expect(400);
+      expect(res.body.code).toBe('INVALID_USERS');
+      expect(await absenceRows(service.id)).toHaveLength(0);
+    });
+
+    it('400 CANNOT_MARK_SELF when an assigned leader targets themselves', async () => {
+      const { service, team, leader } = await world();
+      await insertAssignment(service, leader, team, leader);
+      const res = await request(http())
+        .put(absencePath(service.id, team.id, leader.id))
+        .set(await headersFor(leader))
+        .expect(400);
+      expect(res.body.code).toBe('CANNOT_MARK_SELF');
+      expect(await absenceRows(service.id)).toHaveLength(0);
     });
 
     it('409 SERVICE_NOT_STARTED before the start, for PUT and DELETE', async () => {
