@@ -15,6 +15,8 @@ One orchestrated run over the whole repo. Features run in the order of the Statu
 | Who reads submissions | ADMIN and PEMBINA only. MEMBER and Ketua Bidang (`is_leader`) cannot. |
 | Retention | No auto-delete. ADMIN/PEMBINA manage status and can delete a submission manually. Delete is a HARD delete (the row is gone, no soft-delete flag), because prayer requests are sensitive and "deleted" must mean deleted. The UI always confirms before deleting. |
 | Inbox alerts | A NEW-count badge on the two inbox nav entries. No email or WhatsApp notifications. |
+| E2E test data | E2E tests keep using echo_dev. Everything a test creates is named with the prefix `e2e-` (user emails `e2e-<random>@test.local`, names, bidang names, service titles, submission names). At the START of every e2e run, a Playwright global setup logs in as the E2E admin and deletes all `e2e-` data through the API. Nothing without the prefix is ever deleted, and the E2E admin account itself is never deleted. Cleanup failure fails the run loudly. |
+| Deleting users, bidang, services | Hard delete through the API and the portal. Users and bidang: ADMIN only. Services: whoever can already edit services (ADMIN, PEMBINA). Deleting cascades to the record's memberships and assignments; submission `handled_by` becomes NULL. A user cannot delete themselves, and the last ADMIN cannot be deleted. Every delete in the portal asks for confirmation. |
 | Events | Static content in v1, but read only through one data function (`getEvents()`) via TanStack Query, so it can later be switched to a portal-managed API without touching components. |
 | Volunteer registration | Lands in the portal inbox. Admin contacts the person on WhatsApp, then creates the account with the existing user-creation flow. No automatic account creation. |
 | Logo | Echo logo lives in one `<Logo />` component. If `apps/web` already has a logo asset, copy it. Otherwise a text wordmark "ECHO" as a placeholder. |
@@ -160,19 +162,62 @@ PATCH with an empty body is 400. No pagination (low volume). No bulk delete.
 - Docs stay true: any README, CLAUDE.md, or `.env.example` that describes something the
   feature changed (URLs, paths, ports, env vars, scripts, roles, pages) is updated in the
   same feature. A doc that is now wrong is a failed verification.
+- E2E data: from T2 onward, every e2e test names what it creates with the `e2e-` prefix and
+  relies on the global setup cleanup. No test depends on data left by another run.
 - Only approved dependencies (below).
 
 ## Features
 
 ### P1 — Move portal to /volunteer-portal
-Scope: apps/web only.
+Scope: apps/web, plus `scripts/poc-up.sh` and the "Laptop POC hosting" section of the root
+CLAUDE.md (only the parts the new base path breaks; no other change to either).
 - Vite `base: '/volunteer-portal/'`, router basename, all internal links and redirects
   (login, logout, 401 redirect) work under the new base.
 - Dev server opens at `/volunteer-portal/`. Playwright `baseURL` updated.
 - Acceptance: full existing e2e suite green under the new base; a hard refresh on a deep
   link (e.g. `/volunteer-portal/<some page>`) works in the dev server; no request goes to
   the old `/volunteer` path; `apps/web` README and CLAUDE.md state the new base path and
-  dev URL, and no doc in apps/web still mentions the old `/volunteer` path.
+  dev URL, and no doc in apps/web still mentions the old `/volunteer` path;
+  `scripts/poc-up.sh` waits on and prints the portal at its new `/volunteer-portal/` URL,
+  and the root CLAUDE.md POC section matches the script.
+
+### T1 — Delete endpoints for users, bidang, services
+Scope: apps/api only.
+- First inventory what exists: for users, bidang, services, bidang membership and
+  assignments, list which delete/remove endpoints already exist and how they behave.
+  Record the inventory in the feature log.
+- Add only what is missing, following the "Deleting users, bidang, services" decision.
+  Existing endpoints that already hard delete with matching permissions are kept as they are.
+- If an existing endpoint is a soft delete or deactivation (the row stays), or its
+  permissions differ from the decision, do NOT change it: hard stop and report, because
+  changing existing behavior is my call.
+- Acceptance: tests prove for each delete endpoint: allowed roles get 204 and the row is
+  gone; other roles 403; no token 401; unknown id 404; cascades remove memberships and
+  assignments; submissions keep existing with `handled_by` NULL (once B1 exists this is
+  re-checked in B2; here test it only if the tables exist); deleting yourself is 400 or
+  403 per existing error conventions; deleting the last ADMIN is rejected. Docs updated.
+
+### T2 — Portal delete buttons + e2e cleanup
+Scope: apps/web only.
+- Delete buttons for users, bidang, and services in the portal, shown only to roles allowed
+  to delete. Each opens a confirmation dialog that says the deletion is permanent and what
+  it also removes ("Semua jadwal dan keanggotaan orang ini juga akan dihapus." or the
+  equivalent for bidang/services). After delete, return to the list and refresh it.
+- Playwright global setup that deletes all `e2e-` users, bidang, and services through the
+  API before the run, in an order that respects dependencies. It must:
+  - match the prefix on the field the tests set (email for users, name/title otherwise)
+  - never delete the account whose email equals E2E_ADMIN_EMAIL
+  - print only counts deleted per type, never names, emails, or credentials
+  - fail the whole run if any delete call fails
+- Update every existing e2e test so the data it creates uses the `e2e-` prefix. Only names
+  and emails change; assertions about behavior do not.
+- Acceptance: e2e as ADMIN deletes a user, a bidang, and a service through the dialog and
+  they are gone after reload; cancelling deletes nothing; a role without permission sees
+  no delete button. Running the full e2e suite twice in a row leaves zero `e2e-` records
+  from the first run before the second run's tests start (the setup logs counts > 0 on
+  the second run, then the second run passes). The second full run is not slower than
+  the first in any meaningful way; record both durations in the feature log.
+  `apps/web` README documents the `e2e-` prefix rule and the cleanup.
 
 ### B1 — Public submission endpoints
 Scope: apps/api only.
@@ -192,7 +237,8 @@ Scope: apps/api only.
   handled_by/handled_at; PATCH updates admin_note on both types; invalid status 400; empty
   PATCH body 400; unknown id 404 on PATCH and DELETE; DELETE returns 204 and the row is
   gone (a following GET no longer lists it); deleting a volunteer application also removes
-  its bidang join rows; counts change correctly after create, status change, and delete.
+  its bidang join rows; counts change correctly after create, status change, and delete;
+  deleting a user who handled a submission keeps the submission with `handled_by` NULL.
   Docs updated.
 
 ### F1 — Public site scaffold
@@ -207,7 +253,9 @@ that must list the new app.
   mobile burger menu at 360px; footer link points to `VITE_PORTAL_URL`;
   `apps/public/README.md` covers install, dev command and port, env vars, test commands,
   and where to edit content (`src/content/`) and the logo; `.env.example` lists every
-  `VITE_*` variable the app reads, with placeholder values only.
+  `VITE_*` variable the app reads, with placeholder values only. Playwright global setup in
+  apps/public deletes `e2e-` prayer requests and volunteer applications through the admin
+  API before each run, with the same rules as T2 (prefix only, counts only, fail loudly).
 
 ### F2 — Home: Hero, Ibadah, Lokasi
 Scope: apps/public.
@@ -248,7 +296,9 @@ Scope: apps/web. Requires B2, P1.
   changes from NEW; delete a submission through the dialog and it is gone after reload;
   cancelling the dialog deletes nothing. e2e as PEMBINA: can open both pages. e2e as
   MEMBER: nav entries absent and direct URL blocked. Test users are created through the
-  API, never SQL. `apps/web` README (or its docs) lists the two inbox pages, their routes,
+  API, never SQL. The T2 global setup also deletes `e2e-` prayer requests (by `name`) and
+  volunteer applications (by `full_name`), and the submissions these tests create use the
+  prefix. `apps/web` README (or its docs) lists the two inbox pages, their routes,
   which roles can see them, and that delete is permanent.
 
 ### F6 — Public polish
@@ -265,6 +315,8 @@ Scope: apps/public, plus the root README.md.
 
 ## Status
 - [ ] P1 Move portal to /volunteer-portal
+- [ ] T1 Delete endpoints for users, bidang, services
+- [ ] T2 Portal delete buttons + e2e cleanup
 - [ ] B1 Public submission endpoints
 - [ ] B2 Admin submission endpoints
 - [ ] F1 Public site scaffold
