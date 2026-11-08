@@ -20,14 +20,23 @@ export function NavLinks({ items, onNavigate }: NavLinksProps) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-11 items-center gap-3 rounded-md px-3 text-base font-medium transition-colors',
+                  'relative flex min-h-11 items-center gap-3 rounded-md px-3 text-base transition-colors',
                   'hover:bg-accent hover:text-accent-foreground',
-                  isActive ? 'bg-accent text-accent-foreground' : 'text-sidebar-foreground',
+                  isActive
+                    ? 'bg-primary-soft text-accent-foreground before:bg-primary font-medium before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full'
+                    : 'text-sidebar-foreground font-normal',
                 )
               }
             >
-              <Icon className="size-5 shrink-0" aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {({ isActive }) => (
+                <>
+                  <Icon
+                    className={cn('size-5 shrink-0', isActive && 'text-primary')}
+                    aria-hidden="true"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
+                </>
+              )}
             </NavLink>
           </li>
         ))}

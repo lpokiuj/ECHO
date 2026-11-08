@@ -51,7 +51,7 @@ export function AppShell() {
         <Brand />
         <NavLinks items={items} />
         {me ? (
-          <div className="mt-auto border-t pt-3">
+          <div className="-mx-4 mt-auto border-t px-4 pt-3">
             <UserMenu me={me} />
           </div>
         ) : null}

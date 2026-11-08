@@ -39,7 +39,7 @@ interface Actions {
 function StatusBadges({ user, isSelf }: { user: User; isSelf: boolean }) {
   return (
     <>
-      <Badge variant={user.isActive ? 'outline' : 'secondary'}>
+      <Badge variant={user.isActive ? 'success' : 'secondary'}>
         {user.isActive ? t.active : t.inactive}
       </Badge>
       {isSelf ? <Badge variant="outline">{t.you}</Badge> : null}

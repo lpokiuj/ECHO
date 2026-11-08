@@ -88,11 +88,11 @@ function NoteField({ candidate, selected, notes, onNoteChange, locked }: RowProp
 }
 
 function Status({ candidate }: { candidate: Candidate }) {
-  if (candidate.assigned) return <Badge variant="secondary">{t.assignedBadge}</Badge>
+  if (candidate.assigned) return <Badge variant="success">{t.assignedBadge}</Badge>
   if (candidate.unavailable) {
     return (
       <>
-        <Badge variant="outline">{t.unavailableBadge}</Badge>
+        <Badge variant="warning">{t.unavailableBadge}</Badge>
         <span id={`unavailable-${candidate.userId}`} className="sr-only">
           {t.unavailableHint}
         </span>

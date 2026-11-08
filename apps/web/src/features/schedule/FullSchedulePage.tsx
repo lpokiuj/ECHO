@@ -242,7 +242,7 @@ function DetailButton({ service }: { service: ServiceSchedule }) {
 
 function EndedBadge({ service }: { service: ServiceSchedule }) {
   if (hasEnded(service.endsAt)) return <Badge variant="secondary">{t.ended}</Badge>
-  return service.unavailable ? <Badge variant="outline">{messages.availability.badge}</Badge> : null
+  return service.unavailable ? <Badge variant="warning">{messages.availability.badge}</Badge> : null
 }
 
 function ServiceTable({ services }: { services: ServiceSchedule[] }) {

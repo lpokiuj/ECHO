@@ -56,7 +56,7 @@ function DetailButton({ teamId, row }: { teamId: string; row: TeamAbsenceRow }) 
           aria-label={fillMessage(t.detailAria, { name: row.name })}
         >
           {t.detail}
-          <Badge variant="secondary">{row.count}</Badge>
+          <Badge variant="info">{row.count}</Badge>
         </Button>
       </DialogTrigger>
       <DialogContent className="grid-rows-[auto_minmax(0,1fr)] overflow-hidden max-sm:max-h-[80dvh] sm:max-h-[calc(100dvh-4rem)] sm:max-w-md">

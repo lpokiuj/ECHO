@@ -70,6 +70,9 @@ describe('design tokens', () => {
     ['warning-foreground', 'warning'],
     ['sidebar-foreground', 'sidebar'],
     ['primary', 'background'],
+    ['success', 'success-soft'],
+    ['warning', 'warning-soft'],
+    ['accent-foreground', 'primary-soft'],
     ['destructive', 'card'],
   ])('%s on %s meets WCAG AA (4.5:1)', (fg, bg) => {
     expect(contrast(token(fg), token(bg))).toBeGreaterThanOrEqual(4.5)

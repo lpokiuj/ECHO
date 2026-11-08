@@ -18,7 +18,7 @@ export function MyAbsencesCard() {
       <h2 id="att-mine" className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold">
         {t.title}
         {q.data ? (
-          <Badge variant="secondary" data-testid="my-absence-count">
+          <Badge variant="info" data-testid="my-absence-count">
             {fillMessage(t.count, { count: q.data.count })}
           </Badge>
         ) : null}

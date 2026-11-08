@@ -29,6 +29,9 @@
   --success-foreground: #ffffff;
   --warning: #92400e;
   --warning-foreground: #ffffff;
+  --success-soft: #dcfce7;
+  --warning-soft: #fef3c7;
+  --primary-soft: #d9f0ed;
   --border: #d3dcdb;
   --input: #7f908e;
   --ring: #0f766e;
@@ -63,6 +66,9 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-primary-soft: var(--primary-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
