@@ -211,12 +211,20 @@ Scope: apps/web only.
   - fail the whole run if any delete call fails
 - Update every existing e2e test so the data it creates uses the `e2e-` prefix. Only names
   and emails change; assertions about behavior do not.
+- Log in once per run, not once per test: the global setup logs in as the E2E admin (and
+  any other fixed role it needs) and saves the session for reuse (Playwright
+  `storageState` for UI tests, a cached token for API helpers). Tests that create their
+  own users still log in as those users, once each. Tests whose purpose is the login flow
+  itself keep logging in through the UI, but as their own `e2e-` user, not the E2E admin.
 - Acceptance: e2e as ADMIN deletes a user, a bidang, and a service through the dialog and
   they are gone after reload; cancelling deletes nothing; a role without permission sees
   no delete button. Running the full e2e suite twice in a row leaves zero `e2e-` records
   from the first run before the second run's tests start (the setup logs counts > 0 on
   the second run, then the second run passes). The second full run is not slower than
-  the first in any meaningful way; record both durations in the feature log.
+  the first in any meaningful way; record both durations in the feature log. The full
+  suite passes with the backend's default `LOGIN_RATE_LIMIT` of 5 (the E2E admin logs in
+  at most once per run, plus at most once per test-created user); record the total
+  number of login calls per run in the feature log.
   `apps/web` README documents the `e2e-` prefix rule and the cleanup.
 
 ### B1 — Public submission endpoints
@@ -255,7 +263,8 @@ that must list the new app.
   and where to edit content (`src/content/`) and the logo; `.env.example` lists every
   `VITE_*` variable the app reads, with placeholder values only. Playwright global setup in
   apps/public deletes `e2e-` prayer requests and volunteer applications through the admin
-  API before each run, with the same rules as T2 (prefix only, counts only, fail loudly).
+  API before each run, with the same rules as T2 (prefix only, counts only, fail loudly),
+  and logs in once per run like T2.
 
 ### F2 — Home: Hero, Ibadah, Lokasi
 Scope: apps/public.
