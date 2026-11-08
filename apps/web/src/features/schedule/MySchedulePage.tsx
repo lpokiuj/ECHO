@@ -1,8 +1,9 @@
+import { UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { MyScheduleItem } from '@/api/types'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent } from '@/components/ui/card'
+import { ListCard, MetaDateTime, MetaItem } from '@/components/ListCard'
 import {
   Table,
   TableBody,
@@ -75,24 +76,20 @@ function ItemCards({ items }: { items: MyScheduleItem[] }) {
     >
       {items.map((s) => (
         <li key={s.serviceId}>
-          <Card>
-            <CardContent className="flex flex-col gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="min-w-0 text-lg font-semibold break-words">{s.title}</h2>
-                <EndedBadge item={s} />
-              </div>
-              <p className="text-muted-foreground text-base">
-                {formatDate(s.startsAt)}
-                <br />
-                {formatTimeRange(s.startsAt, s.endsAt)}
-              </p>
-              <p className="flex items-center gap-2 text-base">
-                <span className="text-muted-foreground">{t.team}:</span>
-                <Badge variant="outline">{s.teamName}</Badge>
-              </p>
-              <MyNote item={s} />
-            </CardContent>
-          </Card>
+          <ListCard
+            title={<h2 className="text-lg font-semibold break-words">{s.title}</h2>}
+            badges={<EndedBadge item={s} />}
+            meta={
+              <>
+                <MetaDateTime startsAt={s.startsAt} endsAt={s.endsAt} />
+                <MetaItem icon={UsersIcon}>
+                  <Badge variant="outline">{s.teamName}</Badge>
+                </MetaItem>
+              </>
+            }
+          >
+            <MyNote item={s} />
+          </ListCard>
         </li>
       ))}
     </ul>

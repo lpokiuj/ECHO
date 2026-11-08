@@ -10,7 +10,7 @@ import { ErrorState } from '@/components/ErrorState'
 import { ListSkeleton } from '@/components/ListSkeleton'
 import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { ListCard } from '@/components/ListCard'
 import {
   Table,
   TableBody,
@@ -95,12 +95,10 @@ function TeamCards({ teams, onRename }: { teams: Team[]; onRename: (team: Team) 
     >
       {teams.map((team) => (
         <li key={team.id}>
-          <Card>
-            <CardContent className="flex items-center gap-2">
-              <TeamLink team={team} />
-              <RenameButton team={team} onRename={onRename} />
-            </CardContent>
-          </Card>
+          <ListCard
+            title={<TeamLink team={team} />}
+            inlineAction={<RenameButton team={team} onRename={onRename} />}
+          />
         </li>
       ))}
     </ul>

@@ -14,7 +14,7 @@ import { RoleBadge } from '@/components/RoleBadge'
 import { UserAvatar } from '@/components/UserAvatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { ListCard } from '@/components/ListCard'
 import {
   Table,
   TableBody,
@@ -128,16 +128,16 @@ function UserCards({ users, meId, ...actions }: { users: User[]; meId?: string }
     >
       {users.map((u) => (
         <li key={u.id}>
-          <Card>
-            <CardContent className="flex flex-col gap-3">
-              <Identity user={u} />
-              <div className="flex flex-wrap items-center gap-2">
+          <ListCard
+            title={<Identity user={u} />}
+            meta={
+              <>
                 <RoleBadge role={u.role} />
                 <StatusBadges user={u} isSelf={u.id === meId} />
-              </div>
-              <RowActions user={u} {...actions} />
-            </CardContent>
-          </Card>
+              </>
+            }
+            actions={<RowActions user={u} {...actions} />}
+          />
         </li>
       ))}
     </ul>

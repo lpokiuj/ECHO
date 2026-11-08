@@ -7,7 +7,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { PageHeader } from '@/components/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { ListCard, MetaDateTime } from '@/components/ListCard'
 import {
   Table,
   TableBody,
@@ -108,20 +108,12 @@ function ServiceCards({
     >
       {services.map((s) => (
         <li key={s.id}>
-          <Card>
-            <CardContent className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="min-w-0 text-lg font-semibold break-words">{s.title}</h2>
-                <EndedBadge service={s} />
-              </div>
-              <p className="text-muted-foreground text-base">
-                {formatDate(s.startsAt)}
-                <br />
-                {formatTimeRange(s.startsAt, s.endsAt)}
-              </p>
-              <RowActions service={s} {...actions} />
-            </CardContent>
-          </Card>
+          <ListCard
+            title={<h2 className="text-lg font-semibold break-words">{s.title}</h2>}
+            badges={<EndedBadge service={s} />}
+            meta={<MetaDateTime startsAt={s.startsAt} endsAt={s.endsAt} />}
+            actions={<RowActions service={s} {...actions} />}
+          />
         </li>
       ))}
     </ul>

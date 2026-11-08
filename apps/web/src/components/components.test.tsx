@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorState } from '@/components/ErrorState'
+import { ListCard, MetaDateTime } from '@/components/ListCard'
 import { PageHeader } from '@/components/PageHeader'
 import { RoleBadge } from '@/components/RoleBadge'
 import { initialsOf, UserAvatar } from '@/components/UserAvatar'
@@ -164,5 +165,51 @@ describe('RoleBadge and UserAvatar', () => {
   it('renders initials in the avatar', () => {
     render(<UserAvatar name="Siti Aminah" />)
     expect(screen.getByText('SA')).toBeInTheDocument()
+  })
+})
+
+describe('ListCard', () => {
+  it('renders title, badges, meta, children and the actions row', () => {
+    render(
+      <ListCard
+        title={<h2>Kebaktian</h2>}
+        badges={<span>Selesai</span>}
+        meta={<MetaDateTime startsAt="2026-11-08T02:00:00Z" endsAt="2026-11-08T03:30:00Z" />}
+        actions={<Button>Detail</Button>}
+      >
+        <p>Catatan</p>
+      </ListCard>,
+    )
+    expect(screen.getByRole('heading', { level: 2, name: 'Kebaktian' })).toBeInTheDocument()
+    expect(screen.getByText('Selesai')).toBeInTheDocument()
+    expect(screen.getByText('Catatan')).toBeInTheDocument()
+    expect(screen.getByText(/WIB/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Detail' })).toBeInTheDocument()
+  })
+
+  it('hides the decorative meta icons from assistive technology', () => {
+    const { container } = render(
+      <ListCard
+        title="Judul"
+        meta={<MetaDateTime startsAt="2026-11-08T02:00:00Z" endsAt="2026-11-08T03:30:00Z" />}
+      />,
+    )
+    const icons = container.querySelectorAll('svg')
+    expect(icons).toHaveLength(2)
+    icons.forEach((icon) => expect(icon).toHaveAttribute('aria-hidden', 'true'))
+  })
+
+  it('puts an inline action in the title row, without an actions row', () => {
+    const { container } = render(
+      <ListCard title="Judul" inlineAction={<Button aria-label="Ubah">U</Button>} />,
+    )
+    const button = screen.getByRole('button', { name: 'Ubah' })
+    expect(button.closest('.border-t')).toBeNull()
+    expect(container.querySelector('.border-t')).toBeNull()
+  })
+
+  it('omits the meta and actions rows when none are given', () => {
+    render(<ListCard title="Judul" />)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 })
