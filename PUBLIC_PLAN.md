@@ -211,6 +211,11 @@ Scope: apps/web only.
   - fail the whole run if any delete call fails
 - Update every existing e2e test so the data it creates uses the `e2e-` prefix. Only names
   and emails change; assertions about behavior do not.
+- Make specs independent of list pagination: one shared helper in the e2e fixtures finds a
+  record by name or email, using the list's search/filter if the UI has one, otherwise
+  paging through it. Every spec that looks for a record it created uses this helper
+  instead of assuming page 1. Replace one-off helpers (e.g. `showTeam()`) with it.
+  Assertions about behavior do not change.
 - Log in once per run, not once per test: the global setup logs in as the E2E admin (and
   any other fixed role it needs) and saves the session for reuse (Playwright
   `storageState` for UI tests, a cached token for API helpers). Tests that create their
