@@ -3,42 +3,46 @@ import {
   expect,
   test as base,
   type APIRequestContext,
+  type Browser,
+  type BrowserContext,
   type Locator,
   type Page,
 } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
-import { recordCreated } from './created.ts'
+import { PEMBINA_EMAIL, readToken, recordLogin, refreshFrom, requireEnv } from './session.ts'
 
 // Credentials come from process.env only. Messages name the variable, never its value,
 // and no response body is ever included in an error (bodies can hold tokens).
 const SESSION_KEY = 'echo.session'
 const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:5173'
 
-export function requireEnv(name: string): string {
-  const value = process.env[name]
-  if (!value) throw new Error(`Missing environment variable ${name}`)
-  return value
-}
+export { PEMBINA_EMAIL, requireEnv }
 
 export function randomSuffix(): string {
   return randomBytes(4).toString('hex')
 }
 
-/** Logs in through the API (dev proxy) and returns an access token. */
-export async function apiLogin(
+/**
+ * The E2E admin's token, from the session the global setup cached. It never logs in.
+ */
+export async function adminToken(): Promise<string> {
+  return readToken('admin')
+}
+
+/** The shared PEMBINA's cached token (created by the global setup, never changed or deleted). */
+export function pembinaToken(): string {
+  return readToken('pembina')
+}
+
+/** Logs in through the API as a test user and returns only the status. Counted like any login. */
+export async function loginAttemptStatus(
   request: APIRequestContext,
   email: string,
   password: string,
-): Promise<string> {
+): Promise<number> {
+  recordLogin(email)
   const response = await request.post(`${baseUrl}/api/auth/login`, { data: { email, password } })
-  if (response.status() !== 200)
-    throw new Error(`API login failed with status ${response.status()}`)
-  const body = (await response.json()) as { accessToken: string }
-  return body.accessToken
-}
-
-export async function adminToken(request: APIRequestContext): Promise<string> {
-  return apiLogin(request, requireEnv('E2E_ADMIN_EMAIL'), requireEnv('E2E_ADMIN_PASSWORD'))
+  return response.status()
 }
 
 export interface CreatedUser {
@@ -54,7 +58,7 @@ export async function createE2eUser(
   role: 'MEMBER' | 'PEMBINA' = 'MEMBER',
 ): Promise<CreatedUser> {
   const password = requireEnv('E2E_USER_PASSWORD')
-  const token = await adminToken(request)
+  const token = await adminToken()
   const suffix = randomSuffix()
   const name = `e2e-${suffix}`
   const email = `e2e-${suffix}@echo.local`
@@ -62,6 +66,7 @@ export async function createE2eUser(
     data: { name, email, role },
     headers: { Authorization: `Bearer ${token}` },
   })
+  refreshFrom('admin', response.headers())
   if (response.status() === 403) {
     throw new Error(
       'POST /users returned 403: the e2e admin may still have to change its password (PASSWORD_CHANGE_REQUIRED). Stopping.',
@@ -70,7 +75,6 @@ export async function createE2eUser(
   if (response.status() !== 201)
     throw new Error(`POST /users failed with status ${response.status()}`)
   const created = (await response.json()) as { id: string }
-  recordCreated('user', created.id)
   return { id: created.id, name, email, password }
 }
 
@@ -83,11 +87,12 @@ async function adminCall<T>(
   data: unknown,
   expected: number[],
 ): Promise<T> {
-  const token = await adminToken(request)
+  const token = await adminToken()
   const response = await request[method](`${baseUrl}/api${path}`, {
     data,
     headers: authed(token),
   })
+  refreshFrom('admin', response.headers())
   // Only the status is reported: bodies can hold tokens.
   if (!expected.includes(response.status()))
     throw new Error(`${method.toUpperCase()} ${path} failed with status ${response.status()}`)
@@ -121,7 +126,6 @@ export async function createE2eService(
     { title, startsAt: wibInstant(daysAhead, 9), endsAt: wibInstant(daysAhead, 11) },
     [201],
   )
-  recordCreated('service', service.id)
   return service
 }
 
@@ -146,7 +150,6 @@ export async function createStartingSoonService(
     },
     [201],
   )
-  recordCreated('service', service.id)
   return service
 }
 
@@ -177,8 +180,9 @@ export async function assignedUserIds(
   request: APIRequestContext,
   serviceId: string,
 ): Promise<string[]> {
-  const token = await adminToken(request)
+  const token = await adminToken()
   const response = await request.get(`${baseUrl}/api/services`, { headers: authed(token) })
+  refreshFrom('admin', response.headers())
   if (response.status() !== 200)
     throw new Error(`GET /services failed with status ${response.status()}`)
   const services = (await response.json()) as {
@@ -271,14 +275,52 @@ export async function findInList(
   return item
 }
 
+/**
+ * Asserts that `item` is on no page of a paginated list: walks every page (the page lives in the
+ * URL as `?page=N`) and fails if the record shows up anywhere. `list` is awaited first so an
+ * unloaded list is not mistaken for a missing record.
+ */
+export async function expectNotInList(
+  page: Page,
+  item: Locator,
+  options: { list: Locator },
+): Promise<void> {
+  const p = messages.pagination
+  await expect(options.list).toBeVisible()
+  const pager = page.getByRole('navigation', { name: p.label })
+  const next = pager.getByRole('button', { name: p.next })
+  const status = pager.getByRole('status')
+  await expect(item).toHaveCount(0)
+  while ((await pager.count()) > 0 && (await next.isEnabled())) {
+    const before = await status.textContent()
+    await next.click()
+    await expect(status).not.toHaveText(before ?? '')
+    await expect(item).toHaveCount(0)
+  }
+}
+
+/** Reads a whole list as admin (GET /users or /teams); only ids are used by callers. */
+async function listAs<T>(request: APIRequestContext, path: string): Promise<T[]> {
+  const token = await adminToken()
+  const response = await request.get(`${baseUrl}/api${path}`, { headers: authed(token) })
+  refreshFrom('admin', response.headers())
+  if (response.status() !== 200)
+    throw new Error(`GET ${path} failed with status ${response.status()}`)
+  return (await response.json()) as T[]
+}
+
+export const listUsers = (request: APIRequestContext) => listAs<{ id: string }>(request, '/users')
+export const listTeams = (request: APIRequestContext) => listAs<{ id: string }>(request, '/teams')
+
 /** Reads the service list as admin (GET /services?includePast=true). */
 export async function listServices(
   request: APIRequestContext,
 ): Promise<{ id: string; title: string; startsAt: string; endsAt: string }[]> {
-  const token = await adminToken(request)
+  const token = await adminToken()
   const response = await request.get(`${baseUrl}/api/services?includePast=true`, {
     headers: authed(token),
   })
+  refreshFrom('admin', response.headers())
   if (response.status() !== 200)
     throw new Error(`GET /services failed with status ${response.status()}`)
   return (await response.json()) as {
@@ -299,10 +341,39 @@ export async function seedSession(page: Page, token: string): Promise<void> {
   )
 }
 
-/** `test` whose `page` is already logged in as the e2e admin. */
-export const test = base.extend({
-  page: async ({ page, request }, provide) => {
-    await seedSession(page, await adminToken(request))
+/** Counts every browser login request of a context (counts only, see session.ts). */
+function trackLogins(context: BrowserContext): void {
+  context.on('request', (request) => {
+    if (request.method() !== 'POST' || !request.url().endsWith('/api/auth/login')) return
+    const email = (request.postDataJSON() as { email?: unknown } | null)?.email
+    if (typeof email === 'string') recordLogin(email)
+  })
+}
+
+/**
+ * The base `test`: like Playwright's, but every browser context it creates (the default one and
+ * any `browser.newContext()`) counts its login calls. Specs that log in as a created user use it.
+ */
+export const plain = base.extend<object, { browser: Browser }>({
+  browser: [
+    async ({ browser }, provide) => {
+      const original = browser.newContext.bind(browser)
+      browser.newContext = async (options) => {
+        const context = await original(options)
+        trackLogins(context)
+        return context
+      }
+      await provide(browser)
+      browser.newContext = original
+    },
+    { scope: 'worker' },
+  ],
+})
+
+/** `plain` whose `page` already holds the cached e2e admin session (no login). */
+export const test = plain.extend({
+  page: async ({ page }, provide) => {
+    await seedSession(page, await adminToken())
     await provide(page)
   },
 })

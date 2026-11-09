@@ -49,17 +49,39 @@ Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 
 - Unit and component tests live next to the code and use MSW handlers copied from the API docs.
 - Browser tests are in `e2e/`. Install the browser once with `npx playwright install chromium`.
-  They need the backend running on echo_dev and the `E2E_*` variables above. They create data
-  through the API, named `e2e-<random>`, never touch seeded users or teams, and on exit delete
-  the services and deactivate the users that run created. Teams cannot be removed through
-  the API, so e2e teams remain.
+  They need the backend running on echo_dev and the `E2E_*` variables above.
+- **The `e2e-` prefix rule.** Everything a browser test creates is named with the prefix `e2e-`:
+  user emails (`e2e-<random>@echo.local`), team names and service titles. Never create test data
+  without it, and never give seeded data that prefix.
+- **Cleanup.** A Playwright global setup (`e2e/global-setup.ts`) runs before every run. It logs
+  in as the E2E admin and deletes, through the API and in this order, every `e2e-` service
+  (matched by title), team (by name) and user (by email). Teams go before users because the
+  team delete also removes the assignments and absence records that would otherwise block
+  deleting their leaders and absence takers. It never deletes anything without the prefix, the
+  E2E admin (matched by `E2E_ADMIN_EMAIL` and by id) or the shared PEMBINA. It prints counts
+  per type only, never names, emails or credentials, and any failed delete fails the whole run.
+- **The shared PEMBINA.** `e2e-pembina@echo.local` (password `E2E_USER_PASSWORD`) is created by
+  the setup if missing and is the only other account never deleted. The API refuses to delete a
+  user who created a service, and a PEMBINA creating a service is a tested flow, so that role
+  action uses this one account. Tests must never change, deactivate or delete it.
+- **Login once per run.** The setup logs in once as the E2E admin and once as the shared PEMBINA
+  and caches both tokens in `.screens/e2e-session.json` (gitignored, owner-only, replaced
+  atomically, refreshed from `X-Access-Token`, removed when the run ends, never printed).
+  Browser sessions get the token injected into `sessionStorage` (`seedSession`), because
+  Playwright `storageState` does not cover `sessionStorage`. Tests that create their own users
+  log in as those users, once each; the login-flow tests do too, never as the E2E admin. The
+  run ends with a count of login calls by account type (counts only), and the design keeps
+  every account at 5 logins or fewer (the backend's default `LOGIN_RATE_LIMIT`).
+- Lists are paginated, so specs find records with `findInList` (and `expectNotInList`) in
+  `e2e/fixtures.ts`, never by assuming page 1.
 - `e2e/routes.spec.ts` visits every route at 360, 390, 768 and 1280px: no console errors, no
   horizontal scroll, no clipped content, axe with no serious or critical violations and
   44px touch targets below 1024px. Screenshots go to `.screens/` (gitignored).
 - A unit test (`src/lib/no-literals.test.ts`) fails if user-facing text appears outside
   `src/lib/messages.ts`.
-- After echo_dev is reset and reseeded, the seeded admin must change its password again
-  (to the value in `E2E_ADMIN_PASSWORD`) before the browser tests can create data.
+- Users that created a service, assigned someone or recorded an absence cannot be deleted by the
+  API (409). The cleanup relies on deleting teams first. Leftovers from runs made before the
+  cleanup existed may include such users, which then fail the setup: reset echo_dev once.
 
 ## Structure
 

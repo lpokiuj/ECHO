@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
-import { adminToken, createE2eUser, randomSuffix, seedSession } from './fixtures.ts'
+import { adminToken, createE2eUser, plain as test, randomSuffix, seedSession } from './fixtures.ts'
 const widths = [360, 390, 768, 1280]
 const t = messages.auth
 
@@ -56,9 +56,7 @@ test('admin-created user logs in and lands home with no forced change', async ({
   await page.goto('login')
   await submitLogin(page, user.email, user.password)
   await expect(page).toHaveURL(/\/volunteer-portal\/$/)
-  await expect(
-    page.getByRole('navigation', { name: messages.nav.label }).first(),
-  ).toBeVisible()
+  await expect(page.getByRole('navigation', { name: messages.nav.label }).first()).toBeVisible()
   await expect(
     page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
   ).toBeVisible()
@@ -77,8 +75,8 @@ test('admin-created user logs in and lands home with no forced change', async ({
   expect(errors).toEqual([])
 })
 
-test('admin sees the role badge and the nav for routes that exist', async ({ page, request }) => {
-  await seedSession(page, await adminToken(request))
+test('admin sees the role badge and the nav for routes that exist', async ({ page }) => {
+  await seedSession(page, await adminToken())
   await page.goto('./')
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -92,11 +90,10 @@ test('admin sees the role badge and the nav for routes that exist', async ({ pag
 
 test('deep link survives a hard refresh under /volunteer-portal/ and never hits the old path', async ({
   page,
-  request,
 }) => {
   const paths: string[] = []
   page.on('request', (r) => paths.push(new URL(r.url()).pathname))
-  await seedSession(page, await adminToken(request))
+  await seedSession(page, await adminToken())
   await page.goto('teams')
   await expect(page.getByRole('heading', { level: 1, name: messages.teams.title })).toBeVisible()
   await page.reload()

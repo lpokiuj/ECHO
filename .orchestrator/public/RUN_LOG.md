@@ -446,6 +446,51 @@ My verification:
   Login calls per run and T2-specific numbers are T2's.
 - Commits (two, T1 first with explicit paths since `git add -A` would mix them): T1 = apps/api, docs/api, PUBLIC_PLAN.md (user edit + tick);
   chore = apps/web e2e fixes + docs, docs/backend-requests.md; .orchestrator logs go with the second commit.
+## T1 committed (6b9cd09 feat(api)) and chore (dfe1bbb chore(web)); T2 plan round 1
+- Ticked T1 in the Status list. Starting T2: B-T2-plan (model: sonnet, planning only). Report (B's claims, not verified by me):
+  - Delete UI: services already have the button/dialog (soft delete, only copy changes); users and teams need new buttons, client methods,
+    error codes USER_HAS_CREATED_RECORDS and LAST_ADMIN, hooks, unit and e2e tests.
+  - E2E: every spec already uses the `e2e-` prefix; ~330 admin API logins per run today (cannot pass at LOGIN_RATE_LIMIT 5, so the running
+    backend must use a raised limit); `findInList` exists; only teams.spec `memberItem()` on the member list lacks the helper.
+  - Undeletable-user problem: only ONE actor is blocked by the T1 409 rule: the e2e PEMBINA in services.spec who creates a service in the UI
+    (created_by survives soft delete). Leaders (assigned_by) and absence takers (recorded_by) are freed by deleting teams first (cascade).
+- HARD STOP (T2 plan needs the user): (1) the plan's fixed decisions allow exactly one permanent e2e exception (the E2E admin). B's option A adds
+  a second one (a fixed shared `e2e-pembina@...` account, excluded from cleanup) so the PEMBINA test can still create a service; alternatives are a
+  backend change (created_by ON DELETE SET NULL, schema = the user's call) or tolerating 409. (2) Token storage: the app keeps its token only
+  in sessionStorage, so Playwright storageState cannot carry it; B proposes a cached token file (gitignored, mode 0600, under .screens/, removed at
+  teardown) or process.env. apps/web/CLAUDE.md says to STOP and ask about token storage. (3) Legacy `e2e-` users already in echo_dev (including
+  PEMBINA users from my runs this session that created services) are undeletable, so the first cleanup would fail the run; only `db:reset` clears them,
+  and my rules allow it only in preflight. Also to confirm: which LOGIN_RATE_LIMIT the dev backend runs with.
+- State: branch public-site-build, HEAD dfe1bbb, working tree clean except these log edits. T2 unticked, nothing built.
+- RESOLVED by the user (D-022): option A (shared PEMBINA), token cache file, db:reset at the start of every feature (I ran it before resuming B; B was
+  told not to), dev LOGIN_RATE_LIMIT is 1000.
+
+## T2 implemented and verified by me
+B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan rounds counting the user decisions).
+- Scope: `git status`: only apps/web (src, e2e, playwright.config.ts, CLAUDE.md, PLAN.md, README.md; two e2e helper files deleted: created.ts,
+  global-teardown.ts, replaced by global-setup.ts and session.ts) and docs/backend-requests.md. No apps/api, no package.json or lockfile change. PASS.
+- Greps on added lines: no `any`, `@ts-ignore`, `.only(`, `.skip(`, `fixme`. PASS.
+- Setup code read in full (global-setup.ts, session.ts): prefix match only (services by title, teams by name, users by email); users exclude the E2E admin
+  by email and by id and the shared PEMBINA by email; order services, teams, users; counts-only output; any non-204 throws a counts/status error; token
+  file under `.screens/` (gitignored, verified with check-ignore), mode 0600, atomic rename, removed in teardown, never printed; login counter stores a
+  hash and an actor type only. PASS.
+- Spec diffs read: removed lines are signature/import changes (`adminToken()` without `request`), the old per-test PEMBINA/MEMBER login now uses the
+  shared PEMBINA session (same assertions: nav link count 0, no-access page), `memberItem` lookups replaced by `findInList`, one formatting-only change.
+  services PEMBINA test still creates and deletes a service through the UI as a real PEMBINA; the MEMBER part still asserts no menu item and no-access.
+  New tests: delete (confirm, cancel, gone after reload) for users, teams, services; own row has no delete button; dialog axe/overflow at all widths.
+  No test deleted or skipped. PASS.
+- `npm run check -w @echo/web`: pass, 20 files, 302 tests (was 287).
+- Two FULL `npm run e2e -w @echo/web` runs by me, back to back (after B's own two): run A 90 passed in 6.7 min, cleanup `services 27, teams 40, users 90
+  deleted` (counts > 0 for every type the previous run created); run B 90 passed in 6.5 min, same counts. Second run is not slower (6.5 vs 6.7 min). B's
+  runs: 6.6 min (fresh DB, setup `0/0/0`) then 7.1 min (setup 27/40/90).
+- Login calls per run (same every run): 43 = admin 1, shared PEMBINA 1, test users 41 across 39 accounts, max 2 per account.
+- Not satisfiable as written: "passes with the backend's default LOGIN_RATE_LIMIT of 5" cannot be run (dev backend is 1000, I cannot restart it). The
+  design evidence is the per-account maximum of 2 and the admin at 1; recorded for the user (D-022).
+- Screenshots viewed (2 of max 6): delete user dialog at 360 (bottom sheet) and delete bidang dialog at 1280. Permanent-deletion copy, entity name, Hapus/Batal
+  all visible, no clipping.
+- Docs: README (prefix rule, cleanup, shared PEMBINA, login once, token cache), CLAUDE.md data-safety, PLAN.md decisions/status; grep for stale
+  `teardown`/`created.ts`/"deactivate on exit"/"teams cannot be removed" finds none. docs/backend-requests.md gained two low-priority requests. PASS.
+- Result: T2 verified. Committing as feat(web). B noted `ListCard.inlineAction` is now unused in production code (left to avoid deleting its test).
 - (superseded) Status: T1 not committed. Waiting for the user's decision on routes.spec:225 (delete, or convert to login-page widths/axe) before the web
   e2e can be green and T1 plus the chore can be committed. B sessions so far this run: T1 B (3 rounds), web-e2e B (2 rounds). State: branch public-site-build, HEAD a8f0451, unstaged T1 changes (apps/api, docs/api,
   PUBLIC_PLAN.md) + .orchestrator, nothing staged. echo_dev already has the new migration.

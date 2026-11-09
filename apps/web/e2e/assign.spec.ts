@@ -1,7 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import {
   expect as baseExpect,
-  test,
   type APIRequestContext,
   type Browser,
   type BrowserContext,
@@ -18,6 +17,7 @@ import {
   createE2eUser,
   findInList,
   loginAndChange,
+  plain as test,
   type CreatedUser,
 } from './fixtures.ts'
 
@@ -320,7 +320,7 @@ test('two leaders of different teams assign the same volunteer at once: exactly 
   )
 
   // The server agrees: only one team holds the volunteer.
-  const token = await adminToken(request)
+  const token = await adminToken()
   const list = await request.get('/api/services?includePast=true', {
     headers: { Authorization: `Bearer ${token}` },
   })

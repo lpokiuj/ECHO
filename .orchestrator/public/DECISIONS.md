@@ -130,6 +130,21 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-022 (T2, user answers after the plan hard stop)
+- 1. Undeletable PEMBINA: option A. One fixed shared e2e PEMBINA account, excluded from cleanup like the E2E admin (a second permanent exception
+  to the plan's e2e rule, approved by the user). All PEMBINA actions that create services use it. Reverse: backend `created_by ON DELETE SET NULL`
+  (schema change) and then remove the exception.
+- 2. Token cache: gitignored file under `.screens/`, mode 0600, written atomically, removed at teardown.
+- 3. DB reset rule CHANGED by the user: `db:reset` is now run at the START of every feature, once, right before its first B is created (not only in
+  preflight, and never mid-feature). Applies from T2 on. Dev backend LOGIN_RATE_LIMIT is 1000 (told by the user), so the "passes with the default
+  5" criterion cannot be run against this backend; T2 will record login calls per email instead to show no email exceeds 5. I cannot restart the backend.
+- Reverse: n/a.
+
+## D-021 (T2, plan review, mine): small UI choices
+- Delete button on the Teams and Users LIST only, not on TeamDetailPage (simpler; easier to add later). A 409/400 delete error is a toast with
+  the mapped Indonesian message and the dialog closes (matches existing patterns). Services keep their existing delete button; only the
+  confirmation copy changes to say it is permanent. Reverse: add the detail button / inline alert later.
+
 ## D-020 (T1, user answer "1"): fix the stale web e2e specs as a separate chore before committing T1
 - Question: web e2e is red (33 failures) because commit 63bd3be removed the forced password change that specs still expect.
 - Options: (1) update the specs now, separate from T1; (2) commit T1 and fix in T2; (3) restore the forced change.

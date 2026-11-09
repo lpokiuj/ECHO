@@ -20,6 +20,8 @@ const KNOWN_CODES: readonly ErrorCode[] = [
   'SERVICE_NOT_STARTED',
   'CANNOT_MARK_SELF',
   'HAS_ATTENDANCE_RECORDS',
+  'USER_HAS_CREATED_RECORDS',
+  'LAST_ADMIN',
 ]
 
 /** Thrown by the API client. It carries no backend message text. */

@@ -1,7 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import {
   expect as baseExpect,
-  test as plain,
   type Browser,
   type BrowserContext,
   type Page,
@@ -14,6 +13,7 @@ import {
   createE2eUser,
   findInList,
   loginAndChange,
+  plain,
   test,
   type CreatedUser,
 } from './fixtures.ts'

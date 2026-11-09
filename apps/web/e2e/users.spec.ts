@@ -1,11 +1,16 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect as baseExpect, test as plain, type Browser, type Page } from '@playwright/test'
+import { expect as baseExpect, type Browser, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import {
   adminToken,
   createE2eUser,
+  expectNotInList,
   findInList,
+  listUsers,
   loginAndChange,
+  loginAttemptStatus,
+  pembinaToken,
+  plain,
   randomSuffix,
   requireEnv,
   seedSession,
@@ -21,7 +26,6 @@ test.describe.configure({ timeout: 90_000 })
 const t = messages.users
 const f = t.form
 const widths = [360, 390, 768, 1280]
-const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:5173'
 
 function collectErrors(page: Page): string[] {
   const errors: string[] = []
@@ -80,12 +84,8 @@ async function freshPage(browser: Browser, width = 1280): Promise<Page> {
   return context.newPage()
 }
 
-async function loginStatus(page: Page, email: string, password: string): Promise<number> {
-  const response = await page.request.post(`${baseUrl}/api/auth/login`, {
-    data: { email, password },
-  })
-  return response.status()
-}
+const loginStatus = (page: Page, email: string, password: string) =>
+  loginAttemptStatus(page.request, email, password)
 
 test('admin creates a user; that user logs in and changes the password', async ({
   page,
@@ -160,6 +160,50 @@ test('admin edits name and role, then deactivates after a confirmation', async (
   expect(errors).toEqual([])
 })
 
+test('admin deletes a user after confirming; cancelling deletes nothing', async ({
+  page,
+  request,
+}) => {
+  const errors = collectErrors(page)
+  const user = await createE2eUser(request)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('users')
+  const list = listFor(page, 1280)
+  const deleteName = `${t.deleteAria}: ${user.name}`
+
+  // Cancel: the dialog names the user, says it is permanent, and nothing is deleted.
+  const row = await findInList(page, itemFor(page, 1280, user.name), { list })
+  await row.getByRole('button', { name: deleteName }).click()
+  const confirm = page.getByRole('alertdialog')
+  await expect(confirm).toContainText(user.name)
+  await expect(confirm).toContainText(t.confirmDelete.description)
+  await confirm.getByRole('button', { name: messages.common.cancel }).click()
+  await expect(confirm).toHaveCount(0)
+  expect((await listUsers(request)).some((u) => u.id === user.id)).toBe(true)
+  await expect(row).toBeVisible()
+
+  // Confirm: the user is gone from the list, after a reload too, and cannot log in.
+  await row.getByRole('button', { name: deleteName }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: t.confirmDelete.action }).click()
+  await expect(page.getByText(t.toast.deleted)).toBeVisible()
+  await expectNotInList(page, itemFor(page, 1280, user.name), { list })
+  await page.reload()
+  await expectNotInList(page, itemFor(page, 1280, user.name), { list })
+  expect((await listUsers(request)).some((u) => u.id === user.id)).toBe(false)
+  expect(await loginStatus(page, user.email, user.password)).toBe(401)
+  expect(errors).toEqual([])
+})
+
+test('the admin has no delete button on their own row', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('users')
+  const row = await findInList(page, itemFor(page, 1280, requireEnv('E2E_ADMIN_EMAIL')), {
+    list: listFor(page, 1280),
+  })
+  await expect(row).toContainText(t.you)
+  await expect(row.getByRole('button', { name: new RegExp(`^${t.deleteAria}`) })).toHaveCount(0)
+})
+
 test('reset password asks first; the user logs in with the default password', async ({
   page,
   request,
@@ -208,11 +252,15 @@ test('the admin cannot change their own role or active flag', async ({ page }) =
   await page.getByRole('button', { name: messages.common.cancel }).click() // nothing is saved
 })
 
-// Logs in through the UI, so it must not start with the admin session.
-plain('a non-admin sees no users link and a no-access page', async ({ page, request }) => {
+// Uses the shared PEMBINA session, so it must not start with the admin session.
+plain('a non-admin sees no users link and a no-access page', async ({ page }) => {
   const errors = collectErrors(page)
   await page.setViewportSize({ width: 1280, height: 800 })
-  await loginAndChange(page, await createE2eUser(request, 'PEMBINA'))
+  await seedSession(page, pembinaToken())
+  await page.goto('./')
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
+  ).toBeVisible()
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await expect(nav.getByRole('link', { name: messages.nav.users })).toHaveCount(0)
   await page.goto('users')
@@ -229,7 +277,7 @@ for (const width of widths) {
     test.setTimeout(180_000)
     const errors = collectErrors(page)
     const user = await createE2eUser(request)
-    await seedSession(page, await adminToken(request))
+    await seedSession(page, await adminToken())
     await page.setViewportSize({ width, height: 800 })
     await page.goto('users')
     await expect(
@@ -287,6 +335,20 @@ for (const width of widths) {
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page, '[role="alertdialog"]')).toEqual([])
     await page.screenshot({ path: `.screens/f8-reset-${width}.png` })
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: messages.common.cancel })
+      .click()
+
+    await (
+      await findInList(page, itemFor(page, width, user.name), { list: listFor(page, width) })
+    )
+      .getByRole('button', { name: `${t.deleteAria}: ${user.name}` })
+      .click()
+    await expect(page.getByRole('alertdialog')).toBeVisible()
+    expect(await hasHorizontalScroll(page)).toBe(false)
+    expect(await seriousViolations(page, '[role="alertdialog"]')).toEqual([])
+    await page.screenshot({ path: `.screens/f8-delete-${width}.png` })
     expect(errors).toEqual([])
   })
 }

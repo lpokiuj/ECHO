@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createTeam,
+  deleteTeam,
   getTeamMembers,
   getTeams,
   putTeamMember,
@@ -42,6 +43,18 @@ export function useCreateTeam() {
   return useMutation({
     mutationFn: (name: string) => createTeam(name),
     onSuccess: () => invalidate(TEAMS_KEY),
+  })
+}
+
+/** Also removes memberships, assignments and absences of the team, so every dependent view refreshes. */
+export function useDeleteTeam() {
+  const invalidate = useInvalidate()
+  const refresh = () =>
+    invalidate(TEAMS_KEY, SERVICES_KEY, MY_SCHEDULE_KEY, CANDIDATES_KEY, ME_KEY, ['team-members'])
+  return useMutation({
+    mutationFn: (id: string) => deleteTeam(id),
+    onSuccess: refresh,
+    onError: refresh,
   })
 }
 

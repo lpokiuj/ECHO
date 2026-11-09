@@ -332,7 +332,7 @@ Scope: apps/public, plus the root README.md.
 ## Status
 - [x] P1 Move portal to /volunteer-portal
 - [x] T1 Delete endpoints for users, bidang, services
-- [ ] T2 Portal delete buttons + e2e cleanup
+- [x] T2 Portal delete buttons + e2e cleanup
 - [ ] B1 Public submission endpoints
 - [ ] B2 Admin submission endpoints
 - [ ] F1 Public site scaffold

@@ -63,12 +63,17 @@ STOP and ask me before:
 ## Data safety (echo_dev)
 
 - echo_dev is free to use for development and Playwright runs. Create, edit, and deactivate
-  data through the API as much as you need. Leftover data is fine and needs no report.
+  data through the API as much as you need. Every e2e run starts by deleting all `e2e-` data
+  through the API (`e2e/global-setup.ts`), so leftovers never accumulate and need no report.
 - You may run the backend's own `migration:run` and `seed` scripts against echo_dev when the
   baseline is missing. Nothing else on the backend or the database: no SQL, no drops or
   truncation, no volume wipes, no edits under `apps/api`. If you think a wipe is needed, tell me.
-- Name data you create `e2e-<random>`. Never change seeded users or teams. That keeps specs
-  deterministic.
+- Name data you create `e2e-<random>` (emails `e2e-<random>@echo.local`); the cleanup matches
+  that prefix and deletes nothing else. Never change seeded users or teams. The E2E admin and
+  the shared PEMBINA (`e2e-pembina@echo.local`) are the only `e2e-` accounts that are kept: never
+  change, deactivate or delete them. A role action that creates services runs as the shared
+  PEMBINA, because such a user can never be deleted. Log in as the E2E admin only through the
+  cached session (`adminToken`, `seedSession`), never per test.
 - Never assume an empty database. Never depend on data left by another spec.
 
 ## Verification (nobody reviews every diff, so these gates are real)

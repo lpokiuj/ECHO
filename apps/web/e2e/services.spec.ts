@@ -1,14 +1,17 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect as baseExpect, test as plain, type Page } from '@playwright/test'
+import { expect as baseExpect, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import {
   adminToken,
   createE2eService,
   createE2eUser,
+  expectNotInList,
   findInList,
   listServices,
   test,
+  plain,
   loginAndChange,
+  pembinaToken,
   randomSuffix,
   seedSession,
   wibInstant,
@@ -106,6 +109,31 @@ test('admin creates a service in WIB, sees the right time, edits it, deletes it'
   expect(errors).toEqual([])
 })
 
+test('cancelling a service delete deletes nothing; confirming removes it, also after a reload', async ({
+  page,
+  request,
+}) => {
+  const service = await createE2eService(request)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('services')
+  const list = listFor(page, 1280)
+  const deleteName = `${t.deleteAria}: ${service.title}`
+  const row = await findInList(page, itemFor(page, 1280, service.title), { list })
+  await row.getByRole('button', { name: deleteName }).click()
+  const confirm = page.getByRole('alertdialog')
+  await expect(confirm).toContainText(t.confirmDelete.description)
+  await confirm.getByRole('button', { name: messages.common.cancel }).click()
+  await expect(confirm).toHaveCount(0)
+  expect((await listServices(request)).some((s) => s.id === service.id)).toBe(true)
+
+  await row.getByRole('button', { name: deleteName }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: t.confirmDelete.action }).click()
+  await expect(page.getByText(t.toast.deleted)).toBeVisible()
+  await page.reload()
+  await expectNotInList(page, itemFor(page, 1280, service.title), { list })
+  expect((await listServices(request)).some((s) => s.id === service.id)).toBe(false)
+})
+
 test('a start that is not in the future is blocked by the form', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('services')
@@ -154,12 +182,14 @@ test('a server validation error and a 403 show Indonesian messages next to the f
 // Logs in through the UI, so it must not start with the seeded admin session.
 plain(
   'a PEMBINA manages services; a MEMBER sees no menu item and a no-access page',
-  async ({ page, request }) => {
+  async ({ page, browser, request }) => {
     const errors = collectErrors(page)
     await page.setViewportSize({ width: 1280, height: 800 })
     const nav = () => page.getByRole('navigation', { name: messages.nav.label }).first()
 
-    await loginAndChange(page, await createE2eUser(request, 'PEMBINA'))
+    // The shared PEMBINA (never deleted) creates the service, so no deletable user holds it.
+    await seedSession(page, pembinaToken())
+    await page.goto('./')
     await nav().getByRole('link', { name: messages.nav.services }).click()
     const title = `e2e-${randomSuffix()}`
     await page.getByRole('button', { name: t.add }).click()
@@ -174,11 +204,23 @@ plain(
       .click()
     await expect(itemFor(page, 1280, title)).toHaveCount(0)
 
-    await page.evaluate(() => window.sessionStorage.clear())
-    await loginAndChange(page, await createE2eUser(request, 'MEMBER'))
-    await expect(nav().getByRole('link', { name: messages.nav.services })).toHaveCount(0)
-    await page.goto('services')
-    await expect(page.getByText(t.noAccessTitle)).toBeVisible()
+    // A MEMBER logs in on their own page, so the PEMBINA session is not seeded again.
+    const member = await (await browser.newContext()).newPage()
+    member.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text())
+    })
+    member.on('pageerror', (err) => errors.push(err.message))
+    await member.setViewportSize({ width: 1280, height: 800 })
+    await loginAndChange(member, await createE2eUser(request, 'MEMBER'))
+    await expect(
+      member
+        .getByRole('navigation', { name: messages.nav.label })
+        .first()
+        .getByRole('link', { name: messages.nav.services }),
+    ).toHaveCount(0)
+    await member.goto('services')
+    await expect(member.getByText(t.noAccessTitle)).toBeVisible()
+    await member.context().close()
     expect(errors).toEqual([])
   },
 )
@@ -193,7 +235,7 @@ for (const width of widths) {
     test.setTimeout(180_000)
     const errors = collectErrors(page)
     const service = await createE2eService(request, 45)
-    await seedSession(page, await adminToken(request))
+    await seedSession(page, await adminToken())
     await page.setViewportSize({ width, height: 800 })
     await page.goto('services')
     await expect(

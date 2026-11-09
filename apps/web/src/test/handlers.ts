@@ -275,6 +275,22 @@ export const USER_PATCHED = {
 export const USERS_EXAMPLE = [USER_ADMIN, USER_CREATED, USER_PATCHED]
 
 export const USER_ERROR_BODIES = {
+  // Bodies copied verbatim from ../../docs/api/users.md (DELETE /users/:id).
+  deleteSelf: { message: 'You cannot delete yourself', error: 'Bad Request', statusCode: 400 },
+  lastAdmin: {
+    statusCode: 400,
+    error: 'Bad Request',
+    code: 'LAST_ADMIN',
+    message: 'The last ADMIN cannot be deleted',
+  },
+  hasCreatedRecords: {
+    statusCode: 409,
+    error: 'Conflict',
+    code: 'USER_HAS_CREATED_RECORDS',
+    message:
+      'This user created services, assigned people, or recorded absences, so they cannot be deleted',
+  },
+  userNotFound: { message: 'User not found', error: 'Not Found', statusCode: 404 },
   validation: {
     message: [
       'name should not be empty',

@@ -341,6 +341,86 @@ describe('edit', () => {
   })
 })
 
+describe('delete', () => {
+  const deleteButton = (name: string) =>
+    within(rowOf(name)).getByRole('button', { name: `${t.deleteAria}: ${name}` })
+  const confirmButton = async () =>
+    within(await screen.findByRole('alertdialog')).getByRole('button', {
+      name: t.confirmDelete.action,
+    })
+
+  it('asks first, says it is permanent and what goes with it; cancel sends nothing', async () => {
+    const sink = { calls: 0 }
+    server.use(
+      http.delete(
+        '*/api/users/:id',
+        () => ((sink.calls += 1), new Response(null, { status: 204 })),
+      ),
+    )
+    await openPage()
+    const u = user()
+    await u.click(deleteButton(OTHER.name))
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText(OTHER.name)).toBeInTheDocument()
+    expect(dialog).toHaveTextContent(t.confirmDelete.description)
+    await u.click(within(dialog).getByRole('button', { name: messages.common.cancel }))
+    expect(sink.calls).toBe(0)
+    expect(toast.success).not.toHaveBeenCalled()
+  })
+
+  it('deletes after confirming (204), removes the row and shows a toast', async () => {
+    const ids: string[] = []
+    server.use(
+      http.delete('*/api/users/:id', ({ params }) => {
+        ids.push(String(params.id))
+        return new Response(null, { status: 204 })
+      }),
+    )
+    await openPage()
+    await user().click(deleteButton(OTHER.name))
+    await user().click(await confirmButton())
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(t.toast.deleted))
+    expect(ids).toEqual([OTHER.id])
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+  })
+
+  it('has no delete button on the own account', async () => {
+    await openPage()
+    expect(
+      within(rowOf(SELF.name)).queryByRole('button', { name: new RegExp(`^${t.deleteAria}`) }),
+    ).toBeNull()
+    expect(deleteButton(OTHER.name)).toBeInTheDocument()
+  })
+
+  it.each([
+    [
+      '409 USER_HAS_CREATED_RECORDS',
+      409,
+      USER_ERROR_BODIES.hasCreatedRecords,
+      messages.errors.codes.USER_HAS_CREATED_RECORDS,
+    ],
+    ['400 LAST_ADMIN', 400, USER_ERROR_BODIES.lastAdmin, messages.errors.codes.LAST_ADMIN],
+    ['400 without a code (self)', 400, USER_ERROR_BODIES.deleteSelf, t.toast.cannotDeleteSelf],
+    ['404', 404, USER_ERROR_BODIES.userNotFound, t.toast.gone],
+    ['403', 403, ERROR_BODIES.forbidden, messages.errors.forbidden],
+  ])('maps %s to an Indonesian toast and closes the dialog', async (_label, status, body, text) => {
+    server.use(http.delete('*/api/users/:id', () => respond(status, body)))
+    await openPage()
+    await user().click(deleteButton(OTHER.name))
+    await user().click(await confirmButton())
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(text))
+    expect(toast.error).not.toHaveBeenCalledWith(expect.stringContaining('ADMIN cannot'))
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+  })
+
+  it('shows no delete button to a non-admin session', async () => {
+    server.use(handlers.me(undefined, ME_BY_ROLE.pembina))
+    renderApp('/users', { token: true })
+    expect(await screen.findByText(t.noAccessTitle)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: new RegExp(`^${t.deleteAria}`) })).toBeNull()
+  })
+})
+
 describe('reset password', () => {
   const resetButton = (name: string) =>
     within(rowOf(name)).getByRole('button', { name: `${t.resetAria}: ${name}` })

@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createUser, getUsers, resetUserPassword, updateUser } from '@/api/client'
+import { createUser, deleteUser, getUsers, resetUserPassword, updateUser } from '@/api/client'
 import type { CreateUserBody, UpdateUserBody, User } from '@/api/types'
 import { ME_KEY } from '@/features/auth/useMe'
+import { MY_SCHEDULE_KEY, SERVICES_KEY } from '@/features/schedule/useSchedule'
 
 export const USERS_KEY = ['users'] as const
 
@@ -60,5 +61,26 @@ export function useResetPassword() {
     mutationFn: (id: string) => resetUserPassword(id),
     onSuccess: refresh,
     onError: refresh,
+  })
+}
+
+/** Also removes the user's memberships and assignments, so schedules refresh too. */
+export function useDeleteUser() {
+  const refresh = useRefreshUsers()
+  const client = useQueryClient()
+  const refreshAll = () => {
+    refresh()
+    void client.invalidateQueries({ queryKey: SERVICES_KEY })
+    void client.invalidateQueries({ queryKey: MY_SCHEDULE_KEY })
+    void client.invalidateQueries({ queryKey: ['candidates'] })
+  }
+  return useMutation({
+    mutationFn: (id: string) => deleteUser(id),
+    onSuccess: (_data, id) => {
+      client.setQueryData<User[]>(USERS_KEY, (list) => list?.filter((u) => u.id !== id))
+      refreshAll()
+    },
+    // A 404 means the user is already gone; a 409 or 400 leaves the row. The list refreshes either way.
+    onError: refreshAll,
   })
 }

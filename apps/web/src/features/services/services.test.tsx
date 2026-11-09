@@ -356,6 +356,7 @@ describe('delete', () => {
     const dialog = await screen.findByRole('alertdialog')
     expect(within(dialog).getByText(t.confirmDelete.title)).toBeInTheDocument()
     expect(within(dialog).getByText(UPCOMING.title)).toBeInTheDocument()
+    expect(dialog).toHaveTextContent(t.confirmDelete.description)
     await u.click(within(dialog).getByRole('button', { name: messages.common.cancel }))
     await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
     expect(calls).toBe(0)

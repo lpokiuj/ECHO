@@ -3,7 +3,7 @@
 // tests in src/features/schedule/schedule.test.tsx. Here we only check that the toggle sends
 // includePast=true and that the fixture stays visible.
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 import { formatDate } from '../src/lib/dates.ts'
 import { messages } from '../src/lib/messages.ts'
 import {
@@ -14,6 +14,7 @@ import {
   createE2eTeam,
   createE2eUser,
   findInList,
+  plain as test,
   seedSession,
   type CreatedUser,
 } from './fixtures.ts'
@@ -82,7 +83,7 @@ test('full schedule shows a created service with its teams and people in WIB', a
 }) => {
   const errors = collectErrors(page)
   const { service, team, users } = await createFixture(request)
-  await seedSession(page, await adminToken(request))
+  await seedSession(page, await adminToken())
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('schedule')
   await expect(page.getByRole('heading', { level: 1, name: t.fullTitle })).toBeVisible()
@@ -156,7 +157,7 @@ for (const width of widths) {
     test.setTimeout(150_000)
     const errors = collectErrors(page)
     const { service } = await createFixture(request)
-    await seedSession(page, await adminToken(request))
+    await seedSession(page, await adminToken())
     await page.setViewportSize({ width, height: 800 })
     await page.goto('schedule')
     await expect(

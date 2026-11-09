@@ -78,6 +78,8 @@ describe('attendance and availability codes', () => {
     ['SERVICE_NOT_STARTED', 409],
     ['HAS_ATTENDANCE_RECORDS', 409],
     ['CANNOT_MARK_SELF', 400],
+    ['USER_HAS_CREATED_RECORDS', 409],
+    ['LAST_ADMIN', 400],
   ] as const)('maps %s to its Indonesian text', (code, status) => {
     const error = fromResponse(status, { statusCode: status, error: 'x', code, message: '...' })
     expect(error.code).toBe(code)

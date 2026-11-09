@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test'
+import { expect, type APIRequestContext, type Browser, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import {
   addTeamMember,
@@ -8,6 +8,7 @@ import {
   createE2eUser,
   findInList,
   loginAndChange,
+  plain as test,
   assignUsers,
 } from './fixtures.ts'
 

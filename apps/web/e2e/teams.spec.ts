@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect as baseExpect, test as plain, type Browser, type Page } from '@playwright/test'
+import { expect as baseExpect, type Browser, type Page } from '@playwright/test'
 import { fillMessage, messages } from '../src/lib/messages.ts'
 import {
   addTeamMember,
@@ -10,8 +10,12 @@ import {
   createE2eTeam,
   createE2eUser,
   deactivateUser,
+  expectNotInList,
   findInList,
+  listTeams,
   loginAndChange,
+  pembinaToken,
+  plain,
   seedSession,
   test,
 } from './fixtures.ts'
@@ -64,6 +68,13 @@ function memberItem(page: Page, width: number, name: string) {
   return width >= 768
     ? page.getByTestId('members-table').getByRole('row').filter({ hasText: name })
     : page.getByTestId('members-cards').getByRole('listitem').filter({ hasText: name })
+}
+
+/** A member of a team, wherever the paginated member list shows them. */
+function findMember(page: Page, width: number, name: string) {
+  return findInList(page, memberItem(page, width, name), {
+    list: page.getByTestId(width >= 768 ? 'members-table' : 'members-cards'),
+  })
 }
 
 async function freshPage(browser: Browser, width = 1280): Promise<Page> {
@@ -119,6 +130,37 @@ test('admin creates a team, hits a duplicate name, and renames it', async ({ pag
   expect(errors).toEqual([])
 })
 
+test('admin deletes a team after confirming; cancelling deletes nothing', async ({
+  page,
+  request,
+}) => {
+  const errors = collectErrors(page)
+  const team = await createE2eTeam(request)
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('teams')
+  const list = page.getByTestId('teams-table')
+  const deleteName = `${t.deleteAria}: ${team.name}`
+
+  const row = await findInList(page, teamItem(page, 1280, team.name), { list })
+  await row.getByRole('button', { name: deleteName }).click()
+  const confirm = page.getByRole('alertdialog')
+  await expect(confirm).toContainText(team.name)
+  await expect(confirm).toContainText(t.confirmDelete.description)
+  await confirm.getByRole('button', { name: messages.common.cancel }).click()
+  await expect(confirm).toHaveCount(0)
+  expect((await listTeams(request)).some((x) => x.id === team.id)).toBe(true)
+  await expect(row).toBeVisible()
+
+  await row.getByRole('button', { name: deleteName }).click()
+  await page.getByRole('alertdialog').getByRole('button', { name: t.confirmDelete.action }).click()
+  await expect(page.getByText(t.toast.deleted)).toBeVisible()
+  await expectNotInList(page, teamItem(page, 1280, team.name), { list })
+  await page.reload()
+  await expectNotInList(page, teamItem(page, 1280, team.name), { list })
+  expect((await listTeams(request)).some((x) => x.id === team.id)).toBe(false)
+  expect(errors).toEqual([])
+})
+
 test('add a member, set them leader: they see the assign screen', async ({
   page,
   request,
@@ -132,7 +174,7 @@ test('add a member, set them leader: they see the assign screen', async ({
   await expect(page.getByText(d.emptyTitle)).toBeVisible()
 
   await addViaUi(page, member)
-  const row = memberItem(page, 1280, member.name)
+  const row = await findMember(page, 1280, member.name)
   await expect(row).toBeVisible()
   await expect(row).toContainText(d.volunteerBadge)
   await row.getByRole('button', { name: `${d.makeLeaderAria}: ${member.name}` }).click()
@@ -170,7 +212,7 @@ test('removing a member asks first and deletes only their future assignments of 
 
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto(`teams/${team.id}`)
-  const row = memberItem(page, 1280, removed.name)
+  const row = await findMember(page, 1280, removed.name)
   await row.getByRole('button', { name: `${d.removeAria}: ${removed.name}` }).click()
   const confirm = page.getByRole('alertdialog')
   await expect(confirm).toContainText(
@@ -209,11 +251,15 @@ test('adding an inactive user shows an Indonesian error', async ({ page, request
   expect(errors).toEqual([])
 })
 
-// Logs in through the UI, so it must not start with the admin session.
-plain('a non-admin sees no teams link and a no-access page', async ({ page, request }) => {
+// Uses the shared PEMBINA session, so it must not start with the admin session.
+plain('a non-admin sees no teams link and a no-access page', async ({ page }) => {
   const errors = collectErrors(page)
   await page.setViewportSize({ width: 1280, height: 800 })
-  await loginAndChange(page, await createE2eUser(request, 'PEMBINA'))
+  await seedSession(page, pembinaToken())
+  await page.goto('./')
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
+  ).toBeVisible()
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await expect(nav.getByRole('link', { name: messages.nav.teams })).toHaveCount(0)
   await page.goto('teams')
@@ -235,7 +281,7 @@ for (const width of widths) {
     ]
     await addTeamMember(request, team.id, lead.id, true)
     await addTeamMember(request, team.id, volunteer.id)
-    await seedSession(page, await adminToken(request))
+    await seedSession(page, await adminToken())
     await page.setViewportSize({ width, height: 800 })
 
     await page.goto('teams')
@@ -263,11 +309,11 @@ for (const width of widths) {
     // Open the team from the list, as a person would.
     await listItem.getByRole('link', { name: `${t.openAria}: ${team.name}` }).click()
     await expect(page.getByRole('heading', { level: 1, name: team.name })).toBeVisible()
-    await expect(memberItem(page, width, volunteer.name)).toBeVisible()
+    await expect(await findMember(page, width, volunteer.name)).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page)).toEqual([])
     if (width < 1024) {
-      const buttons = memberItem(page, width, volunteer.name).getByRole('button')
+      const buttons = (await findMember(page, width, volunteer.name)).getByRole('button')
       for (let i = 0; i < (await buttons.count()); i++) {
         expect((await buttons.nth(i).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
       }
@@ -292,13 +338,33 @@ for (const width of widths) {
     await page.screenshot({ path: `.screens/f9-add-${width}.png` })
     await page.keyboard.press('Escape')
 
-    await memberItem(page, width, volunteer.name)
+    await (
+      await findMember(page, width, volunteer.name)
+    )
       .getByRole('button', { name: `${d.removeAria}: ${volunteer.name}` })
       .click()
     await expect(page.getByRole('alertdialog')).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page, '[role="alertdialog"]')).toEqual([])
     await page.screenshot({ path: `.screens/f9-remove-${width}.png` })
+    await page
+      .getByRole('alertdialog')
+      .getByRole('button', { name: messages.common.cancel })
+      .click()
+
+    // The delete dialog on the list.
+    await page.goto('teams')
+    await (
+      await findInList(page, teamItem(page, width, team.name), {
+        list: page.getByTestId(width >= 768 ? 'teams-table' : 'teams-cards'),
+      })
+    )
+      .getByRole('button', { name: `${t.deleteAria}: ${team.name}` })
+      .click()
+    await expect(page.getByRole('alertdialog')).toBeVisible()
+    expect(await hasHorizontalScroll(page)).toBe(false)
+    expect(await seriousViolations(page, '[role="alertdialog"]')).toEqual([])
+    await page.screenshot({ path: `.screens/f9-delete-${width}.png` })
     await page
       .getByRole('alertdialog')
       .getByRole('button', { name: messages.common.cancel })

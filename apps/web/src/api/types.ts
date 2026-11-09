@@ -9,6 +9,8 @@ export type ErrorCode =
   | 'SERVICE_NOT_STARTED'
   | 'CANNOT_MARK_SELF'
   | 'HAS_ATTENDANCE_RECORDS'
+  | 'USER_HAS_CREATED_RECORDS'
+  | 'LAST_ADMIN'
 
 export interface Membership {
   teamId: string

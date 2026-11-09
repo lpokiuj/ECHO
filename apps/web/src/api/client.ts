@@ -179,6 +179,11 @@ export function updateUser(id: string, body: UpdateUserBody): Promise<User> {
   return request<User>(`/users/${encodeURIComponent(id)}`, { method: 'PATCH', body })
 }
 
+/** Hard delete, 204 with an empty body. ADMIN only. */
+export function deleteUser(id: string): Promise<void> {
+  return request<void>(`/users/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
 /** 204 with an empty body. The server sets its default password; nothing is returned. */
 export function resetUserPassword(id: string): Promise<void> {
   return request<void>(`/users/${encodeURIComponent(id)}/reset-password`, { method: 'POST' })
@@ -194,6 +199,11 @@ export function getTeams(): Promise<Team[]> {
 
 export function createTeam(name: string): Promise<Team> {
   return request<Team>('/teams', { method: 'POST', body: { name } })
+}
+
+/** Hard delete, 204 with an empty body. ADMIN only. */
+export function deleteTeam(id: string): Promise<void> {
+  return request<void>(teamPath(id), { method: 'DELETE' })
 }
 
 export function renameTeam(id: string, name: string): Promise<Team> {

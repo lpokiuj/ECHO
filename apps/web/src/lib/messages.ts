@@ -135,6 +135,9 @@ export const messages = {
       CANNOT_MARK_SELF: 'Anda tidak dapat mencatat diri sendiri sebagai tidak hadir.',
       HAS_ATTENDANCE_RECORDS:
         'Relawan ini sudah memiliki catatan ketidakhadiran sehingga penugasannya tidak dapat dihapus.',
+      USER_HAS_CREATED_RECORDS:
+        'Pengguna ini pernah membuat kegiatan, menugaskan orang, atau mencatat ketidakhadiran sehingga tidak dapat dihapus. Nonaktifkan akunnya sebagai gantinya.',
+      LAST_ADMIN: 'Admin terakhir tidak dapat dihapus.',
     },
     fields: {
       email: 'Format email tidak valid.',
@@ -187,7 +190,8 @@ export const messages = {
     },
     confirmDelete: {
       title: 'Hapus kegiatan ini?',
-      description: 'Kegiatan akan dihapus dari semua jadwal dan tidak dapat dikembalikan.',
+      description:
+        'Penghapusan bersifat permanen. Kegiatan dan semua penugasan di dalamnya akan dihapus dari semua jadwal.',
       action: 'Hapus',
     },
     toast: {
@@ -241,6 +245,13 @@ export const messages = {
       description: 'Sesi pengguna ini akan langsung berakhir dan ia tidak dapat masuk lagi.',
       action: 'Nonaktifkan',
     },
+    deleteAria: 'Hapus pengguna',
+    confirmDelete: {
+      title: 'Hapus pengguna ini?',
+      description:
+        'Penghapusan bersifat permanen. Semua jadwal dan keanggotaan orang ini juga akan dihapus.',
+      action: 'Hapus',
+    },
     confirmReset: {
       title: 'Atur ulang kata sandi?',
       description:
@@ -252,6 +263,8 @@ export const messages = {
       updated: 'Pengguna berhasil diubah.',
       reset: 'Kata sandi diatur ulang. Sampaikan kata sandi bawaan di luar aplikasi.',
       gone: 'Pengguna sudah tidak ada. Daftar telah dimuat ulang.',
+      deleted: 'Pengguna berhasil dihapus.',
+      cannotDeleteSelf: 'Anda tidak dapat menghapus akun Anda sendiri.',
     },
   },
   teams: {
@@ -261,6 +274,13 @@ export const messages = {
     rename: 'Ganti nama',
     renameAria: 'Ganti nama bidang',
     openAria: 'Buka bidang',
+    deleteAria: 'Hapus bidang',
+    confirmDelete: {
+      title: 'Hapus bidang ini?',
+      description:
+        'Penghapusan bersifat permanen. Semua keanggotaan, penugasan, dan riwayat kehadiran bidang ini juga akan dihapus.',
+      action: 'Hapus',
+    },
     listLabel: 'Daftar bidang',
     columns: { team: 'Bidang', actions: 'Aksi' },
     loadErrorTitle: 'Bidang gagal dimuat',
@@ -285,6 +305,7 @@ export const messages = {
     toast: {
       created: 'Bidang berhasil ditambahkan.',
       renamed: 'Nama bidang berhasil diubah.',
+      deleted: 'Bidang berhasil dihapus.',
       gone: 'Bidang sudah tidak ada. Daftar telah dimuat ulang.',
       memberAdded: '{name} ditambahkan ke bidang.',
       leaderSet: '{name} kini Ketua Bidang. Akses penugasan berlaku pada permintaan berikutnya.',

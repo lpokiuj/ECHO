@@ -1,8 +1,10 @@
-import { ChevronRightIcon, PencilIcon, PlusIcon, UsersIcon } from 'lucide-react'
+import { ChevronRightIcon, PencilIcon, PlusIcon, Trash2Icon, UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { errorMessage } from '@/api/errors'
+import { toast } from 'sonner'
+import { errorMessage, normalizeError } from '@/api/errors'
 import type { Team } from '@/api/types'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { Pagination } from '@/components/Pagination'
 import { usePagination } from '@/hooks/usePagination'
 import { EmptyState } from '@/components/EmptyState'
@@ -19,11 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useMe } from '@/features/auth/useMe'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { messages } from '@/lib/messages'
 import { PATHS } from '@/routes/paths'
 import { TeamFormDialog } from './TeamFormDialog'
-import { useTeams } from './useTeams'
+import { useDeleteTeam, useTeams } from './useTeams'
 
 const t = messages.teams
 
@@ -46,20 +49,38 @@ function TeamLink({ team }: { team: Team }) {
   )
 }
 
-function RenameButton({ team, onRename }: { team: Team; onRename: (team: Team) => void }) {
+interface Actions {
+  onRename: (team: Team) => void
+  /** Present only for ADMIN. */
+  onDelete?: (team: Team) => void
+}
+
+function RowActions({ team, onRename, onDelete }: Actions & { team: Team }) {
   return (
-    <Button
-      variant="outline"
-      size="icon"
-      aria-label={`${t.renameAria}: ${team.name}`}
-      onClick={() => onRename(team)}
-    >
-      <PencilIcon />
-    </Button>
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="icon"
+        aria-label={`${t.renameAria}: ${team.name}`}
+        onClick={() => onRename(team)}
+      >
+        <PencilIcon />
+      </Button>
+      {onDelete ? (
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={`${t.deleteAria}: ${team.name}`}
+          onClick={() => onDelete(team)}
+        >
+          <Trash2Icon />
+        </Button>
+      ) : null}
+    </div>
   )
 }
 
-function TeamTable({ teams, onRename }: { teams: Team[]; onRename: (team: Team) => void }) {
+function TeamTable({ teams, ...actions }: { teams: Team[] } & Actions) {
   return (
     <div className="hidden md:block" data-testid="teams-table">
       <Table aria-label={t.listLabel}>
@@ -76,7 +97,7 @@ function TeamTable({ teams, onRename }: { teams: Team[]; onRename: (team: Team) 
                 <TeamLink team={team} />
               </TableCell>
               <TableCell>
-                <RenameButton team={team} onRename={onRename} />
+                <RowActions team={team} {...actions} />
               </TableCell>
             </TableRow>
           ))}
@@ -86,7 +107,7 @@ function TeamTable({ teams, onRename }: { teams: Team[]; onRename: (team: Team) 
   )
 }
 
-function TeamCards({ teams, onRename }: { teams: Team[]; onRename: (team: Team) => void }) {
+function TeamCards({ teams, ...actions }: { teams: Team[] } & Actions) {
   return (
     <ul
       className="flex flex-col gap-3 md:hidden"
@@ -97,7 +118,7 @@ function TeamCards({ teams, onRename }: { teams: Team[]; onRename: (team: Team) 
         <li key={team.id}>
           <ListCard
             title={<TeamLink team={team} />}
-            inlineAction={<RenameButton team={team} onRename={onRename} />}
+            actions={<RowActions team={team} {...actions} />}
           />
         </li>
       ))}
@@ -111,6 +132,21 @@ export function TeamsPage() {
   const pager = usePagination(data ?? [])
   const [formOpen, setFormOpen] = useState(false)
   const [renaming, setRenaming] = useState<Team | undefined>()
+  const [deleting, setDeleting] = useState<Team | undefined>()
+  const me = useMe()
+  const remove = useDeleteTeam()
+  const onDelete = me.data?.role === 'ADMIN' ? setDeleting : undefined
+
+  async function confirmDelete() {
+    if (!deleting || remove.isPending) return
+    try {
+      await remove.mutateAsync(deleting.id)
+      toast.success(t.toast.deleted)
+    } catch (error) {
+      toast.error(normalizeError(error).kind === 'notFound' ? t.toast.gone : errorMessage(error))
+    }
+    setDeleting(undefined)
+  }
 
   const openCreate = () => {
     setRenaming(undefined)
@@ -152,13 +188,33 @@ export function TeamsPage() {
           />
         ) : (
           <>
-            <TeamTable teams={pager.pageItems} onRename={openRename} />
-            <TeamCards teams={pager.pageItems} onRename={openRename} />
+            <TeamTable teams={pager.pageItems} onRename={openRename} onDelete={onDelete} />
+            <TeamCards teams={pager.pageItems} onRename={openRename} onDelete={onDelete} />
             <Pagination {...pager} />
           </>
         )}
       </div>
       <TeamFormDialog open={formOpen} onOpenChange={setFormOpen} team={renaming} />
+      <ConfirmDialog
+        open={deleting !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(undefined)
+        }}
+        title={t.confirmDelete.title}
+        description={
+          deleting ? (
+            <>
+              <strong className="break-words">{deleting.name}</strong>
+              <br />
+              {t.confirmDelete.description}
+            </>
+          ) : null
+        }
+        confirmLabel={t.confirmDelete.action}
+        destructive
+        pending={remove.isPending}
+        onConfirm={() => void confirmDelete()}
+      />
     </>
   )
 }

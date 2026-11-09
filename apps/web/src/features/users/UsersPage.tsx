@@ -1,4 +1,4 @@
-import { KeyRoundIcon, PencilIcon, UserPlusIcon, UsersIcon } from 'lucide-react'
+import { KeyRoundIcon, PencilIcon, Trash2Icon, UserPlusIcon, UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { errorMessage, normalizeError } from '@/api/errors'
@@ -27,13 +27,16 @@ import { useMe } from '@/features/auth/useMe'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
 import { messages } from '@/lib/messages'
 import { UserFormDialog } from './UserFormDialog'
-import { useResetPassword, useUsers } from './useUsers'
+import { useDeleteUser, useResetPassword, useUsers } from './useUsers'
 
 const t = messages.users
 
 interface Actions {
   onEdit: (user: User) => void
   onReset: (user: User) => void
+  /** Present only for ADMIN; the own account never gets a delete button. */
+  onDelete?: (user: User) => void
+  meId?: string
 }
 
 function StatusBadges({ user, isSelf }: { user: User; isSelf: boolean }) {
@@ -47,7 +50,7 @@ function StatusBadges({ user, isSelf }: { user: User; isSelf: boolean }) {
   )
 }
 
-function RowActions({ user, onEdit, onReset }: Actions & { user: User }) {
+function RowActions({ user, onEdit, onReset, onDelete, meId }: Actions & { user: User }) {
   return (
     <div className="flex gap-2">
       <Button
@@ -66,6 +69,16 @@ function RowActions({ user, onEdit, onReset }: Actions & { user: User }) {
       >
         <KeyRoundIcon />
       </Button>
+      {onDelete && user.id !== meId ? (
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={`${t.deleteAria}: ${user.name}`}
+          onClick={() => onDelete(user)}
+        >
+          <Trash2Icon />
+        </Button>
+      ) : null}
     </div>
   )
 }
@@ -82,7 +95,7 @@ function Identity({ user }: { user: User }) {
   )
 }
 
-function UserTable({ users, meId, ...actions }: { users: User[]; meId?: string } & Actions) {
+function UserTable({ users, ...actions }: { users: User[] } & Actions) {
   return (
     <div className="hidden md:block" data-testid="users-table">
       <Table aria-label={t.listLabel}>
@@ -105,7 +118,7 @@ function UserTable({ users, meId, ...actions }: { users: User[]; meId?: string }
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap gap-1">
-                  <StatusBadges user={u} isSelf={u.id === meId} />
+                  <StatusBadges user={u} isSelf={u.id === actions.meId} />
                 </div>
               </TableCell>
               <TableCell>
@@ -119,7 +132,7 @@ function UserTable({ users, meId, ...actions }: { users: User[]; meId?: string }
   )
 }
 
-function UserCards({ users, meId, ...actions }: { users: User[]; meId?: string } & Actions) {
+function UserCards({ users, ...actions }: { users: User[] } & Actions) {
   return (
     <ul
       className="flex flex-col gap-3 md:hidden"
@@ -133,7 +146,7 @@ function UserCards({ users, meId, ...actions }: { users: User[]; meId?: string }
             meta={
               <>
                 <RoleBadge role={u.role} />
-                <StatusBadges user={u} isSelf={u.id === meId} />
+                <StatusBadges user={u} isSelf={u.id === actions.meId} />
               </>
             }
             actions={<RowActions user={u} {...actions} />}
@@ -149,6 +162,8 @@ export function UsersPage() {
   const query = useUsers()
   const me = useMe()
   const reset = useResetPassword()
+  const remove = useDeleteUser()
+  const [deleting, setDeleting] = useState<User | undefined>()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<User | undefined>()
   const [resetting, setResetting] = useState<User | undefined>()
@@ -174,8 +189,24 @@ export function UsersPage() {
     setResetting(undefined)
   }
 
+  async function confirmDelete() {
+    if (!deleting || remove.isPending) return
+    try {
+      await remove.mutateAsync(deleting.id)
+      toast.success(t.toast.deleted)
+    } catch (error) {
+      const e = normalizeError(error)
+      // Only the own account answers a 400 without a code, and the button is hidden for it.
+      if (e.kind === 'notFound') toast.error(t.toast.gone)
+      else if (e.kind === 'validation' && !e.code) toast.error(t.toast.cannotDeleteSelf)
+      else toast.error(errorMessage(error))
+    }
+    setDeleting(undefined)
+  }
+
   const { data, isPending, isError, error, refetch, isRefetching } = query
   const meId = me.data?.id
+  const onDelete = me.data?.role === 'ADMIN' ? setDeleting : undefined
   const pager = usePagination(data ?? [])
 
   return (
@@ -214,18 +245,40 @@ export function UsersPage() {
               meId={meId}
               onEdit={openEdit}
               onReset={setResetting}
+              onDelete={onDelete}
             />
             <UserCards
               users={pager.pageItems}
               meId={meId}
               onEdit={openEdit}
               onReset={setResetting}
+              onDelete={onDelete}
             />
             <Pagination {...pager} />
           </>
         )}
       </div>
       <UserFormDialog open={formOpen} onOpenChange={setFormOpen} user={editing} meId={meId} />
+      <ConfirmDialog
+        open={deleting !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(undefined)
+        }}
+        title={t.confirmDelete.title}
+        description={
+          deleting ? (
+            <>
+              <strong className="break-words">{deleting.name}</strong>
+              <br />
+              {t.confirmDelete.description}
+            </>
+          ) : null
+        }
+        confirmLabel={t.confirmDelete.action}
+        destructive
+        pending={remove.isPending}
+        onConfirm={() => void confirmDelete()}
+      />
       <ConfirmDialog
         open={resetting !== undefined}
         onOpenChange={(open) => {

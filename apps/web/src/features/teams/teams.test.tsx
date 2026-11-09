@@ -215,6 +215,79 @@ describe('create and rename', () => {
   })
 })
 
+describe('delete', () => {
+  const deleteButton = () =>
+    within(screen.getByTestId('teams-table')).getByRole('button', {
+      name: `${t.deleteAria}: Music`,
+    })
+  const confirmButton = async () =>
+    within(await screen.findByRole('alertdialog')).getByRole('button', {
+      name: t.confirmDelete.action,
+    })
+
+  it('asks first and says it is permanent; cancel sends nothing', async () => {
+    const sink = { calls: 0 }
+    server.use(
+      http.delete(
+        '*/api/teams/:id',
+        () => ((sink.calls += 1), new Response(null, { status: 204 })),
+      ),
+    )
+    await openList()
+    await user().click(deleteButton())
+    const dialog = await screen.findByRole('alertdialog')
+    expect(within(dialog).getByText('Music')).toBeInTheDocument()
+    expect(dialog).toHaveTextContent(t.confirmDelete.description)
+    await user().click(within(dialog).getByRole('button', { name: messages.common.cancel }))
+    expect(sink.calls).toBe(0)
+  })
+
+  it('deletes after confirming (204), refreshes dependent views and shows a toast', async () => {
+    const ids: string[] = []
+    server.use(
+      http.delete('*/api/teams/:id', ({ params }) => {
+        ids.push(String(params.id))
+        return new Response(null, { status: 204 })
+      }),
+    )
+    await openList()
+    const spy = vi.spyOn(queryClient, 'invalidateQueries')
+    await user().click(deleteButton())
+    await user().click(await confirmButton())
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith(t.toast.deleted))
+    expect(ids).toEqual([TEAMS_EXAMPLE[1]!.id])
+    const keys = spy.mock.calls.map((c) => JSON.stringify(c[0]?.queryKey))
+    expect(keys).toEqual(expect.arrayContaining(['["teams"]', '["services"]', '["me"]']))
+    spy.mockRestore()
+  })
+
+  it('maps 404 to the already-gone message and 403 to the forbidden message', async () => {
+    let status = 404
+    server.use(
+      http.delete('*/api/teams/:id', () =>
+        status === 404
+          ? respond(404, TEAM_ERROR_BODIES.teamNotFound)
+          : respond(403, ERROR_BODIES.forbidden),
+      ),
+    )
+    await openList()
+    for (const expected of [t.toast.gone, messages.errors.forbidden]) {
+      await user().click(deleteButton())
+      await user().click(await confirmButton())
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith(expected))
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
+      status = 403
+    }
+  })
+
+  it('shows no delete button to a non-admin session', async () => {
+    server.use(handlers.me(undefined, ME_BY_ROLE.pembina))
+    renderApp('/teams', { token: true })
+    expect(await screen.findByText(t.noAccessTitle)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: new RegExp(`^${t.deleteAria}`) })).toBeNull()
+  })
+})
+
 describe('team page', () => {
   it('lists members with initials, a leader badge and an inactive mark, without fetching /users', async () => {
     let usersCalls = 0
