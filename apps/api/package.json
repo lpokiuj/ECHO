@@ -24,6 +24,7 @@
     "migration:revert": "npm run build && typeorm migration:revert -d dist/database/data-source.js",
     "migration:run:test": "NODE_ENV=test npm run migration:run",
     "seed": "npm run build && node dist/database/seed.js",
+    "db:reset": "npm run build && node dist/database/reset.js && node dist/database/seed.js",
     "pretest:e2e": "nest build"
   },
   "dependencies": {
