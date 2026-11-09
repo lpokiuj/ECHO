@@ -69,13 +69,18 @@ for (const [label, size] of [
   })
 }
 
+const navLabel = (id: string) => site.nav.items.find((i) => i.id === id)!.label
+
 test.describe('header links at 1280px', () => {
   test.use({ viewport: { width: 1280, height: 800 } })
 
   for (const [label, title] of [
     ['Ibadah', site.sections.worship.title],
     ['Lokasi', site.sections.location.title],
-    ['Kegiatan', site.sections.events.title],
+    [navLabel('acara'), site.sections.events.title],
+    [navLabel('tentang'), site.sections.about.title],
+    [navLabel('pertama-kali'), site.sections.faq.title],
+    [navLabel('kontak'), site.sections.contact.title],
   ] as const) {
     test(`the "${label}" link scrolls to its section`, async ({ page }) => {
       await page.goto('/')
@@ -94,6 +99,10 @@ test.describe('header links at 360px (burger)', () => {
   for (const [label, title] of [
     ['Ibadah', site.sections.worship.title],
     ['Lokasi', site.sections.location.title],
+    [navLabel('acara'), site.sections.events.title],
+    [navLabel('tentang'), site.sections.about.title],
+    [navLabel('pertama-kali'), site.sections.faq.title],
+    [navLabel('kontak'), site.sections.contact.title],
   ] as const) {
     test(`the burger "${label}" link scrolls to its section`, async ({ page }) => {
       await page.goto('/')

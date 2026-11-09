@@ -18,9 +18,9 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 
 - `src/content/`: ALL user-facing text (`site.ts`) and the static events (`events.ts`)
 - `src/api/`: the only place that touches the network (`client.ts`, types, errors)
-- `src/lib/`: `events.ts` (`getEvents()`), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
+- `src/lib/`: `events.ts` (`getEvents()`, `upcomingEvents()`), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
 - `src/pages/`: the route components. `src/features/<feature>/`: feature UI and hooks (F2 to F5;
-  `home/` holds the hero, Ibadah and Lokasi sections)
+  `home/` holds the hero and the Ibadah, Lokasi, Tentang, FAQ, Kontak and Persembahan sections)
 - `src/components/`: shared UI (Logo, header, footer, layout). `src/components/ui/`: shadcn/ui
 - `src/hooks/`, `src/routes/` (router, `PATHS`), `src/test/` (Vitest setup, render helper, MSW handlers)
 
@@ -37,7 +37,11 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
   `content.test.ts`); the embed URL is built from it and `map.query` in `src/lib/maps.ts`. Unit and
   e2e tests never load Google (e2e uses `mockGoogleMaps` from `e2e/maps-mock.ts`).
 - Events are read only through `getEvents()` (`src/lib/events.ts`, async) via the `useEvents()`
-  query hook. ESLint forbids importing `@/content/events` anywhere else.
+  query hook. ESLint forbids importing `@/content/events` anywhere else. The home page shows
+  `useUpcomingEvents()` (`upcomingEvents(list, now)`: sorted, `startsAt < now` hidden; `now` is
+  injected, so tests fix the clock).
+- Contact and giving values (WhatsApp, Instagram, email, bank, QRIS) are plain-text placeholders
+  ending in "akan diisi", never links or real numbers; `content.test.ts` enforces it.
 - Never import from `apps/web` (ESLint enforces it). Copy what you need (theme tokens, Logo glyph,
   shadcn files). Copy shadcn components from `apps/web/src/components/ui/`; do not run the shadcn
   CLI (it adds unapproved packages). Replace any `messages` import with `site` from `@/content/site`.
@@ -82,7 +86,10 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - Theme tokens copied from apps/web without the portal-only sidebar/topbar tokens; radius is 0.75rem
   (rounder cards for the youth feel). Light theme only.
 - `react-router` (not `react-router-dom`), like apps/web.
-- Home section order follows the plan: hero, Ibadah, Lokasi, Kegiatan, Tentang, then the rest; the
-  header links follow the same order. Hash links scroll via `useHashScroll` in `SiteLayout`, which
+- Home section order follows the plan: hero, Ibadah, Lokasi, Acara, Tentang Kami, Pertama Kali?,
+  Kontak, Persembahan. The header and burger link to all but Persembahan, in page order, plus
+  "Doa". There are no Doa or Relawan CTA sections on home (the hero, header and "Daftar Relawan"
+  button link to the pages). The FAQ accordion is `src/components/ui/accordion.tsx` (hand-written
+  on `radix-ui`; the shadcn CLI is not used). Hash links scroll via `useHashScroll` in `SiteLayout`, which
   also depends on `location.key` so clicking the same link twice scrolls twice. The map iframe has
   no `sandbox` attribute (decision), and the open-in-Maps link is the fallback when it does not show.

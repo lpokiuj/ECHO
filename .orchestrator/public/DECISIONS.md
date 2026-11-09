@@ -130,6 +130,16 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-027 (F3, plan review, mine)
+- Final home order per PUBLIC_PLAN: Hero, Ibadah, Lokasi, Acara, Tentang Kami (bidang overview inside, static), Pertama Kali?, Kontak, Persembahan. "Kegiatan" is renamed "Acara" (id `acara`).
+  The F1 placeholder sections `bidang`, `prayer` (Doa CTA) and `volunteer` (Relawan CTA) are removed (not in the plan; /doa and /relawan stay reachable from the hero, header and
+  burger). No test is deleted: the router loop test and the nav-order content test keep their strictness (their expected lists follow the new content), and explicit "section#doa and
+  section#relawan are absent" assertions are ADDED. Past event = `startsAt < now` (no endsAt in the data). Contact values are plain text with icons, not links (no invented href/email);
+  real links later through a lib builder with its own test. Footer heading renamed "Hubungi kami" to avoid a duplicate "Kontak" h2. Persembahan is not in the header nav and gets no footer
+  link. `PlaceholderBlock.tsx` is deleted (unused). Reverse: re-add sections / revert the rename in content and tests.
+- Known time bomb for the final report: the static placeholder events are dated 2030, so after 2030-01-05 the existing `useEvents`/router tests that expect those events would fail
+  until the dates are rolled forward.
+
 ## D-026 (F2, plan review, mine)
 - Section ORDER follows PUBLIC_PLAN (Hero, Ibadah, Lokasi, Acara, Tentang, then the F3 placeholders), not F1's placeholder order: F2 moves the F1 "Tentang" placeholder below
   Kegiatan. B's suggestion to keep F1's order is rejected (the plan text is authoritative). Tones re-alternate accordingly. Header/burger nav gets "Lokasi" (after Ibadah).

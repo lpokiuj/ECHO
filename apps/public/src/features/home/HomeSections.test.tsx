@@ -108,7 +108,7 @@ describe('LocationSection', () => {
 })
 
 describe('home section order', () => {
-  it('follows Ibadah, Lokasi, Kegiatan, Tentang', () => {
+  it('follows Ibadah, Lokasi, Acara, Tentang', () => {
     const { container } = renderApp('/')
     const ids = [...container.querySelectorAll('main section')].map((s) => s.id)
     expect(ids.slice(0, 5)).toEqual([
@@ -118,5 +118,84 @@ describe('home section order', () => {
       site.sections.events.id,
       site.sections.about.id,
     ])
+  })
+
+  it('has exactly the plan sections, in order, after the hero', () => {
+    const { container } = renderApp('/')
+    const ids = [...container.querySelectorAll('main section')].map((s) => s.id)
+    expect(ids).toEqual([
+      site.hero.id,
+      site.sections.worship.id,
+      site.sections.location.id,
+      site.sections.events.id,
+      site.sections.about.id,
+      site.sections.faq.id,
+      site.sections.contact.id,
+      site.sections.giving.id,
+    ])
+  })
+})
+
+describe('AboutSection', () => {
+  it('renders the vision, the story and the bidang overview from content', () => {
+    renderApp('/')
+    const copy = site.sections.about
+    const section = within(screen.getByRole('region', { name: copy.title }))
+    expect(section.getByRole('heading', { level: 3, name: copy.vision.title })).toBeVisible()
+    expect(section.getByText(copy.vision.text)).toBeVisible()
+    expect(section.getByRole('heading', { level: 3, name: copy.story.title })).toBeVisible()
+    expect(section.getByText(copy.story.paragraphs[0]!)).toBeVisible()
+    expect(section.getByRole('heading', { level: 3, name: copy.bidang.title })).toBeVisible()
+    expect(section.getAllByText(copy.bidang.items[0]!.name)).toHaveLength(copy.bidang.items.length)
+  })
+})
+
+describe('FaqSection', () => {
+  it('lists the questions closed, and opens an answer with the keyboard', async () => {
+    renderApp('/')
+    const copy = site.sections.faq
+    const section = within(screen.getByRole('region', { name: copy.title }))
+    for (const item of copy.items) {
+      expect(section.getByRole('button', { name: item.question })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      )
+    }
+    expect(section.queryByText(copy.items[0]!.answer)).not.toBeInTheDocument()
+    const first = section.getByRole('button', { name: copy.items[0]!.question })
+    first.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(first).toHaveAttribute('aria-expanded', 'true')
+    expect(section.getByText(copy.items[0]!.answer)).toBeVisible()
+  })
+})
+
+describe('ContactSection', () => {
+  it('shows WhatsApp, Instagram and email placeholders as text, not links', () => {
+    renderApp('/')
+    const copy = site.sections.contact
+    const section = within(screen.getByRole('region', { name: copy.title }))
+    expect(section.getByText(copy.whatsappLabel)).toBeVisible()
+    expect(section.getByText(site.contact.whatsapp)).toBeVisible()
+    expect(section.getByText(site.contact.email)).toBeVisible()
+    const instagram = site.socials.items.find((i) => i.id === 'instagram')!
+    expect(section.getByText(instagram.label)).toBeVisible()
+    expect(section.getByText(instagram.handle)).toBeVisible()
+    expect(section.queryAllByRole('link')).toHaveLength(0)
+  })
+})
+
+describe('GivingSection', () => {
+  it('shows the bank and QRIS placeholder blocks', () => {
+    renderApp('/')
+    const copy = site.sections.giving
+    const section = within(screen.getByRole('region', { name: copy.title }))
+    expect(section.getByRole('heading', { level: 3, name: copy.bank.title })).toBeVisible()
+    for (const row of [copy.bank.bankName, copy.bank.accountName, copy.bank.accountNumber]) {
+      expect(section.getByText(row.label)).toBeVisible()
+      expect(section.getByText(row.value)).toBeVisible()
+    }
+    expect(section.getByRole('heading', { level: 3, name: copy.qris.title })).toBeVisible()
+    expect(section.getByText(copy.qris.placeholder)).toBeVisible()
   })
 })

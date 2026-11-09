@@ -15,6 +15,13 @@ describe('router', () => {
     expect(document.title).toBe(site.brand.name)
   })
 
+  it('has no Doa or Relawan call-to-action sections on home (they are pages, not sections)', () => {
+    const { container } = renderApp('/')
+    expect(container.querySelector('section#doa')).toBeNull()
+    expect(container.querySelector('section#relawan')).toBeNull()
+    expect(container.querySelector('section#bidang')).toBeNull()
+  })
+
   it('renders /doa and /relawan with their own heading and title', () => {
     renderApp('/doa')
     expect(

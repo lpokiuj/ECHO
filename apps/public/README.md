@@ -52,13 +52,21 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - **Text**: everything visitors read is in `src/content/site.ts` (navigation, section titles,
   footer, contact and social placeholders, error messages). Placeholders say "akan diisi": replace
   them with real content. Components never contain copy.
-- **Home sections** (page order: hero, Ibadah, Lokasi, Kegiatan, Tentang, ...): the hero, the
-  worship schedule and "what to expect" (`sections.worship`) and the address, transport, parking and
-  map (`sections.location`) are all in `src/content/site.ts`. To point the map at the real church,
+- **Home sections** (page order: hero, Ibadah, Lokasi, Acara, Tentang Kami, Pertama Kali?, Kontak,
+  Persembahan; the key order of `site.sections` is the page order). The hero, the worship schedule
+  (`sections.worship`), the address and map (`sections.location`), Tentang Kami with vision, story
+  and the bidang overview (`sections.about`, static text), the FAQ (`sections.faq`, an accordion),
+  Kontak (`sections.contact`) and Persembahan (`sections.giving`) are all in `src/content/site.ts`.
+  Contact and giving values (WhatsApp, Instagram, email, bank, QRIS) are plain-text placeholders
+  ("akan diisi"), not links, and `content.test.ts` rejects real-looking numbers; real links will
+  need a small builder in `src/lib` like `maps.ts`. There are no separate Doa or Relawan sections:
+  those are pages, reached from the hero, the header and the burger. To point the map at the real church,
   change `sections.location.map.query` (the embed URL is built in `src/lib/maps.ts`). The Google Maps
   base URL there is the only external URL on the site.
 - **Events**: `src/content/events.ts` (static list). The app reads events only through
-  `getEvents()` in `src/lib/events.ts`, so the source can later become an API.
+  `getEvents()` in `src/lib/events.ts`, so the source can later become an API. The Acara section
+  shows only `upcomingEvents(list, now)` (sorted, `startsAt < now` hidden) through
+  `useUpcomingEvents()`, with loading, error (retry) and empty states.
 - **Logo**: `src/components/Logo.tsx` (the "E" mark and the "ECHO" wordmark) and `public/favicon.svg`.
 - **Colors, radius, font**: tokens in `src/index.css`, copied from the portal so the brand matches.
 
@@ -71,6 +79,9 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   360, 768 and 1280px (no console errors, no horizontal scroll, 44px touch targets, axe with no
   serious or critical violations). `e2e/home.spec.ts` covers the hero buttons, the header and burger
   section links (with the sticky header offset), reduced motion and the map iframe attributes.
+  `e2e/sections.spec.ts` covers Acara (past hidden and the empty state, by fixing the page clock
+  with `page.clock.setFixedTime`), the FAQ keyboard behaviour, axe with an item open, and the
+  header at 1024px.
   Browser tests never load Google: `e2e/maps-mock.ts` answers requests to google.com locally.
   Screenshots go to `.screens/` (gitignored).
 - **Cleanup.** `e2e/global-setup.ts` runs before every run. It logs in once as the E2E admin
@@ -89,7 +100,7 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - `src/content/`: all text and static events
 - `src/api/`: the only place that touches the network
 - `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
-  Ibadah, Lokasi)
+  Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan)
 - `src/components/`: shared UI. `src/components/ui/`: shadcn/ui
 - `src/lib/`, `src/hooks/`, `src/routes/`, `src/test/`
 

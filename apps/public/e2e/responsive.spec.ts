@@ -34,6 +34,19 @@ for (const width of [360, 768, 1280]) {
           page.getByRole('heading', { level: 2, name: site.sections.location.title }),
         ).toBeVisible()
         await expect(page.getByTitle(site.sections.location.map.title)).toBeAttached()
+        for (const copy of [
+          site.sections.events,
+          site.sections.about,
+          site.sections.faq,
+          site.sections.contact,
+          site.sections.giving,
+        ]) {
+          await expect(page.getByRole('heading', { level: 2, name: copy.title })).toBeAttached()
+        }
+        if (width < 1024) {
+          const trigger = page.getByRole('button', { name: site.sections.faq.items[0]!.question })
+          expect((await trigger.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+        }
         if (width < 1024) {
           const heroRegion = page.getByRole('region', { name: site.hero.title })
           for (const cta of [site.hero.primaryCta, site.hero.secondaryCta]) {

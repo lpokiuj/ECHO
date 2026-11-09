@@ -59,9 +59,60 @@ describe('home content', () => {
   })
 
   it('lists the nav items in page order after the hero', () => {
-    const order = ['ibadah', 'lokasi', 'kegiatan', 'tentang', 'bidang']
+    const order = ['ibadah', 'lokasi', 'acara', 'tentang', 'pertama-kali', 'kontak']
     const anchors = site.nav.items.filter((i) => i.to.startsWith('/#')).map((i) => i.id)
     expect(anchors).toEqual(order)
+  })
+
+  it('keeps the home sections in plan order, and the nav anchors a subsequence of it', () => {
+    const pageOrder = Object.values(site.sections).map((s) => s.id)
+    expect(pageOrder).toEqual([
+      'ibadah',
+      'lokasi',
+      'acara',
+      'tentang',
+      'pertama-kali',
+      'kontak',
+      'persembahan',
+    ])
+    const anchors = site.nav.items.filter((i) => i.to.startsWith('/#')).map((i) => i.id)
+    expect(pageOrder.filter((id) => (anchors as string[]).includes(id))).toEqual(anchors)
+  })
+
+  it('has unique ids in the bidang overview and the FAQ', () => {
+    for (const items of [site.sections.about.bidang.items, site.sections.faq.items]) {
+      const ids = items.map((i) => i.id)
+      expect(new Set(ids).size).toBe(ids.length)
+    }
+  })
+})
+
+describe('no real bank, phone or contact numbers', () => {
+  const eventCopy = events.flatMap((e) => [e.id, e.title, e.location, e.description])
+
+  it('has no long digit runs, phone prefixes or grouped numbers in any string', () => {
+    for (const raw of [...strings(site), ...eventCopy]) {
+      // A standalone year (the footer copyright sample) is the only 4-digit number allowed.
+      const text = raw.replace(/\b(?:19|20)\d{2}\b/g, '')
+      expect(text).not.toMatch(/\d{4,}/)
+      expect(text).not.toMatch(/(\+62|\b0)8\d/)
+      expect(text).not.toMatch(/\d{3,}[\s.-]\d{3,}/)
+    }
+  })
+
+  it('keeps every contact, giving and social value an obvious placeholder', () => {
+    const g = site.sections.giving
+    const values = [
+      site.contact.address,
+      site.contact.whatsapp,
+      site.contact.email,
+      ...site.socials.items.map((i) => i.handle),
+      g.bank.bankName.value,
+      g.bank.accountName.value,
+      g.bank.accountNumber.value,
+      g.qris.placeholder,
+    ]
+    for (const value of values) expect(value).toMatch(/akan diisi$/)
   })
 })
 

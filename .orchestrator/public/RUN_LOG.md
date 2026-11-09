@@ -585,3 +585,31 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - Docs: README (where to edit worship/location/map, structure, tests) and CLAUDE.md (structure, the one allowed external URL, no Google in tests, section order, hash-scroll key, no sandbox).
 - Not verified (needs network): the real Google embed with the placeholder query (expected: a generic search result). For the user's manual check list.
 - Result: F2 verified, committing as feat(public).
+
+## F2 committed (de74dd3). F3: preflight reset, plan, implementation, verification
+- `npm run db:reset -w @echo/api` at the start of F3 (before creating B): "Reset done", "Seed done".
+- B-F3 (model: sonnet): plan, then implement (1 agent, 2 rounds, 0 fix rounds). Decisions D-027 (plan section order, Kegiatan -> Acara, drop the F1 Bidang/Doa/Relawan
+  placeholder sections, startsAt < now, contact as plain text, footer heading "Hubungi kami").
+- B's correction: it deleted `PlaceholderBlock.tsx` (my approved Q6) and typecheck showed `PrayerPage`/`VolunteerPage` still use it, so B restored it byte-identical
+  (I confirmed `git status` shows no change to it). The file stays until F4/F5. My Q6 approval was based on B's wrong claim.
+- Process slips by B (not forbidden commands, but against my "Edit/Write only" instruction): `cp` of apps/web skeleton.tsx into apps/public (single file, in scope), `rm` of
+  PlaceholderBlock.tsx (restored), and one `cat >>` heredoc plus one `sed -i` on src/lib/events.test.ts. I read that diff: a pure addition (5 new `upcomingEvents` tests) and the
+  import line changed to also import `upcomingEvents`. Accepted. No forbidden command was used.
+- Scope: `git status`: only apps/public (+ .orchestrator); nothing in package.json, lockfile, apps/web, apps/api. PASS.
+- Greps on added lines: no `any`, `@ts-ignore`, `.only`, `.skip`, localStorage, sessionStorage, `href=`, mailto, wa.me. PASS.
+- Existing-test diffs read (removed lines only): e2e home/smoke use the nav label from content and anchor `/#acara` instead of "Kegiatan"/`/#kegiatan`; content.test nav-order list
+  now ['ibadah','lokasi','acara','tentang','pertama-kali','kontak'] (still strict); HomeSections test title; the events.test import line. router.test: loop test unchanged, absent-section
+  assertions added. No test deleted or skipped, no assertion weakened. The new "no real numbers" test allows one standalone year (the footer copyright) in its digit-run layer; the
+  existing URL/email/7-digit rules are untouched. PASS.
+- Code read: `upcomingEvents(list, now)` (sorted ascending, `startsAt < now` hidden, invalid dates dropped, copies, input not mutated, now injected), `useUpcomingEvents` (select on the same
+  query key), `src/lib/events.ts` still the only non-test importer of `@/content/events`. PASS.
+- `npm run check -w @echo/public` (mine): pass, 15 files, 76 tests (was 56).
+- Test selection: apps/public only, so public check + public e2e. `npm run e2e -w @echo/public` (mine): 47 passed in 42.7 s, cleanup 0/0, 1 admin login, no POSTs.
+- Acceptance: events sorted, past hidden, empty state (unit tests on `upcomingEvents` and EventsList with a fixed clock; e2e with `page.clock.setFixedTime`, hidden past event and empty state at 360
+  and 1280); FAQ accordion keyboard accessible (unit: Tab/Enter/Space/arrows/Home/End/single mode; e2e at 360 and 1280 plus focus not under the sticky header; axe with an item open);
+  no real bank or phone numbers anywhere (two-layer content test); no links for contact values; header at 1024px with 7 links fits (e2e checks no collision/wrap). PASS.
+  EventsList error state is unit-tested only (static content cannot fail).
+- Screenshots viewed (3 of max 6): FAQ with an item open at 360 (focus ring visible), Acara at 360 (one past event hidden by the mocked clock), header at 1024. Clean.
+- Docs: README (sections, events, tests, structure) and CLAUDE.md (structure, events rule, contact/giving placeholder rule, section order and dropped CTAs). PASS.
+- Known time bomb (final report): static event dates are in 2030 and some existing tests (useEvents, router) expect those events; after 2030-01-05 they fail until the dates roll.
+- Result: F3 verified, committing as feat(public).

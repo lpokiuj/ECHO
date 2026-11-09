@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { site } from '../src/content/site.ts'
 
+const acaraLabel = site.nav.items.find((i) => i.id === 'acara')!.label
+
 test.describe('smoke at 360px', () => {
   test.use({ viewport: { width: 360, height: 740 } })
 
@@ -37,9 +39,9 @@ test.describe('smoke at 360px', () => {
     await page.getByRole('button', { name: site.a11y.openMenu }).click()
     await page
       .getByRole('dialog', { name: site.a11y.menuTitle })
-      .getByRole('link', { name: 'Kegiatan' })
+      .getByRole('link', { name: acaraLabel })
       .click()
-    await expect(page).toHaveURL(/\/#kegiatan$/)
+    await expect(page).toHaveURL(/\/#acara$/)
     await expect(
       page.getByRole('heading', { level: 2, name: site.sections.events.title }),
     ).toBeInViewport()

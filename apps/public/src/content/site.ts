@@ -34,9 +34,10 @@ export const site = {
     items: [
       { id: 'ibadah', label: 'Ibadah', to: '/#ibadah' },
       { id: 'lokasi', label: 'Lokasi', to: '/#lokasi' },
-      { id: 'kegiatan', label: 'Kegiatan', to: '/#kegiatan' },
+      { id: 'acara', label: 'Acara', to: '/#acara' },
       { id: 'tentang', label: 'Tentang', to: '/#tentang' },
-      { id: 'bidang', label: 'Bidang', to: '/#bidang' },
+      { id: 'pertama-kali', label: 'Pertama Kali', to: '/#pertama-kali' },
+      { id: 'kontak', label: 'Kontak', to: '/#kontak' },
       { id: 'doa', label: 'Doa', to: '/doa' },
     ],
     cta: { label: 'Daftar Relawan', to: '/relawan' },
@@ -53,8 +54,9 @@ export const site = {
     secondaryCta: { label: 'Kirim Pokok Doa', to: '/doa' },
   },
 
-  // Home sections in page order (the hero comes first). F2 and F3 fill the bodies; the ids are
-  // the nav anchors.
+  // Home sections in page order (the hero comes first); the key order is the page order. The ids
+  // are the nav anchors. Contact and giving values are plain-text placeholders ("akan diisi"):
+  // never put a real number, account or email here without a deliberate change to content.test.ts.
   sections: {
     worship: {
       id: 'ibadah',
@@ -111,34 +113,60 @@ export const site = {
       },
     },
     events: {
-      id: 'kegiatan',
-      title: 'Kegiatan',
-      intro: 'Daftar kegiatan akan diisi.',
-      empty: 'Belum ada kegiatan yang dijadwalkan.',
-      error: 'Kegiatan tidak dapat dimuat.',
+      id: 'acara',
+      title: 'Acara',
+      intro: 'Acara mendatang akan diisi.',
+      empty: 'Belum ada acara mendatang.',
+      error: 'Acara tidak dapat dimuat.',
       timezoneLabel: 'WIB',
     },
     about: {
       id: 'tentang',
-      title: 'Tentang Echo',
+      title: 'Tentang Kami',
       intro: 'Teks tentang Echo akan diisi.',
+      vision: { title: 'Visi', text: 'Visi akan diisi.' },
+      story: { title: 'Cerita singkat', paragraphs: ['Cerita singkat akan diisi.'] },
+      bidang: {
+        title: 'Bidang pelayanan',
+        intro: 'Penjelasan bidang pelayanan akan diisi.',
+        items: [
+          { id: 'bidang-1', name: 'Nama bidang akan diisi', text: 'Deskripsi akan diisi.' },
+          { id: 'bidang-2', name: 'Nama bidang akan diisi', text: 'Deskripsi akan diisi.' },
+          { id: 'bidang-3', name: 'Nama bidang akan diisi', text: 'Deskripsi akan diisi.' },
+          { id: 'bidang-4', name: 'Nama bidang akan diisi', text: 'Deskripsi akan diisi.' },
+        ],
+      },
     },
-    bidang: {
-      id: 'bidang',
-      title: 'Bidang Pelayanan',
-      intro: 'Penjelasan bidang pelayanan akan diisi.',
+    faq: {
+      id: 'pertama-kali',
+      title: 'Pertama Kali?',
+      intro: 'Pertanyaan yang sering diajukan pengunjung baru akan diisi.',
+      items: [
+        { id: 'faq-1', question: 'Pertanyaan pertama akan diisi', answer: 'Jawaban akan diisi.' },
+        { id: 'faq-2', question: 'Pertanyaan kedua akan diisi', answer: 'Jawaban akan diisi.' },
+        { id: 'faq-3', question: 'Pertanyaan ketiga akan diisi', answer: 'Jawaban akan diisi.' },
+        { id: 'faq-4', question: 'Pertanyaan keempat akan diisi', answer: 'Jawaban akan diisi.' },
+      ],
     },
-    prayer: {
-      id: 'doa',
-      title: 'Pokok Doa',
-      intro: 'Ajakan untuk mengirim pokok doa akan diisi.',
-      cta: 'Kirim Pokok Doa',
+    contact: {
+      id: 'kontak',
+      title: 'Kontak',
+      intro: 'Hubungi kami lewat kanal berikut.',
+      whatsappLabel: 'WhatsApp',
+      emailLabel: 'Email',
     },
-    volunteer: {
-      id: 'relawan',
-      title: 'Jadi Relawan',
-      intro: 'Ajakan untuk menjadi relawan akan diisi.',
-      cta: 'Daftar Relawan',
+    giving: {
+      id: 'persembahan',
+      title: 'Persembahan',
+      intro: 'Informasi persembahan akan diisi.',
+      bank: {
+        title: 'Transfer bank',
+        bankName: { label: 'Bank', value: 'Nama bank akan diisi' },
+        accountName: { label: 'Atas nama', value: 'Nama rekening akan diisi' },
+        accountNumber: { label: 'Nomor rekening', value: 'Nomor rekening akan diisi' },
+      },
+      qris: { title: 'QRIS', placeholder: 'Kode QRIS akan diisi' },
+      note: 'Catatan persembahan akan diisi.',
     },
   },
 
@@ -161,6 +189,7 @@ export const site = {
   footer: {
     portalLinkLabel: 'Portal Relawan',
     portalTitle: 'Untuk relawan',
+    contactTitle: 'Hubungi kami',
     copyright: (year: number) => `© ${year} Echo Youth GLC`,
   },
 

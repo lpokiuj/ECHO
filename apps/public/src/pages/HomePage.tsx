@@ -1,46 +1,34 @@
-import { Link } from 'react-router'
-import { PlaceholderBlock } from '@/components/PlaceholderBlock'
 import { Section } from '@/components/Section'
-import { Button } from '@/components/ui/button'
 import { site } from '@/content/site'
 import { EventsList } from '@/features/events/EventsList'
+import { AboutSection } from '@/features/home/AboutSection'
+import { ContactSection } from '@/features/home/ContactSection'
+import { FaqSection } from '@/features/home/FaqSection'
+import { GivingSection } from '@/features/home/GivingSection'
 import { HeroSection } from '@/features/home/HeroSection'
 import { LocationSection } from '@/features/home/LocationSection'
 import { WorshipSection } from '@/features/home/WorshipSection'
 import { useDocumentTitle } from '@/hooks/useDocumentTitle'
-import { PATHS } from '@/routes/paths'
 
 /**
- * The home page: hero, Ibadah, Lokasi (F2), then Kegiatan, Tentang and the other sections (F3).
- * Section backgrounds alternate plain and muted after the dark hero.
+ * The home page, in plan order: hero, Ibadah, Lokasi, Acara, Tentang Kami, Pertama Kali?, Kontak,
+ * Persembahan. Section backgrounds alternate plain and muted after the dark hero.
  */
 export function HomePage() {
   useDocumentTitle()
-  const s = site.sections
+  const events = site.sections.events
   return (
     <>
       <HeroSection />
       <WorshipSection />
       <LocationSection />
-      <Section id={s.events.id} title={s.events.title} intro={s.events.intro} tone="muted">
+      <Section id={events.id} title={events.title} intro={events.intro} tone="muted">
         <EventsList />
       </Section>
-      <Section id={s.about.id} title={s.about.title} intro={s.about.intro}>
-        <PlaceholderBlock />
-      </Section>
-      <Section id={s.bidang.id} title={s.bidang.title} intro={s.bidang.intro} tone="muted">
-        <PlaceholderBlock />
-      </Section>
-      <Section id={s.prayer.id} title={s.prayer.title} intro={s.prayer.intro}>
-        <Button asChild size="lg">
-          <Link to={PATHS.prayer}>{s.prayer.cta}</Link>
-        </Button>
-      </Section>
-      <Section id={s.volunteer.id} title={s.volunteer.title} intro={s.volunteer.intro} tone="muted">
-        <Button asChild size="lg">
-          <Link to={PATHS.volunteer}>{s.volunteer.cta}</Link>
-        </Button>
-      </Section>
+      <AboutSection />
+      <FaqSection />
+      <ContactSection />
+      <GivingSection />
     </>
   )
 }

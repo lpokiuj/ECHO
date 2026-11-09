@@ -13,7 +13,7 @@ export function SiteFooter() {
           <p>{site.brand.tagline}</p>
         </div>
         <div className="space-y-3">
-          <h2 className="text-base font-bold">{site.contact.title}</h2>
+          <h2 className="text-base font-bold">{site.footer.contactTitle}</h2>
           <ul className="space-y-2">
             <li className="flex items-center gap-2">
               <MapPinIcon className="size-4 shrink-0" aria-hidden="true" />
