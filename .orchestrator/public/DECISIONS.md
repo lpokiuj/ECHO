@@ -130,6 +130,17 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-025 (F1, plan review, mine)
+- Logo: the favicon "E" mark (copied from apps/web) inline plus the "ECHO" wordmark, in one `<Logo />`. Root files are NOT edited in F1 (scope is apps/public; the workspace
+  glob `apps/*` already lists the app): no `dev:public` or root build/lint/test/check changes, no root README/CLAUDE.md/CI/poc-up edits. They go into the final report as
+  manual items. Reverse: add the root scripts later. NOTE for the user: the root CLAUDE.md still says the monorepo is `apps/api` and `apps/web` (I may not edit CLAUDE.md files).
+- shadcn components are COPIED from apps/web/src/components/ui and edited (no shadcn CLI, no network); the Accordion for F3 is hand-written from the standard source on
+  `radix-ui`. Public base URL variable for e2e: `E2E_PUBLIC_BASE_URL` (default http://localhost:5174), separate from web's `E2E_BASE_URL`. Vite port 5174 with strictPort.
+  Placeholder events: valid ISO dates in 2030 with "(contoh)" in the titles. Footer-link e2e: href ends with `/volunteer-portal/` in Playwright, exact override semantics in a
+  unit test (no reading of env files). Cleanup DELETE: strict (any non-204 fails the run), like web. API client includes `getBidang` and both POST functions now (typed, MSW-tested).
+  ESLint bans localStorage/sessionStorage/cookies, imports from apps/web, and imports of `@/content/events` outside `lib/events.ts`. `src/pages` plus `src/features` layout.
+  `/doa` and `/relawan` are real placeholder routes. Reverse: each is a small edit in apps/public.
+
 ## D-024 (B2, plan review, mine): accepted B's recommendations
 - Body/response keys camelCase (`adminNote`; the plan text's `admin_note` was indicative). `handledBy` in list/PATCH responses is `{id, name}` or null (no email or role),
   because a PEMBINA cannot read the users list so a bare id would be useless. Any successful PATCH sets handledBy/handledAt (even a no-op or a reset to NEW).

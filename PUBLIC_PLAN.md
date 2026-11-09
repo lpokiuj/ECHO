@@ -335,7 +335,7 @@ Scope: apps/public, plus the root README.md.
 - [x] T2 Portal delete buttons + e2e cleanup
 - [x] B1 Public submission endpoints
 - [x] B2 Admin submission endpoints
-- [ ] F1 Public site scaffold
+- [x] F1 Public site scaffold
 - [ ] F2 Home: Hero, Ibadah, Lokasi
 - [ ] F3 Home: Acara, Tentang Kami, Pertama Kali, Kontak, Persembahan
 - [ ] F4 Prayer request form

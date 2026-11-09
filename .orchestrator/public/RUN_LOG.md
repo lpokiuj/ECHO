@@ -539,3 +539,29 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - Docs: admin-submissions.md (new), README (index, 42 routes, enums), permissions.md rows 28-34 + count, public.md pointer, users.md sentence, apps/api/PLAN.md. PASS.
 - Known risk: if the acting user is deleted mid-PATCH the UPDATE hits a FK error (500); B left it unhandled (extremely unlikely).
 - Result: B2 verified, committing as feat(api).
+
+## B2 committed (be4722a). F1: preflight reset, plan, implementation, verification
+- `npm run db:reset -w @echo/api` at the start of F1 (before creating B): "Reset done", "Seed done".
+- B-F1 (model: sonnet): plan, then implement (1 agent, 2 rounds, 0 fix rounds). Decisions D-025.
+- Scope: apps/public (new, 69 files) and package-lock.json only. `git status` outside apps/public: only .orchestrator and package-lock.json. No root file, apps/web or
+  apps/api change. PASS.
+- Lockfile diff read: 50 insertions, 0 deletions: the `apps/public` package entry and the `node_modules/@echo/public` link; no other package version changed. B ran
+  `npm install` once at the root ("added 1 package"). PASS.
+- Dependencies: apps/public/package.json read: same ranges as apps/web, minus `sonner`; no `react-router-dom`; nothing outside the approved list. PASS.
+- Greps in src, e2e and configs: no `any`, `@ts-ignore`, `.only`, `.skip`, localStorage, sessionStorage, document.cookie, or imports from apps/web. PASS.
+- Setup code read in full (e2e/global-setup.ts, e2e/session.ts): one admin login, lists both admin endpoints, matches `name` / `fullName` startsWith `e2e-` only (null never
+  matches), strict 204, counts-only output, errors carry status only, token file mode 0600 + atomic rename, removed at teardown (verified: absent after my run). PASS.
+- Test selection: root package-lock.json changed, so `npm run check` in every app (no e2e for api/web) plus the apps/public e2e (public row):
+  - `npm run check -w @echo/public`: pass, 12 files, 43 tests.
+  - `npm run check -w @echo/web`: pass, 302 tests. `npm run lint -w @echo/api` clean, `npm test -w @echo/api` 8/8.
+  - `npm run e2e -w @echo/public` (mine): 15 passed in 14.6 s, cleanup `prayer requests 0, volunteer applications 0 deleted`, `login calls: 1 (admin 1)`.
+  - B's cleanup proof (B's claim; I did not repeat it, to protect the 5-per-10-min public rate limit): after one curl POST to each public endpoint with an `e2e-` name, run 1
+    printed 1 and 1 deleted (15 passed, 16.0 s); run 2 printed 0 and 0 (15 passed, 15.0 s).
+- Acceptance: `npm run check` passes (above). Smoke at 360px via the burger menu (sheet opens, Doa -> /doa, CTA -> /relawan, Kegiatan scrolls), footer link href ends with
+  `/volunteer-portal/` (exact override semantics in a unit test), README covers install/dev/env/tests/content/logo (not re-read line by line: B wrote it, and the
+  `.env.example` sync is enforced by a unit test), `.env.example` lists `VITE_PORTAL_URL` (the only VITE_* read) with placeholders, global setup cleanup as T2. PASS.
+- Screenshots viewed (3 of max 6): home at 360 and 1280, /doa at 360. Layout clean, no overflow, header/burger/footer/portal link present, placeholders obvious, no stock images.
+  B reported axe serious/critical clean and no console errors on `/`, `/doa`, `/relawan`, 404 at 360/768/1280 (inside the passing responsive spec).
+- Not done by design (D-025): root package.json scripts, README, CLAUDE.md, docs/README.md, CI, poc-up.sh. The root CLAUDE.md still names only apps/api and apps/web (I may not
+  edit it). Listed for the final report.
+- Result: F1 verified, committing as feat(public).

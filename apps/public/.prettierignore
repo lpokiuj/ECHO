@@ -1,0 +1,7 @@
+dist
+node_modules
+.screens
+playwright-report
+test-results
+package-lock.json
+CLAUDE.md
