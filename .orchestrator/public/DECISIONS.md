@@ -1,0 +1,100 @@
+# DECISIONS
+
+## D-001 (preflight): API docs path
+- Question: PUBLIC_PLAN.md says the API contract and docs live at `apps/api/docs/api/README.md`.
+  That path does not exist.
+- Options: (a) hard stop; (b) use `docs/api/README.md`, which exists and which root CLAUDE.md
+  names as the contract; (c) create the new path.
+- Choice: (b). Every "API docs" reference in the plan (global criteria, B1, B2) means
+  `docs/api/` at the repo root.
+- Reason: consistent with existing code and docs; no plan text is changed.
+- Reverse: tell the Bs a different path.
+
+## D-002 (P1): no `server.open`
+- Question: "Dev server opens at /volunteer-portal/": set `server.open`?
+- Options: (a) no `server.open`, docs and Vite's printed URL say `/volunteer-portal/`; (b) `server.open`.
+- Choice: (a). Reason: Playwright's webServer and WSL would try to launch a browser; simpler.
+- Reverse: add `open: '/volunteer-portal/'` to `server` in apps/web/vite.config.ts.
+
+## D-003 (P1): `E2E_BASE_URL` stays an origin
+- Options: (a) keep origin, append `/volunteer-portal/` in playwright.config.ts; (b) full URL.
+- Choice: (a). Reason: fewer edits, `/api` helpers in fixtures keep working.
+- Reverse: put the full URL in E2E_BASE_URL and update the `${baseUrl}/api` users.
+
+## D-004 (P1): out-of-scope files affected by the new base
+- Findings: root README.md line 41 (dev URL) and scripts/poc-up.sh (wait loop curls
+  `http://127.0.0.1:5173/`, which no longer serves the app; tunnel users must open
+  `<tunnel>/volunteer-portal/`) and the root CLAUDE.md "Laptop POC hosting" section.
+- Choice: not changed in P1 (scope is apps/web only; I may not edit CLAUDE.md). Root README
+  "Running locally" is rewritten in F6. poc-up.sh and root CLAUDE.md are a KNOWN GAP, listed in
+  the final report for the user to fix.
+- Reverse: n/a, user action.
+- SUPERSEDED by D-005.
+
+## D-005 (P1, resume): P1 scope now includes poc-up.sh and root CLAUDE.md POC section
+- Question: D-004 left those two files as a known gap because the plan scoped P1 to apps/web.
+  The plan (commit 94c414f) now lists them in P1's Scope and acceptance.
+- Choice: follow the updated plan. A fresh B edits only the parts of `scripts/poc-up.sh` and the
+  "Laptop POC hosting" section that the new base path breaks. D-004 no longer applies.
+- Reason: the plan text is authoritative; no judgment needed.
+- Reverse: n/a.
+
+## D-007 (P1, plan review): pagination failures do not excuse "e2e green"
+- Question: B's plan proposed declaring P1 done if only pagination-drift e2e failures remain (listed as T2 items).
+- Options: (a) accept; (b) require a green suite using small local spec fixes, no shared helper; (c) build the T2 helper in P1.
+- Choice: (b). P1 acceptance says the full existing suite is green; I may not reword it, and the shared helper
+  belongs to T2 (D-006). If small local fixes are not enough, that is a hard stop, not a waiver.
+- Also: routes.spec startDate selector change kept only if the original selector fails; root CLAUDE.md long line rewrapped.
+- Reverse: n/a.
+
+## D-006 (P1, resume): pagination-aware specs stay out of P1
+- Question: B2-P1 recommended making services/schedule/users/routes/teams specs pagination-aware in P1.
+- Choice: no. The user's commit 3b2e6c2 and the plan's P1 note both place the shared helper in T2.
+  P1 keeps only the small selector fixes needed to pass.
+- Reverse: n/a, plan-level.
+- SUPERSEDED by D-008.
+
+## D-008 (P1, eleventh session): P1 now includes the helper, the aria-label fix and auth.spec:58
+- Question: D-006/D-007 kept the pagination helper in T2. The current orchestrator prompt says P1 is
+  "base path plus a green portal suite: the pagination-aware helper across specs, the 'Rekap bidang'
+  aria-label fix, and the auth.spec:58 cause", and that changing how a spec FINDS a record is allowed.
+- Choice: follow the prompt. P1 includes all three. The helper is built in P1; T2 later reuses it and
+  only adds the prefix, cleanup and single-login work. The aria-label fix is in apps/web src (in P1's
+  apps/web scope). Assertions about behavior must not change; I verify by reading the spec diffs.
+- Reason: the prompt is the later, explicit instruction and P1's acceptance needs a green suite.
+- Reverse: n/a, plan-level.
+
+## D-009 (P1, plan review): router basename keeps the trailing slash
+- Question: auth.spec:58 root cause (per B's code reading, to be confirmed by running): basename
+  `/volunteer-portal` (slash stripped) makes home `/volunteer-portal`, which Vite answers with a 404 hint
+  page on hard refresh. Fix by `basename: import.meta.env.BASE_URL` so home is `/volunteer-portal/`?
+- Options: (a) keep slash-less home and accept the broken refresh; (b) basename with trailing slash;
+  (c) Vite dev middleware (does not cover preview/tunnel).
+- Choice: (b). Reason: P1 requires hard refresh to work; it is the router-basename part of P1 and the plan
+  clearly implies it. B must confirm in the browser; if it does not work, fall back to an explicit redirect.
+- Reverse: restore `.replace(/\/$/, '')` in apps/web/src/routes/router.tsx.
+
+## D-010 (P1, plan review): home-URL assertions go back to the original
+- The loosened `/\/volunteer-portal\/?$/` regexes hid the bug. Revert to the original `/\/$/` or the
+  stricter `/\/volunteer-portal\/$/`. This restores or tightens, never weakens.
+
+## D-011 (P1, plan review): aria-label fix and its unit-test lookup
+- "Rekap bidang" detail button: visible text is "Detail" + count badge. Fix the label to start with the
+  visible text (`Detail {count} ketidakhadiran {name}`) and add a space between text and badge.
+  attendance.test.tsx:344 builds the name through `fillMessage`; adding `count` only changes how the
+  button is found, not what is asserted. Allowed; I verify by reading that diff.
+- Reverse: restore `detailAria` in messages.ts and the old call sites.
+
+## D-012 (P1, implementation): attendance.spec recap checks move to the home page
+- Question: attendance.spec:65 and :122 expect "Rekap bidang" on `/attendance`. apps/web/PLAN.md line 95
+  (the documented behavior) puts the recap on the home page only. Pre-existing drift, unrelated to the base path.
+- Options: (a) hard stop; (b) point the recap lookups at the home page, keep every assertion; (c) change the app to show the recap on Kehadiran.
+- Choice: (b). Reason: consistent with the documented behavior and the existing code; (c) would be an unplanned UI change.
+  Conditions: every existing assertion stays (incl. scroll/axe on Kehadiran and the h1 check); the recap heading and
+  recap table checks run on home. I verify by reading the diff.
+- Reverse: point the two lookups back at `attendance`.
+
+## D-013 (P1, review of B's report): timing-only spec edits accepted
+- `test.setTimeout(90_000)`, a 20s expect timeout in assign.spec, and a 400ms wait before the toggle height
+  measurement in availability.spec. Accepted as timing, not assertions, provided the 44px minimum assertion is unchanged.
+  I verify by reading the diff. Reverse: remove the timeouts and the wait.

@@ -13,6 +13,7 @@ import {
   createE2eService,
   createE2eTeam,
   createE2eUser,
+  findInList,
   randomSuffix,
   seedSession,
   type CreatedUser,
@@ -59,7 +60,7 @@ async function createFixture(request: Parameters<typeof createE2eUser>[0]) {
 /** Logs in through the UI and completes the forced password change. */
 async function loginAndChange(page: Page, user: CreatedUser) {
   const next = `Np-${randomSuffix()}-${randomSuffix()}`
-  await page.goto('/login')
+  await page.goto('login')
   await page.getByLabel(a.emailLabel).fill(user.email)
   await page.getByLabel(a.passwordLabel).fill(user.password)
   await page.getByRole('button', { name: a.loginSubmit }).click()
@@ -68,7 +69,7 @@ async function loginAndChange(page: Page, user: CreatedUser) {
   await page.getByLabel(a.newPasswordLabel, { exact: true }).fill(next)
   await page.getByLabel(a.confirmPasswordLabel).fill(next)
   await page.getByRole('button', { name: a.changePasswordSubmit }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/volunteer-portal\/$/)
 }
 
 /** The visible list item for a title: a table row on desktop, a card below 768px. */
@@ -76,6 +77,10 @@ function itemFor(page: Page, width: number, title: string) {
   return width >= 768
     ? page.getByTestId('schedule-table').getByRole('row').filter({ hasText: title })
     : page.getByTestId('schedule-cards').getByRole('listitem').filter({ hasText: title })
+}
+
+function listFor(page: Page, width: number) {
+  return page.getByTestId(width >= 768 ? 'schedule-table' : 'schedule-cards')
 }
 
 test('full schedule shows a created service with its teams and people in WIB', async ({
@@ -86,10 +91,12 @@ test('full schedule shows a created service with its teams and people in WIB', a
   const { service, team, users } = await createFixture(request)
   await seedSession(page, await adminToken(request))
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/schedule')
+  await page.goto('schedule')
   await expect(page.getByRole('heading', { level: 1, name: t.fullTitle })).toBeVisible()
 
-  const row = itemFor(page, 1280, service.title)
+  const row = await findInList(page, itemFor(page, 1280, service.title), {
+    list: listFor(page, 1280),
+  })
   await expect(row).toBeVisible()
   await expect(row).toContainText(formatDate(service.startsAt))
   await expect(row).toContainText(`09.00 - 11.00 ${messages.dates.wib}`)
@@ -106,7 +113,9 @@ test('full schedule shows a created service with its teams and people in WIB', a
   await toggle.click()
   await request2
   await expect(toggle).toBeChecked()
-  await expect(itemFor(page, 1280, service.title)).toBeVisible()
+  await expect(
+    await findInList(page, itemFor(page, 1280, service.title), { list: listFor(page, 1280) }),
+  ).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -124,19 +133,23 @@ test('my schedule shows the assigned service with its team; an unassigned user s
     .getByRole('link', { name: messages.nav.mySchedule })
     .click()
   await expect(page).toHaveURL(/\/my-schedule$/)
-  const row = itemFor(page, 1280, service.title)
+  const row = await findInList(page, itemFor(page, 1280, service.title), {
+    list: listFor(page, 1280),
+  })
   await expect(row).toBeVisible()
   await expect(row).toContainText(team.name)
   const withPast = page.waitForRequest((r) => r.url().includes('/me/schedule?includePast=true'))
   await page.getByRole('switch', { name: t.includePast }).click()
   await withPast
-  await expect(itemFor(page, 1280, service.title)).toBeVisible()
+  await expect(
+    await findInList(page, itemFor(page, 1280, service.title), { list: listFor(page, 1280) }),
+  ).toBeVisible()
   expect(errors).toEqual([])
 
   const lonely = await createE2eUser(request)
   await page.evaluate(() => window.sessionStorage.clear())
   await loginAndChange(page, lonely)
-  await page.goto('/my-schedule')
+  await page.goto('my-schedule')
   await expect(page.getByText(t.emptyMineTitle)).toBeVisible()
   await expect(page.getByRole('button', { name: t.emptyShowPast })).toBeVisible()
 })
@@ -152,8 +165,10 @@ for (const width of widths) {
     const { service } = await createFixture(request)
     await seedSession(page, await adminToken(request))
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/schedule')
-    await expect(itemFor(page, width, service.title)).toBeVisible()
+    await page.goto('schedule')
+    await expect(
+      await findInList(page, itemFor(page, width, service.title), { list: listFor(page, width) }),
+    ).toBeVisible()
     await expect(page.getByTestId('schedule-table')).toBeVisible({ visible: width >= 768 })
     await expect(page.getByTestId('schedule-cards')).toBeVisible({ visible: width < 768 })
     await page.screenshot({ path: `.screens/f5-full-${width}.png`, fullPage: true })
@@ -174,8 +189,10 @@ for (const width of widths) {
     const { service, users } = await createFixture(request)
     await page.setViewportSize({ width, height: 800 })
     await loginAndChange(page, users[0]!)
-    await page.goto('/my-schedule')
-    await expect(itemFor(page, width, service.title)).toBeVisible()
+    await page.goto('my-schedule')
+    await expect(
+      await findInList(page, itemFor(page, width, service.title), { list: listFor(page, width) }),
+    ).toBeVisible()
     await expect(page.getByTestId('schedule-table')).toBeVisible({ visible: width >= 768 })
     await expect(page.getByTestId('schedule-cards')).toBeVisible({ visible: width < 768 })
     await page.screenshot({ path: `.screens/f5-mine-${width}.png`, fullPage: true })

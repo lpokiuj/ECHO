@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import {
-  expect,
+  expect as baseExpect,
   test,
   type APIRequestContext,
   type Browser,
@@ -16,9 +16,14 @@ import {
   createE2eService,
   createE2eTeam,
   createE2eUser,
+  findInList,
   loginAndChange,
   type CreatedUser,
 } from './fixtures.ts'
+
+// Saving a note refetches the whole schedule, which holds every leftover e2e- service, so the
+// default 5s is too short under load.
+const expect = baseExpect.configure({ timeout: 20_000 })
 
 // The race must never be retried into a pass.
 test.describe.configure({ retries: 0 })
@@ -73,7 +78,7 @@ async function leaderSession(
 }
 
 async function openAssign(page: Page, serviceId: string, teamId: string) {
-  await page.goto(`/assign?service=${serviceId}&team=${teamId}`)
+  await page.goto(`assign?service=${serviceId}&team=${teamId}`)
   await expect(page.getByRole('heading', { level: 1, name: t.title })).toBeVisible()
 }
 
@@ -148,6 +153,7 @@ test('leader assigns with a note, everyone reads it in the detail, only the lead
   browser,
   request,
 }) => {
+  test.setTimeout(90_000)
   const s = await scenario(request)
   const { context, page } = await leaderSession(browser, s.leaderA, s.service.id, s.teamA.id)
   const errors = collectErrors(page)
@@ -160,8 +166,10 @@ test('leader assigns with a note, everyone reads it in the detail, only the lead
   await expect(page.getByTestId('assign-result')).toContainText(s.volunteer.name)
 
   const detail = async (p: Page) => {
-    await p.goto('/schedule')
-    const row = p.getByRole('row').filter({ hasText: s.service.title })
+    await p.goto('schedule')
+    const row = await findInList(p, p.getByRole('row').filter({ hasText: s.service.title }), {
+      list: p.getByTestId('schedule-table'),
+    })
     await row.getByRole('button', { name: new RegExp(messages.schedule.detail) }).click()
     return p.getByRole('dialog', { name: s.service.title })
   }

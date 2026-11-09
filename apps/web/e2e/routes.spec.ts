@@ -12,6 +12,7 @@ import {
   createE2eService,
   createE2eTeam,
   createE2eUser,
+  findInList,
   loginAndChange,
   test,
   type CreatedUser,
@@ -134,17 +135,17 @@ for (const width of widths) {
     const errors = collectErrors(page)
     const team = await createE2eTeam(request)
     const targets: Target[] = [
-      { name: 'home', path: '/', heading: messages.placeholder.title },
-      { name: 'my-schedule', path: '/my-schedule', heading: s.myTitle },
-      { name: 'schedule', path: '/schedule', heading: s.fullTitle },
-      { name: 'services', path: '/services', heading: messages.services.title },
-      { name: 'users', path: '/users', heading: messages.users.title },
-      { name: 'teams', path: '/teams', heading: messages.teams.title },
-      { name: 'team-detail', path: `/teams/${team.id}`, heading: team.name },
-      { name: 'not-found', path: '/tidak-ada', heading: messages.notFound.title },
+      { name: 'home', path: './', heading: messages.placeholder.title },
+      { name: 'my-schedule', path: 'my-schedule', heading: s.myTitle },
+      { name: 'schedule', path: 'schedule', heading: s.fullTitle },
+      { name: 'services', path: 'services', heading: messages.services.title },
+      { name: 'users', path: 'users', heading: messages.users.title },
+      { name: 'teams', path: 'teams', heading: messages.teams.title },
+      { name: 'team-detail', path: `teams/${team.id}`, heading: team.name },
+      { name: 'not-found', path: 'tidak-ada', heading: messages.notFound.title },
       {
         name: 'assign-no-access',
-        path: '/assign',
+        path: 'assign',
         heading: messages.assign.noAccessTitle,
         level: 2,
       },
@@ -171,7 +172,7 @@ test('leader: the assign screen at every width', async ({ browser, request }) =>
   const errors = collectErrors(page)
   const target: Target = {
     name: 'assign',
-    path: `/assign?service=${service.id}&team=${team.id}`,
+    path: `assign?service=${service.id}&team=${team.id}`,
     heading: messages.assign.title,
   }
   for (const width of widths) await audit(page, target, width, errors)
@@ -190,14 +191,14 @@ for (const width of widths) {
     const targets: Target[] = [
       {
         name: 'member-services',
-        path: '/services',
+        path: 'services',
         heading: messages.services.noAccessTitle,
         level: 2,
       },
-      { name: 'member-users', path: '/users', heading: messages.users.noAccessTitle, level: 2 },
-      { name: 'member-teams', path: '/teams', heading: messages.teams.noAccessTitle, level: 2 },
-      { name: 'member-assign', path: '/assign', heading: messages.assign.noAccessTitle, level: 2 },
-      { name: 'member-my-schedule', path: '/my-schedule', heading: s.myTitle },
+      { name: 'member-users', path: 'users', heading: messages.users.noAccessTitle, level: 2 },
+      { name: 'member-teams', path: 'teams', heading: messages.teams.noAccessTitle, level: 2 },
+      { name: 'member-assign', path: 'assign', heading: messages.assign.noAccessTitle, level: 2 },
+      { name: 'member-my-schedule', path: 'my-schedule', heading: s.myTitle },
     ]
     for (const target of targets) await audit(page, target, width, errors)
     await context.close()
@@ -216,7 +217,7 @@ plain('login page at every width', async ({ browser }) => {
   await guestAudit(
     context,
     page,
-    { name: 'login', path: '/login', heading: messages.auth.loginTitle },
+    { name: 'login', path: 'login', heading: messages.auth.loginTitle },
     errors,
   )
 })
@@ -226,7 +227,7 @@ plain('forced password change page at every width', async ({ browser, request })
   const context = await browser.newContext()
   const page = await context.newPage()
   const a = messages.auth
-  await page.goto('/login')
+  await page.goto('login')
   await page.getByLabel(a.emailLabel).fill(user.email)
   await page.getByLabel(a.passwordLabel).fill(user.password)
   await page.getByRole('button', { name: a.loginSubmit }).click()
@@ -234,7 +235,7 @@ plain('forced password change page at every width', async ({ browser, request })
   const errors = collectErrors(page)
   const target: Target = {
     name: 'change-password',
-    path: '/change-password',
+    path: 'change-password',
     heading: a.changePasswordTitle,
   }
   for (const width of widths) await audit(page, target, width, errors)
@@ -249,7 +250,7 @@ for (const width of widths) {
     test.use({ viewport: { width, height: 800 } })
 
     test('shell: sidebar from 1024px, menu sheet below', async ({ page }) => {
-      await page.goto('/my-schedule')
+      await page.goto('my-schedule')
       const sidebar = page.getByRole('complementary')
       const menuButton = page.getByRole('button', { name: messages.nav.openMenu })
       if (width >= 1024) {
@@ -270,7 +271,7 @@ for (const width of widths) {
         await menuButton.click()
         await sheet.getByRole('link', { name: new RegExp(messages.nav.home) }).click()
         await expect(sheet).toBeHidden()
-        await expect(page).toHaveURL(/\/$/)
+        await expect(page).toHaveURL(/\/volunteer-portal\/$/)
       }
     })
 
@@ -279,8 +280,12 @@ for (const width of widths) {
       request,
     }) => {
       const service = await createE2eService(request)
-      await page.goto('/services')
-      const trigger = page.getByRole('button', { name: `${sv.deleteAria}: ${service.title}` })
+      await page.goto('services')
+      const trigger = await findInList(
+        page,
+        page.getByRole('button', { name: `${sv.deleteAria}: ${service.title}` }),
+        { list: page.getByTestId(width >= 768 ? 'services-table' : 'services-cards') },
+      )
       await trigger.focus()
       await page.keyboard.press('Enter')
       const dialog = page.getByRole('alertdialog', { name: sv.confirmDelete.title })
@@ -308,9 +313,9 @@ for (const width of widths) {
     })
 
     test('the service form is single column below 768px', async ({ page }) => {
-      await page.goto('/services')
+      await page.goto('services')
       await page.getByRole('button', { name: sv.add }).click()
-      const a = await page.getByLabel(sv.form.startDate).boundingBox()
+      const a = await page.getByRole('button', { name: sv.form.startDate }).boundingBox()
       const b = await page.getByLabel(sv.form.startTime).boundingBox()
       expect(a).not.toBeNull()
       expect(b).not.toBeNull()
@@ -321,7 +326,7 @@ for (const width of widths) {
 }
 
 test('focus ring is visible on keyboard focus', async ({ page }) => {
-  await page.goto('/my-schedule')
+  await page.goto('my-schedule')
   await expect(page.getByRole('main')).toBeVisible()
   await page.keyboard.press('Tab') // skip link
   await page.keyboard.press('Tab')
@@ -334,7 +339,7 @@ test('focus ring is visible on keyboard focus', async ({ page }) => {
 
 test('prefers-reduced-motion disables transitions and animations', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' })
-  await page.goto('/')
+  await page.goto('./')
   const duration = await page
     .getByRole('link', { name: messages.nav.mySchedule, exact: true })
     .last()
@@ -347,7 +352,7 @@ test('prefers-reduced-motion disables transitions and animations', async ({ page
 
 test('hover state changes a button background', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/')
+  await page.goto('./')
   const b = page.getByRole('link', { name: messages.nav.fullSchedule, exact: true }).last()
   const before = await b.evaluate((el) => getComputedStyle(el).backgroundColor)
   await b.hover()

@@ -459,7 +459,7 @@ export const messages = {
       listLabel: 'Rekap ketidakhadiran bidang',
       columns: { name: 'Relawan', count: 'Tidak hadir', detail: 'Detail' },
       detail: 'Detail',
-      detailAria: 'Detail ketidakhadiran {name}',
+      detailAria: 'Detail {count} ketidakhadiran {name}',
       detailTitle: 'Ketidakhadiran {name}',
       detailDescription: 'Kegiatan yang tidak dihadiri, dari semua bidang.',
       detailColumns: { service: 'Kegiatan', date: 'Tanggal' },

@@ -42,7 +42,7 @@ const newPassword = () => `Np-${randomSuffix()}-${randomSuffix()}`
 
 test('wrong credentials show one generic message and stay on login', async ({ page }) => {
   const errors = collectErrors(page, [/status of 401/])
-  await page.goto('/login')
+  await page.goto('login')
   await submitLogin(page, `e2e-${randomSuffix()}@echo.local`, 'salah-salah-123')
   await expect(page.getByText(t.loginFailed)).toBeVisible()
   await expect(page).toHaveURL(/\/login$/)
@@ -50,7 +50,7 @@ test('wrong credentials show one generic message and stay on login', async ({ pa
 })
 
 test('an unauthenticated visit to a protected route goes to login', async ({ page }) => {
-  await page.goto('/my-schedule')
+  await page.goto('my-schedule')
   await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('heading', { level: 1, name: t.loginTitle })).toBeVisible()
 })
@@ -63,16 +63,16 @@ test('admin-created user logs in, completes the forced change, lands home', asyn
   const user = await createE2eUser(request)
   const next = newPassword()
 
-  await page.goto('/login')
+  await page.goto('login')
   await submitLogin(page, user.email, user.password)
   await expect(page).toHaveURL(/\/change-password$/)
   await expect(page.getByRole('heading', { level: 1, name: t.changePasswordTitle })).toBeVisible()
   await expect(page.getByRole('navigation', { name: messages.nav.label })).toHaveCount(0)
 
   // No other route is reachable while the change is pending.
-  await page.goto('/my-schedule')
+  await page.goto('my-schedule')
   await expect(page).toHaveURL(/\/change-password$/)
-  await page.goto('/')
+  await page.goto('./')
   await expect(page).toHaveURL(/\/change-password$/)
 
   // A wrong current password is an inline error and does not log out.
@@ -81,7 +81,7 @@ test('admin-created user logs in, completes the forced change, lands home', asyn
   await expect(page).toHaveURL(/\/change-password$/)
 
   await submitChange(page, user.password, next)
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/volunteer-portal\/$/)
   await expect(
     page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
   ).toBeVisible()
@@ -95,14 +95,14 @@ test('admin-created user logs in, completes the forced change, lands home', asyn
   await page.getByRole('menuitem', { name: t.logout }).click()
   await expect(page).toHaveURL(/\/login$/)
   await submitLogin(page, user.email, next)
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/volunteer-portal\/$/)
   await expect(page.getByRole('main').getByText(user.name)).toBeVisible()
   expect(errors).toEqual([])
 })
 
 test('admin sees the role badge and the nav for routes that exist', async ({ page, request }) => {
   await seedSession(page, await adminToken(request))
-  await page.goto('/')
+  await page.goto('./')
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await page.setViewportSize({ width: 1280, height: 800 })
   await expect(nav.getByRole('link', { name: messages.nav.home })).toBeVisible()
@@ -111,6 +111,32 @@ test('admin sees the role badge and the nav for routes that exist', async ({ pag
     .first()
     .click()
   await expect(page.getByText(messages.roles.ADMIN).first()).toBeVisible()
+})
+
+test('deep link survives a hard refresh under /volunteer-portal/ and never hits the old path', async ({
+  page,
+  request,
+}) => {
+  const paths: string[] = []
+  page.on('request', (r) => paths.push(new URL(r.url()).pathname))
+  await seedSession(page, await adminToken(request))
+  await page.goto('teams')
+  await expect(page.getByRole('heading', { level: 1, name: messages.teams.title })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1, name: messages.teams.title })).toBeVisible()
+  await expect(page).toHaveURL(/\/volunteer-portal\/teams$/)
+  // The home URL keeps its trailing slash, so a hard refresh there is served too.
+  await page.goto('./')
+  await page.reload()
+  await expect(page).toHaveURL(/\/volunteer-portal\/$/)
+  await expect(
+    page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
+  ).toBeVisible()
+  expect(paths.length).toBeGreaterThan(0)
+  expect(paths.filter((p) => p.startsWith('/volunteer/'))).toEqual([])
+  expect(
+    paths.filter((p) => !p.startsWith('/api/') && !p.startsWith('/volunteer-portal/')),
+  ).toEqual([])
 })
 
 for (const width of widths) {
@@ -122,7 +148,7 @@ for (const width of widths) {
     const user = await createE2eUser(request)
     await page.setViewportSize({ width, height: 800 })
 
-    await page.goto('/login')
+    await page.goto('login')
     await expect(page.getByRole('heading', { level: 1, name: t.loginTitle })).toBeVisible()
     await page.screenshot({ path: `.screens/f4-login-${width}.png`, fullPage: true })
     expect(await hasHorizontalScroll(page)).toBe(false)

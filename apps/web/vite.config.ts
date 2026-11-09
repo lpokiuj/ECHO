@@ -10,6 +10,8 @@ export default defineConfig(({ mode }) => {
   const target = env.API_PROXY_TARGET || 'http://localhost:3000'
 
   return {
+    // The portal is served under /volunteer-portal/; /api stays at the origin root.
+    base: '/volunteer-portal/',
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },

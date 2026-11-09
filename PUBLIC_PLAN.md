@@ -330,7 +330,7 @@ Scope: apps/public, plus the root README.md.
   production route map from the Routing section marked as not yet configured.
 
 ## Status
-- [ ] P1 Move portal to /volunteer-portal
+- [x] P1 Move portal to /volunteer-portal
 - [ ] T1 Delete endpoints for users, bidang, services
 - [ ] T2 Portal delete buttons + e2e cleanup
 - [ ] B1 Public submission endpoints

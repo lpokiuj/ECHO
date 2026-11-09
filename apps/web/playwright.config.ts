@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:5173'
+// E2E_BASE_URL is the origin only; the portal lives under /volunteer-portal/.
+const origin = process.env.E2E_BASE_URL ?? 'http://localhost:5173'
+const baseURL = new URL('/volunteer-portal/', origin).href
 
 export default defineConfig({
   testDir: './e2e',

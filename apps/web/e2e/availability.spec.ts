@@ -6,6 +6,7 @@ import {
   createE2eService,
   createE2eTeam,
   createE2eUser,
+  findInList,
   loginAndChange,
   assignUsers,
 } from './fixtures.ts'
@@ -58,11 +59,19 @@ async function session(browser: Browser, user: Parameters<typeof loginAndChange>
 }
 
 async function openDetail(page: Page, title: string) {
-  await page.goto('/schedule')
-  const item = page
-    .locator('[data-testid="schedule-table"] tr, [data-testid="schedule-cards"] li')
-    .filter({ hasText: title })
-    .filter({ visible: true })
+  await page.goto('schedule')
+  const item = await findInList(
+    page,
+    page
+      .locator('[data-testid="schedule-table"] tr, [data-testid="schedule-cards"] li')
+      .filter({ hasText: title })
+      .filter({ visible: true }),
+    {
+      list: page
+        .locator('[data-testid="schedule-table"], [data-testid="schedule-cards"]')
+        .filter({ visible: true }),
+    },
+  )
   await item.getByRole('button', { name: new RegExp(messages.schedule.detail) }).click()
   return page.getByRole('dialog', { name: title })
 }
@@ -80,7 +89,7 @@ test('member marks unavailable, the leader sees them locked, then they unmark', 
   await dialog.getByRole('switch').click()
   await expect(dialog.getByRole('switch')).toBeChecked()
 
-  await l.page.goto(`/assign?service=${s.service.id}&team=${s.team.id}`)
+  await l.page.goto(`assign?service=${s.service.id}&team=${s.team.id}`)
   const row = l.page.getByRole('row').filter({ hasText: s.member.name })
   await expect(row).toContainText(a.unavailableBadge)
   await expect(l.page.getByRole('checkbox', { name: s.member.name, exact: true })).toBeDisabled()
@@ -116,6 +125,7 @@ test('an assigned member has no toggle, and the screen fits 360px to 1280px', as
 })
 
 test('toggle layout and axe at every width', async ({ browser, request }) => {
+  test.setTimeout(90_000)
   const s = await scenario(request)
   const m = await session(browser, s.member)
   const errors = collectErrors(m.page)
@@ -124,6 +134,8 @@ test('toggle layout and axe at every width', async ({ browser, request }) => {
     const dialog = await openDetail(m.page, s.service.title)
     const toggle = dialog.getByRole('switch')
     await expect(toggle).toBeVisible()
+    // The dialog zooms in; measure after the animation (a scaled box reads 43.6px, not 44).
+    await m.page.waitForTimeout(400)
     const box = await toggle.locator('xpath=ancestor::label').boundingBox()
     expect(box!.height).toBeGreaterThanOrEqual(44)
     expect(await hasHorizontalScroll(m.page)).toBe(false)

@@ -72,7 +72,7 @@ test('leader designates the taker, the taker records an absence after the start'
   const errors = collectErrors(l.page)
 
   // Leader: designate from the assigned members on the assign screen.
-  await l.page.goto(`/assign?service=${s.service.id}&team=${s.team.id}`)
+  await l.page.goto(`assign?service=${s.service.id}&team=${s.team.id}`)
   await l.page.getByRole('combobox', { name: taker.label }).click()
   await l.page.getByRole('option', { name: s.takerUser.name }).click()
   await l.page.getByRole('button', { name: taker.save }).click()
@@ -82,7 +82,7 @@ test('leader designates the taker, the taker records an absence after the start'
 
   // Taker: before the start the switches are locked; after it they work.
   const tk = await session(browser, s.takerUser)
-  await tk.page.goto('/attendance')
+  await tk.page.goto('attendance')
   const peerSwitch = tk.page.getByRole('switch', {
     name: fillMessage(t.record.absentAria, { name: s.peer.name }),
   })
@@ -103,11 +103,11 @@ test('leader designates the taker, the taker records an absence after the start'
 
   // The peer sees one absence; the leader's recap shows the count.
   const p = await session(browser, s.peer)
-  await p.page.goto('/attendance')
+  await p.page.goto('attendance')
   await expect(p.page.getByTestId('my-absence-count')).toHaveText(
     fillMessage(t.mine.count, { count: 1 }),
   )
-  await l.page.goto('/attendance')
+  await l.page.goto('./')
   const recap = l.page
     .locator('[data-testid="recap-table"], [data-testid="recap-cards"]')
     .filter({ visible: true })
@@ -126,13 +126,16 @@ test('Kehadiran fits every width and has no axe violations', async ({ browser, r
   const errors = collectErrors(l.page)
   for (const width of widths) {
     await l.page.setViewportSize({ width, height: 900 })
-    await l.page.goto('/attendance')
+    await l.page.goto('attendance')
     await expect(l.page.getByRole('heading', { level: 1, name: t.title })).toBeVisible()
-    await expect(l.page.getByRole('heading', { name: t.recap.title })).toBeVisible()
     expect(await hasHorizontalScroll(l.page)).toBe(false)
     expect(await seriousViolations(l.page)).toEqual([])
     await l.page.screenshot({ path: `.screens/attendance-${width}.png`, fullPage: true })
-    await l.page.goto(`/assign?service=${s.service.id}&team=${s.team.id}`)
+    // The recap is on the home page (PLAN.md), not on Kehadiran.
+    await l.page.goto('./')
+    await expect(l.page.getByRole('heading', { name: t.recap.title })).toBeVisible()
+    expect(await hasHorizontalScroll(l.page)).toBe(false)
+    await l.page.goto(`assign?service=${s.service.id}&team=${s.team.id}`)
     await expect(l.page.getByRole('heading', { name: taker.title })).toBeVisible()
     expect(await hasHorizontalScroll(l.page)).toBe(false)
     await l.page.screenshot({ path: `.screens/assign-taker-${width}.png`, fullPage: true })

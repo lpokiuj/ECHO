@@ -1,5 +1,11 @@
 import { randomBytes } from 'node:crypto'
-import { expect, test as base, type APIRequestContext, type Page } from '@playwright/test'
+import {
+  expect,
+  test as base,
+  type APIRequestContext,
+  type Locator,
+  type Page,
+} from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import { recordCreated } from './created.ts'
 
@@ -206,7 +212,7 @@ export async function assignUsers(
 export async function loginAndChange(page: Page, user: CreatedUser): Promise<void> {
   const a = messages.auth
   const next = `Np-${randomSuffix()}-${randomSuffix()}`
-  await page.goto('/login')
+  await page.goto('login')
   await page.getByLabel(a.emailLabel).fill(user.email)
   await page.getByLabel(a.passwordLabel).fill(user.password)
   await page.getByRole('button', { name: a.loginSubmit }).click()
@@ -215,7 +221,60 @@ export async function loginAndChange(page: Page, user: CreatedUser): Promise<voi
   await page.getByLabel(a.newPasswordLabel, { exact: true }).fill(next)
   await page.getByLabel(a.confirmPasswordLabel).fill(next)
   await page.getByRole('button', { name: a.changePasswordSubmit }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/volunteer-portal\/$/)
+}
+
+/**
+ * Finds a record in a paginated list (10 per page, client-side, no search UI): checks page 1, the
+ * last page, then pages backward until `item` is on screen. `list` (the table or cards container) is awaited
+ * first so a list that has not loaded is not mistaken for a missing record. Returns `item`; the
+ * caller asserts on it.
+ */
+export async function findInList(
+  page: Page,
+  item: Locator,
+  options: { list?: Locator } = {},
+): Promise<Locator> {
+  const p = messages.pagination
+  if (options.list) await expect(options.list).toBeVisible()
+  const pager = page.getByRole('navigation', { name: p.label })
+  const previous = pager.getByRole('button', { name: p.previous })
+  const next = pager.getByRole('button', { name: p.next })
+  const status = pager.getByRole('status')
+  // Other workers add records while this runs, so the page total can change: only the page
+  // number is compared. A list may also still be refetching after a save, so the whole search is
+  // retried until the record shows up. The lists are long (hundreds of leftover rows), so the
+  // search checks page 1, then the last page, then walks backward from there. The page lives in
+  // the URL (`?page=N`, clamped), so a jump is a history change, not a reload: toggles stay as set.
+  const jump = async (target: number | 'last') => {
+    await page.evaluate((to) => {
+      const url = new URL(window.location.href)
+      if (to === 1) url.searchParams.delete('page')
+      else url.searchParams.set('page', String(to === 'last' ? 1_000_000 : to))
+      window.history.pushState(null, '', url)
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    }, target)
+    await expect(status).toContainText(target === 'last' ? /Halaman (\d+) dari \1 / : /^Halaman 1 /)
+  }
+  const currentPage = async () => {
+    const match = /(\d+) dari/.exec((await status.textContent()) ?? '')
+    return Number(match?.[1] ?? 1)
+  }
+  await expect(async () => {
+    if ((await pager.count()) > 0) {
+      await jump(1)
+      if ((await item.count()) === 0 && (await next.isEnabled())) {
+        await jump('last')
+        while ((await item.count()) === 0 && (await previous.isEnabled())) {
+          const n = await currentPage()
+          await previous.click()
+          await expect(status).toContainText(`${p.status(n - 1, 0).replace(/ 0$/, '')} `)
+        }
+      }
+    }
+    expect(await item.count()).toBeGreaterThan(0)
+  }).toPass({ timeout: 60_000 })
+  return item
 }
 
 /** Reads the service list as admin (GET /services?includePast=true). */

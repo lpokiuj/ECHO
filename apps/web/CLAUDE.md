@@ -8,7 +8,7 @@ PLAN.md before any task. PLAN.md is the source of truth for scope and decisions.
 
 - Install once at the repo root: `npm install`, then once `npx playwright install chromium`.
   Run the scripts below from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
-- Dev server: `npm run dev`
+- Dev server: `npm run dev` (http://localhost:5173/volunteer-portal/)
 - All checks: `npm run check` (typecheck + lint + unit tests)
 - Unit tests: `npm test`
 - Browser tests: `npm run e2e` (needs the backend running on echo_dev and the `E2E_*` env vars)
@@ -45,6 +45,7 @@ STOP and ask me before:
 - The token lives only in the session store (memory plus `sessionStorage`). Never in
   `localStorage`, a URL, a log, a screenshot, or a test file. Nothing secret goes in code:
   Vite exposes every `VITE_*` value to the browser.
+- The app lives under `/volunteer-portal/` (Vite `base` + router basename). Keep `PATHS` basename-relative; `/api` stays at the origin root. In e2e use relative `goto('teams')`, never `goto('/teams')`.
 - Role-based UI comes from `GET /me`. Hiding UI is UX only. Handle 403 on every call.
 - Follow the UI quality bar in PLAN.md. Use shadcn/ui and the theme tokens. No native
   `alert`, `confirm`, or `prompt`.

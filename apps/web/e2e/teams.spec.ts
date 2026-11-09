@@ -10,6 +10,7 @@ import {
   createE2eTeam,
   createE2eUser,
   deactivateUser,
+  findInList,
   loginAndChange,
   seedSession,
   test,
@@ -82,14 +83,15 @@ test('admin creates a team, hits a duplicate name, and renames it', async ({ pag
   const errors = collectErrors(page)
   const name = `e2e-${Math.random().toString(16).slice(2, 10)}`
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/teams')
+  await page.goto('teams')
   await expect(page.getByRole('heading', { level: 1, name: t.title })).toBeVisible()
 
   await page.getByRole('button', { name: t.addTeam }).click()
   await page.getByLabel(t.form.nameLabel, { exact: true }).fill(name)
   await page.getByRole('button', { name: t.form.submitCreate }).click()
-  const row = teamItem(page, 1280, name)
-  await expect(row).toBeVisible()
+  await expect(
+    await findInList(page, teamItem(page, 1280, name), { list: page.getByTestId('teams-table') }),
+  ).toBeVisible()
 
   // A second team with the same name is refused, inline on the field.
   await page.getByRole('button', { name: t.addTeam }).click()
@@ -103,10 +105,17 @@ test('admin creates a team, hits a duplicate name, and renames it', async ({ pag
   await page.getByRole('button', { name: messages.common.cancel }).click()
 
   const renamed = `${name}-ubah`
+  const row = await findInList(page, teamItem(page, 1280, name), {
+    list: page.getByTestId('teams-table'),
+  })
   await row.getByRole('button', { name: `${t.renameAria}: ${name}` }).click()
   await page.getByLabel(t.form.nameLabel, { exact: true }).fill(renamed)
   await page.getByRole('button', { name: t.form.submitRename }).click()
-  await expect(teamItem(page, 1280, renamed)).toBeVisible()
+  await expect(
+    await findInList(page, teamItem(page, 1280, renamed), {
+      list: page.getByTestId('teams-table'),
+    }),
+  ).toBeVisible()
   expect(errors).toEqual([])
 })
 
@@ -118,7 +127,7 @@ test('add a member, set them leader: they see the assign screen', async ({
   const errors = collectErrors(page)
   const [team, member] = [await createE2eTeam(request), await createE2eUser(request)]
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto(`/teams/${team.id}`)
+  await page.goto(`teams/${team.id}`)
   await expect(page.getByRole('heading', { level: 1, name: team.name })).toBeVisible()
   await expect(page.getByText(d.emptyTitle)).toBeVisible()
 
@@ -160,7 +169,7 @@ test('removing a member asks first and deletes only their future assignments of 
   await assignUsers(request, service.id, team.id, [kept.id, removed.id])
 
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto(`/teams/${team.id}`)
+  await page.goto(`teams/${team.id}`)
   const row = memberItem(page, 1280, removed.name)
   await row.getByRole('button', { name: `${d.removeAria}: ${removed.name}` }).click()
   const confirm = page.getByRole('alertdialog')
@@ -192,7 +201,7 @@ test('adding an inactive user shows an Indonesian error', async ({ page, request
   const [team, inactive] = [await createE2eTeam(request), await createE2eUser(request)]
   await deactivateUser(request, inactive.id)
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto(`/teams/${team.id}`)
+  await page.goto(`teams/${team.id}`)
   await addViaUi(page, inactive)
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText(t.errors.inactiveUser)).toBeVisible()
@@ -207,7 +216,7 @@ plain('a non-admin sees no teams link and a no-access page', async ({ page, requ
   await loginAndChange(page, await createE2eUser(request, 'PEMBINA'))
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await expect(nav.getByRole('link', { name: messages.nav.teams })).toHaveCount(0)
-  await page.goto('/teams')
+  await page.goto('teams')
   await expect(page.getByText(t.noAccessTitle)).toBeVisible()
   expect(errors).toEqual([])
 })
@@ -229,8 +238,11 @@ for (const width of widths) {
     await seedSession(page, await adminToken(request))
     await page.setViewportSize({ width, height: 800 })
 
-    await page.goto('/teams')
-    await expect(teamItem(page, width, team.name)).toBeVisible()
+    await page.goto('teams')
+    const listItem = await findInList(page, teamItem(page, width, team.name), {
+      list: page.getByTestId(width >= 768 ? 'teams-table' : 'teams-cards'),
+    })
+    await expect(listItem).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page)).toEqual([])
     await page.screenshot({ path: `.screens/f9-list-${width}.png` })
@@ -249,9 +261,7 @@ for (const width of widths) {
     await page.getByRole('button', { name: messages.common.cancel }).click()
 
     // Open the team from the list, as a person would.
-    await teamItem(page, width, team.name)
-      .getByRole('link', { name: `${t.openAria}: ${team.name}` })
-      .click()
+    await listItem.getByRole('link', { name: `${t.openAria}: ${team.name}` }).click()
     await expect(page.getByRole('heading', { level: 1, name: team.name })).toBeVisible()
     await expect(memberItem(page, width, volunteer.name)).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)

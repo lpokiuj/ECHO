@@ -34,7 +34,7 @@ npm run preview -w @echo/web -- --host 127.0.0.1 --port 5173 >"$LOGS/web.log" 2>
 pids+=($!)
 
 for _ in $(seq 1 30); do
-  curl -fs -o /dev/null http://127.0.0.1:5173/ && curl -s -o /dev/null http://127.0.0.1:5173/api/me && break
+  curl -fs -o /dev/null http://127.0.0.1:5173/volunteer-portal/ && curl -s -o /dev/null http://127.0.0.1:5173/api/me && break
   sleep 1
 done
 
@@ -51,6 +51,6 @@ done
 [ -n "$url" ] || { echo "Tunnel URL not found, see $LOGS/tunnel.log"; exit 1; }
 
 echo
-echo "Echo is up: $url"
+echo "Echo is up: $url/volunteer-portal/"
 echo "Logs: $LOGS   |   Ctrl+C to stop"
 wait

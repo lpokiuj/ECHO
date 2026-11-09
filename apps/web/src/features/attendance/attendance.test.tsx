@@ -341,7 +341,9 @@ describe('team recap', () => {
     renderApp('/', { token: true })
     const table = await screen.findByTestId('recap-table')
     await userEvent.click(
-      within(table).getByRole('button', { name: fillMessage(t.recap.detailAria, { name: 'Amy' }) }),
+      within(table).getByRole('button', {
+        name: fillMessage(t.recap.detailAria, { name: 'Amy', count: 1 }),
+      }),
     )
     const dialog = await screen.findByRole('dialog')
     expect(await within(dialog).findByText('Sunday Service')).toBeInTheDocument()

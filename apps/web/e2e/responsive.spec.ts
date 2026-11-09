@@ -13,7 +13,7 @@ for (const width of [390, 768, 1280]) {
     page.on('pageerror', (err) => errors.push(err.message))
 
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/')
+    await page.goto('./')
     await expect(page.getByRole('heading', { name: messages.placeholder.title })).toBeVisible()
     await page.screenshot({ path: `.screens/placeholder-${width}.png`, fullPage: true })
 

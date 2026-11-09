@@ -4,6 +4,7 @@ import { messages } from '../src/lib/messages.ts'
 import {
   adminToken,
   createE2eUser,
+  findInList,
   loginAndChange,
   randomSuffix,
   requireEnv,
@@ -56,6 +57,10 @@ function itemFor(page: Page, width: number, name: string) {
     : page.getByTestId('users-cards').getByRole('listitem').filter({ hasText: name })
 }
 
+function listFor(page: Page, width: number) {
+  return page.getByTestId(width >= 768 ? 'users-table' : 'users-cards')
+}
+
 async function chooseRole(page: Page, label: string) {
   await page.getByRole('combobox', { name: f.roleLabel }).click()
   await page.getByRole('option', { name: label }).click()
@@ -95,11 +100,11 @@ test('admin creates a user; that user logs in and changes the password', async (
     password: requireEnv('E2E_USER_PASSWORD'),
   }
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/users')
+  await page.goto('users')
   await expect(page.getByRole('heading', { level: 1, name: t.title })).toBeVisible()
 
   await createViaUi(page, user.name, user.email)
-  const row = itemFor(page, 1280, user.name)
+  const row = await findInList(page, itemFor(page, 1280, user.name), { list: listFor(page, 1280) })
   // The list refetches after the create; with hundreds of leftover users and parallel workers
   // that can take much longer than the default (see D-032).
   await expect(row).toBeVisible()
@@ -127,16 +132,18 @@ test('admin edits name and role, then deactivates after a confirmation', async (
   const errors = collectErrors(page)
   const user = await createE2eUser(request)
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/users')
+  await page.goto('users')
 
   const renamed = `${user.name}-ubah`
-  await itemFor(page, 1280, user.name)
+  await (
+    await findInList(page, itemFor(page, 1280, user.name), { list: listFor(page, 1280) })
+  )
     .getByRole('button', { name: `${t.editAria}: ${user.name}` })
     .click()
   await page.getByLabel(f.nameLabel).fill(renamed)
   await chooseRole(page, messages.roles.PEMBINA)
   await page.getByRole('button', { name: f.submitEdit }).click()
-  const row = itemFor(page, 1280, renamed)
+  const row = await findInList(page, itemFor(page, 1280, renamed), { list: listFor(page, 1280) })
   await expect(row).toContainText(messages.roles.PEMBINA)
 
   await row.getByRole('button', { name: `${t.editAria}: ${renamed}` }).click()
@@ -145,7 +152,9 @@ test('admin edits name and role, then deactivates after a confirmation', async (
   const confirm = page.getByRole('alertdialog')
   await expect(confirm).toContainText(renamed)
   await confirm.getByRole('button', { name: t.confirmDeactivate.action }).click()
-  await expect(itemFor(page, 1280, renamed)).toContainText(t.inactive)
+  await expect(
+    await findInList(page, itemFor(page, 1280, renamed), { list: listFor(page, 1280) }),
+  ).toContainText(t.inactive)
   // A deactivated user cannot log in any more (status only, never the body).
   expect(await loginStatus(page, user.email, user.password)).toBe(401)
   expect(errors).toEqual([])
@@ -163,8 +172,8 @@ test('reset password asks first; the user must change the password again', async
   await first.context().close()
 
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/users')
-  const row = itemFor(page, 1280, user.name)
+  await page.goto('users')
+  const row = await findInList(page, itemFor(page, 1280, user.name), { list: listFor(page, 1280) })
   await row.getByRole('button', { name: `${t.resetAria}: ${user.name}` }).click()
   const confirm = page.getByRole('alertdialog')
   await expect(confirm).toContainText(user.name)
@@ -176,7 +185,7 @@ test('reset password asks first; the user must change the password again', async
 
   // Back to the default password, and a forced change.
   const second = await freshPage(browser)
-  await second.goto('/login')
+  await second.goto('login')
   await second.getByLabel(messages.auth.emailLabel).fill(user.email)
   await second.getByLabel(messages.auth.passwordLabel).fill(user.password)
   await second.getByRole('button', { name: messages.auth.loginSubmit }).click()
@@ -187,8 +196,10 @@ test('reset password asks first; the user must change the password again', async
 
 test('the admin cannot change their own role or active flag', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/users')
-  const row = itemFor(page, 1280, requireEnv('E2E_ADMIN_EMAIL'))
+  await page.goto('users')
+  const row = await findInList(page, itemFor(page, 1280, requireEnv('E2E_ADMIN_EMAIL')), {
+    list: listFor(page, 1280),
+  })
   await expect(row).toContainText(t.you)
   await row.getByRole('button', { name: new RegExp(`^${t.editAria}`) }).click()
   await expect(page.getByRole('combobox', { name: f.roleLabel })).toBeDisabled()
@@ -204,7 +215,7 @@ plain('a non-admin sees no users link and a no-access page', async ({ page, requ
   await loginAndChange(page, await createE2eUser(request, 'PEMBINA'))
   const nav = page.getByRole('navigation', { name: messages.nav.label }).first()
   await expect(nav.getByRole('link', { name: messages.nav.users })).toHaveCount(0)
-  await page.goto('/users')
+  await page.goto('users')
   await expect(page.getByText(t.noAccessTitle)).toBeVisible()
   expect(errors).toEqual([])
 })
@@ -220,8 +231,10 @@ for (const width of widths) {
     const user = await createE2eUser(request)
     await seedSession(page, await adminToken(request))
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/users')
-    await expect(itemFor(page, width, user.name)).toBeVisible()
+    await page.goto('users')
+    await expect(
+      await findInList(page, itemFor(page, width, user.name), { list: listFor(page, width) }),
+    ).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page)).toEqual([])
     await page.screenshot({ path: `.screens/f8-list-${width}.png` })
@@ -235,7 +248,9 @@ for (const width of widths) {
     await page.screenshot({ path: `.screens/f8-form-errors-${width}.png` })
     await page.getByRole('button', { name: messages.common.cancel }).click()
 
-    await itemFor(page, width, user.name)
+    await (
+      await findInList(page, itemFor(page, width, user.name), { list: listFor(page, width) })
+    )
       .getByRole('button', { name: `${t.editAria}: ${user.name}` })
       .click()
     await expect(page.getByRole('dialog')).toBeVisible()
@@ -263,7 +278,9 @@ for (const width of widths) {
       .click()
     await page.getByRole('button', { name: messages.common.cancel }).click()
 
-    await itemFor(page, width, user.name)
+    await (
+      await findInList(page, itemFor(page, width, user.name), { list: listFor(page, width) })
+    )
       .getByRole('button', { name: `${t.resetAria}: ${user.name}` })
       .click()
     await expect(page.getByRole('alertdialog')).toBeVisible()

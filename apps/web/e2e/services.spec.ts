@@ -5,6 +5,7 @@ import {
   adminToken,
   createE2eService,
   createE2eUser,
+  findInList,
   listServices,
   test,
   loginAndChange,
@@ -48,6 +49,10 @@ function itemFor(page: Page, width: number, title: string) {
     : page.getByTestId('services-cards').getByRole('listitem').filter({ hasText: title })
 }
 
+function listFor(page: Page, width: number) {
+  return page.getByTestId(width >= 768 ? 'services-table' : 'services-cards')
+}
+
 /** Date part (YYYY-MM-DD, Jakarta) of a day `days` ahead, for the date inputs. */
 const futureDate = (days: number) => wibInstant(days, 9).slice(0, 10)
 
@@ -56,9 +61,10 @@ async function fillForm(
   v: { title: string; date: string; start: string; end: string },
 ) {
   await page.getByLabel(f.titleLabel).fill(v.title)
-  await page.getByLabel(f.startDate).fill(v.date)
+  // The date picker is a button plus a hidden date input that share the label; fill the input.
+  await page.getByLabel(f.startDate).and(page.locator('input')).fill(v.date)
   await page.getByLabel(f.startTime).fill(v.start)
-  await page.getByLabel(f.endDate).fill(v.date)
+  await page.getByLabel(f.endDate).and(page.locator('input')).fill(v.date)
   await page.getByLabel(f.endTime).fill(v.end)
 }
 
@@ -70,13 +76,13 @@ test('admin creates a service in WIB, sees the right time, edits it, deletes it'
   const title = `e2e-${randomSuffix()}`
   const date = futureDate(40)
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/services')
+  await page.goto('services')
   await expect(page.getByRole('heading', { level: 1, name: t.title })).toBeVisible()
 
   await page.getByRole('button', { name: t.add }).click()
   await fillForm(page, { title, date, start: '09:00', end: '11:00' })
   await page.getByRole('button', { name: f.submitCreate }).click()
-  const row = itemFor(page, 1280, title)
+  const row = await findInList(page, itemFor(page, 1280, title), { list: listFor(page, 1280) })
   await expect(row).toBeVisible()
   await expect(row).toContainText(`09.00 - 11.00 ${messages.dates.wib}`)
   // Stored as the same instant in UTC.
@@ -90,7 +96,7 @@ test('admin creates a service in WIB, sees the right time, edits it, deletes it'
   await page.getByLabel(f.titleLabel).fill(renamed)
   await page.getByLabel(f.endTime).fill('12:00')
   await page.getByRole('button', { name: f.submitEdit }).click()
-  const edited = itemFor(page, 1280, renamed)
+  const edited = await findInList(page, itemFor(page, 1280, renamed), { list: listFor(page, 1280) })
   await expect(edited).toContainText(`09.00 - 12.00 ${messages.dates.wib}`)
 
   await edited.getByRole('button', { name: `${t.deleteAria}: ${renamed}` }).click()
@@ -102,7 +108,7 @@ test('admin creates a service in WIB, sees the right time, edits it, deletes it'
 
 test('a start that is not in the future is blocked by the form', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/services')
+  await page.goto('services')
   await page.getByRole('button', { name: t.add }).click()
   await fillForm(page, {
     title: `e2e-${randomSuffix()}`,
@@ -118,7 +124,7 @@ test('a server validation error and a 403 show Indonesian messages next to the f
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/services')
+  await page.goto('services')
   let status = 400
   await page.route('**/api/services', async (route) => {
     if (route.request().method() !== 'POST') return route.continue()
@@ -159,7 +165,7 @@ plain(
     await page.getByRole('button', { name: t.add }).click()
     await fillForm(page, { title, date: futureDate(42), start: '09:00', end: '11:00' })
     await page.getByRole('button', { name: f.submitCreate }).click()
-    const row = itemFor(page, 1280, title)
+    const row = await findInList(page, itemFor(page, 1280, title), { list: listFor(page, 1280) })
     await expect(row).toContainText(`09.00 - 11.00 ${messages.dates.wib}`)
     await row.getByRole('button', { name: `${t.deleteAria}: ${title}` }).click()
     await page
@@ -171,7 +177,7 @@ plain(
     await page.evaluate(() => window.sessionStorage.clear())
     await loginAndChange(page, await createE2eUser(request, 'MEMBER'))
     await expect(nav().getByRole('link', { name: messages.nav.services })).toHaveCount(0)
-    await page.goto('/services')
+    await page.goto('services')
     await expect(page.getByText(t.noAccessTitle)).toBeVisible()
     expect(errors).toEqual([])
   },
@@ -189,8 +195,10 @@ for (const width of widths) {
     const service = await createE2eService(request, 45)
     await seedSession(page, await adminToken(request))
     await page.setViewportSize({ width, height: 800 })
-    await page.goto('/services')
-    await expect(itemFor(page, width, service.title)).toBeVisible()
+    await page.goto('services')
+    await expect(
+      await findInList(page, itemFor(page, width, service.title), { list: listFor(page, width) }),
+    ).toBeVisible()
     expect(await hasHorizontalScroll(page)).toBe(false)
     expect(await seriousViolations(page)).toEqual([])
     await page.screenshot({ path: `.screens/f6-list-${width}.png`, fullPage: true })
@@ -204,19 +212,26 @@ for (const width of widths) {
     await page.screenshot({ path: `.screens/f6-form-errors-${width}.png` })
     await page.getByRole('button', { name: messages.common.cancel }).click()
 
-    await itemFor(page, width, service.title)
+    await (
+      await findInList(page, itemFor(page, width, service.title), { list: listFor(page, width) })
+    )
       .getByRole('button', { name: `${t.editAria}: ${service.title}` })
       .click()
     await expect(page.getByRole('dialog')).toBeVisible()
     await page.screenshot({ path: `.screens/f6-form-edit-${width}.png` })
     // Controls are 44px below 1024px (touch); the desktop size is the design's 40px.
     for (const label of width < 1024 ? [f.titleLabel, f.startDate, f.endTime] : []) {
-      const box = await page.getByLabel(label).boundingBox()
+      // The date picker's label also names a hidden input; measure the visible button.
+      const control =
+        label === f.startDate ? page.getByRole('button', { name: label }) : page.getByLabel(label)
+      const box = await control.boundingBox()
       expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
     }
     await page.getByRole('button', { name: messages.common.cancel }).click()
 
-    await itemFor(page, width, service.title)
+    await (
+      await findInList(page, itemFor(page, width, service.title), { list: listFor(page, width) })
+    )
       .getByRole('button', { name: `${t.deleteAria}: ${service.title}` })
       .click()
     await expect(page.getByRole('alertdialog')).toBeVisible()

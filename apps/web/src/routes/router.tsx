@@ -105,4 +105,6 @@ export const routes = [
   },
 ]
 
-export const router = createBrowserRouter(routes)
+// Keep Vite's trailing slash ("/volunteer-portal/"): home is then "/volunteer-portal/", which the
+// dev and preview servers can serve on a hard refresh ("/volunteer-portal" is a 404 there).
+export const router = createBrowserRouter(routes, { basename: import.meta.env.BASE_URL })
