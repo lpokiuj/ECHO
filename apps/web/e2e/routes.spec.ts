@@ -222,26 +222,6 @@ plain('login page at every width', async ({ browser }) => {
   )
 })
 
-plain('forced password change page at every width', async ({ browser, request }) => {
-  const user = await createE2eUser(request)
-  const context = await browser.newContext()
-  const page = await context.newPage()
-  const a = messages.auth
-  await page.goto('login')
-  await page.getByLabel(a.emailLabel).fill(user.email)
-  await page.getByLabel(a.passwordLabel).fill(user.password)
-  await page.getByRole('button', { name: a.loginSubmit }).click()
-  await expect(page).toHaveURL(/\/change-password$/)
-  const errors = collectErrors(page)
-  const target: Target = {
-    name: 'change-password',
-    path: 'change-password',
-    heading: a.changePasswordTitle,
-  }
-  for (const width of widths) await audit(page, target, width, errors)
-  await context.close()
-})
-
 // Interaction checks ported from the removed /design page (feature 2), now on real routes.
 const sv = messages.services
 

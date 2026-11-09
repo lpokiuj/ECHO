@@ -98,3 +98,47 @@
 - `test.setTimeout(90_000)`, a 20s expect timeout in assign.spec, and a 400ms wait before the toggle height
   measurement in availability.spec. Accepted as timing, not assertions, provided the 44px minimum assertion is unchanged.
   I verify by reading the diff. Reverse: remove the timeouts and the wait.
+
+## D-014 (T1, user answer after hard stop): services keep their soft delete
+- Question: existing `DELETE /services/:id` is a soft delete. Options: keep, or change to hard delete.
+- Choice (user, in conversation): keep the soft delete. T1 adds delete endpoints for users and bidang only; the
+  service endpoint, its tests and docs are untouched. PUBLIC_PLAN.md T1/T2 text still says services hard delete; I did not edit it
+  (not mine to edit). T2 (portal) must use the existing soft-delete endpoint for services.
+- Reverse: a later feature that converts services to hard delete.
+
+## D-015 (T1, user answer): cascade wins over attendance history
+- Choice (user: "whichever easier"): deleting a user or bidang cascades their memberships, assignments, unavailability and
+  the absence rows hanging off those assignments (ON DELETE CASCADE). Simplest, and matches the plan's cascade decision.
+- Reverse: new migration restoring RESTRICT plus a 409 check.
+
+## D-016 (T1, user answer): block deleting users who created records
+- Choice (user): `created_by` (services), `assigned_by` (assignments) and `recorded_by` (absences) FKs stay RESTRICT. Deleting a
+  user still referenced there is rejected with 409 (coded error, B names it). No schema change to those columns.
+- Consequence to watch (T2): soft-deleted services keep their `created_by`, so an `e2e-` user who created a service can never be
+  deleted by the cleanup. T2 must have e2e services created by the E2E admin (or accept and report). Logged for T2.
+- Reverse: nullable + SET NULL migration.
+
+## D-017 (T1, user answer "sure"): last-ADMIN counts all ADMIN rows; self-delete is 400
+- Last ADMIN: count all users with role ADMIN (active or not). Self-delete: 400, like PATCH self-change.
+- Reverse: change the count query / error status.
+
+## D-018 (T1, user approval "B, yes, yes"): schema and test changes approved
+- Approved by the user: (1) option B: new FKs `service_absences.user_id -> users` and `.team_id -> teams` (CASCADE) and the composite
+  FK to `service_assignments` RESTRICT -> NO ACTION; (2) `assigned_by` and `recorded_by` RESTRICT -> NO ACTION; (3) replace the two
+  tests that encode the old behavior (schema.e2e-spec membership RESTRICT test, teams.e2e-spec "has no delete-team route") with tests
+  of the new behavior. No other existing test may change. PUBLIC_PLAN.md delete row reverted to hard delete for users/bidang at the
+  user's request (services stay soft).
+- Reverse: a migration restoring the old FKs, and restoring the two tests.
+
+## D-020 (T1, user answer "1"): fix the stale web e2e specs as a separate chore before committing T1
+- Question: web e2e is red (33 failures) because commit 63bd3be removed the forced password change that specs still expect.
+- Options: (1) update the specs now, separate from T1; (2) commit T1 and fix in T2; (3) restore the forced change.
+- Choice (user): 1. A fresh B (sonnet, scope apps/web e2e) updates only what the specs expect about the forced change; all other
+  assertions stay. Tests whose whole purpose was the forced-change page cannot be fixed by rewording: B must report them (hard stop
+  candidate: deleting or weakening a test is not allowed).
+- Reverse: n/a.
+
+## D-019 (T1, mine): dev DB migrated through the existing script
+- The new migration is run on echo_dev with `npm run migration:run` (allowed by the plan: echo_dev changes only through the migration
+  script), after tests pass on the test DB, so the running dev backend and later web e2e match the schema. No db:reset.
+- Reverse: `npm run migration:revert`.

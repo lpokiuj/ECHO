@@ -206,21 +206,15 @@ export async function assignUsers(
 }
 
 /**
- * Logs in through the UI and completes the forced password change. The new password is
- * generated here, lives only in memory, and is never logged or stored.
+ * Logs in through the UI as a created user and waits for the home page. New and reset accounts
+ * are not forced to change their password, so there is no change step.
  */
 export async function loginAndChange(page: Page, user: CreatedUser): Promise<void> {
   const a = messages.auth
-  const next = `Np-${randomSuffix()}-${randomSuffix()}`
   await page.goto('login')
   await page.getByLabel(a.emailLabel).fill(user.email)
   await page.getByLabel(a.passwordLabel).fill(user.password)
   await page.getByRole('button', { name: a.loginSubmit }).click()
-  await expect(page).toHaveURL(/\/change-password$/)
-  await page.getByLabel(a.currentPasswordLabel).fill(user.password)
-  await page.getByLabel(a.newPasswordLabel, { exact: true }).fill(next)
-  await page.getByLabel(a.confirmPasswordLabel).fill(next)
-  await page.getByRole('button', { name: a.changePasswordSubmit }).click()
   await expect(page).toHaveURL(/\/volunteer-portal\/$/)
 }
 

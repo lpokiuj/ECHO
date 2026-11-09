@@ -28,7 +28,7 @@ Set these in the shell that runs the commands. Names only; never commit values.
 | `API_PROXY_TARGET`   | dev server | Backend URL. Defaults to `http://localhost:3000`.            |
 | `E2E_BASE_URL`       | Playwright | App origin only. Defaults to `http://localhost:5173`.        |
 | `E2E_ADMIN_EMAIL`    | Playwright | Email of the seeded admin on echo_dev.                       |
-| `E2E_ADMIN_PASSWORD` | Playwright | That admin's password (after its forced password change).    |
+| `E2E_ADMIN_PASSWORD` | Playwright | That admin's password.                                       |
 | `E2E_USER_PASSWORD`  | Playwright | The default password the API gives users that admin creates. |
 
 `VITE_*` variables are exposed to the browser. Never put a secret in one.

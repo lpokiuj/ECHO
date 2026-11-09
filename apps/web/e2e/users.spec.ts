@@ -160,7 +160,7 @@ test('admin edits name and role, then deactivates after a confirmation', async (
   expect(errors).toEqual([])
 })
 
-test('reset password asks first; the user must change the password again', async ({
+test('reset password asks first; the user logs in with the default password', async ({
   page,
   request,
   browser,
@@ -168,7 +168,7 @@ test('reset password asks first; the user must change the password again', async
   const errors = collectErrors(page)
   const user = await createE2eUser(request)
   const first = await freshPage(browser)
-  await loginAndChange(first, user) // clears mustChangePassword with a runtime-only password
+  await loginAndChange(first, user) // a first login, so the account has been used before the reset
   await first.context().close()
 
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -183,13 +183,13 @@ test('reset password asks first; the user must change the password again', async
   await page.getByRole('alertdialog').getByRole('button', { name: t.confirmReset.action }).click()
   await expect(page.getByText(t.toast.reset)).toBeVisible()
 
-  // Back to the default password, and a forced change.
+  // Back to the default password: logging in with it lands home (no forced change).
   const second = await freshPage(browser)
   await second.goto('login')
   await second.getByLabel(messages.auth.emailLabel).fill(user.email)
   await second.getByLabel(messages.auth.passwordLabel).fill(user.password)
   await second.getByRole('button', { name: messages.auth.loginSubmit }).click()
-  await expect(second).toHaveURL(/\/change-password$/)
+  await expect(second).toHaveURL(/\/volunteer-portal\/$/)
   await second.context().close()
   expect(errors).toEqual([])
 })

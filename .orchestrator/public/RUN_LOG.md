@@ -340,3 +340,112 @@ B sessions: B-P1-plan and B-P1-impl (same agent, model: sonnet). B's claims, NOT
   path; none mention the old path. PASS.
 - Result: P1 verified. Fix rounds used: 1 (D-012). B sessions: 1 agent (plan then implementation, two resumes for the
   decision and the status check).
+
+## Run resumed (2026-11-09, twelfth session): new prompt with preflight db:reset
+- P1 is committed (a1835ee) and ticked. HEAD a8f0451, branch `public-site-build`, working tree clean. First unticked: T1.
+- Preflight: plan, all CLAUDE.md files, docs/api/README.md (real path, D-001), logs read. `GET /health` = 200.
+  E2E_* not checked. Baseline: `npm run check -w @echo/web` 287 pass; `npm test -w @echo/api` 8 pass;
+  `npm run lint -w @echo/api` clean; `npm run test:e2e -w @echo/api` 239 pass. Migration script: `npm run migration:run`
+  (existing, unchanged); `@nestjs/throttler` already in apps/api deps; root workspaces `apps/*` already covers apps/public.
+- `npm run db:reset -w @echo/api`: "Reset done: echo_dev", "Seed done." Health still 200. Not to be run again this session.
+- Starting T1.
+
+## B sessions (twelfth session)
+- B-T1-plan (model: sonnet, planning only): T1 inventory of existing delete endpoints + plan. Reported; changed nothing
+  (`git status` shows only this log modified).
+
+## T1 inventory and HARD STOP (twelfth session)
+Inventory (B's report; the service finding verified by me with grep):
+- users: no delete endpoint (only create, list, PATCH isActive/role, reset-password). Class-level ADMIN.
+- teams (bidang): no delete endpoint. No soft-delete column.
+- services: `DELETE /services/:id` exists, ADMIN+PEMBINA, 204, but it is a SOFT DELETE
+  (`services.service.ts:90` `softDelete`, `service.entity.ts:36` `@DeleteDateColumn deleted_at`). Row stays.
+  Docs, attendance recap ("soft-deleted services still count"), availability, assignments and
+  `TeamsService.removeMember` all depend on it.
+- team membership `DELETE /teams/:id/members/:userId`: hard delete, ADMIN, 200 with removedAssignments (kept as is).
+- assignments `DELETE /services/:id/teams/:teamId/assignments/:userId`: hard delete, leader or ADMIN (kept as is).
+- FKs: every FK to users/teams/services is ON DELETE RESTRICT (none CASCADE or SET NULL). `created_by`,
+  `assigned_by`, `recorded_by` -> users are NOT NULL.
+HARD STOP: the T1 rule says an existing soft delete must not be changed; stop and report. I did not plan or build anything.
+Open decisions for the user (B's recommendations in brackets):
+1. Services: keep soft delete and drop services from T1 [recommended], or change to hard delete (rewrites existing
+   soft-delete tests/docs, loses recap history of deleted services).
+2. Cascade vs attendance: user/team delete cascades assignments and silently removes absence history [recommended per
+   plan], or block with 409 when attendance exists.
+3. `created_by` / `assigned_by` / `recorded_by` NOT NULL FKs block hard-deleting any user who created services or assigned
+   people (the seeded admin likely created all services). Options: block with 409 [B's pick], CASCADE (too destructive),
+   or make nullable + SET NULL (schema change). Plan implies cascade of memberships/assignments only, not these.
+4. Last-ADMIN rule: count all ADMIN rows [recommended] or only active ones.
+5. Self-delete: 400, matching the existing PATCH self-change convention [recommended].
+State at stop: branch public-site-build, HEAD a8f0451, only .orchestrator/ modified, nothing staged, T1 unticked.
+To resume: answer 1 to 3 (4 and 5 can stay at the recommendations), update PUBLIC_PLAN.md T1 if the scope changes, re-run the prompt.
+- RESOLVED in conversation: user answered keep soft delete, cascade, block 409, last-ADMIN all rows, self-delete 400 (D-014..D-017).
+
+## T1 plan round 2 (B-T1-plan resumed): STOPPED FOR USER APPROVAL (schema + existing tests)
+B's plan (verified facts per B; not yet checked by me): `service_absences.team_id` has no FK; the composite FK
+(service_id,user_id)->service_assignments is RESTRICT, so a plain cascade would make any user/team with an absence undeletable,
+and flipping it to CASCADE would break the existing 409 HAS_ATTENDANCE_RECORDS tests and PLAN.md line 159.
+Proposal needing approval (schema = no-guess area, existing tests = hard stop):
+1. Option B: add FKs `service_absences.user_id -> users` and `.team_id -> teams` (both CASCADE), composite FK RESTRICT -> NO ACTION.
+   Option A (no new FKs): service layer deletes the user's/team's absences first in the same transaction; small race, not DB-enforced.
+2. `assigned_by` and `recorded_by` RESTRICT -> NO ACTION (same blocking, checked at statement end; avoids wrongly blocking self-assigned users).
+3. Two existing tests encode the superseded behavior and cannot pass as written: schema.e2e-spec "refuses to delete a user who has a
+   team membership (RESTRICT)" and teams.e2e-spec ~line 300 "has no delete-team route" (404). B proposes replacing them with the new behavior's tests.
+Why stopped: my rules forbid guessing on schema and forbid deleting or weakening an existing test; the plan did not clearly imply these.
+State: branch public-site-build, HEAD a8f0451, only .orchestrator/ modified, T1 unticked.
+- RESOLVED in conversation: user approved "B, yes, yes" (D-018). PUBLIC_PLAN.md delete row reverted to hard delete for users/bidang at the
+  user's request (the only plan edit I made, on explicit instruction).
+
+## T1 implemented and verified by me; HARD STOP on the web e2e row (twelfth session)
+B-T1-plan resumed to implement (model: sonnet; B sessions for T1: 1 agent, 2 plan rounds, 1 implementation, 0 fix rounds).
+My verification:
+- Scope: `git status`/diff stat: only apps/api (src, test, new migration 1794235300560-CascadeUserTeamDeletes.ts, PLAN.md), docs/api/*,
+  PUBLIC_PLAN.md (user-requested) and .orchestrator. No package.json or lockfile change. PASS.
+- Added-line greps: no `any`, `@ts-ignore`, `.only(`, `.skip(`. Test diffs read: only the two approved tests replaced
+  (schema "refuses to delete a user who has a team membership" and teams "has no delete-team route"); everything else is additions. PASS.
+- Migration SQL read: only the approved FKs dropped/re-added, 2 new absence FKs, `down()` restores. PASS.
+- `npm run lint -w @echo/api` clean; `npm test -w @echo/api` 8/8; `npm run test:e2e -w @echo/api` 258/258 (was 239). PASS.
+- Docs read: users.md, teams.md, README.md (32 routes, error codes), permissions.md, flows.md, attendance.md, apps/api/PLAN.md; grep for stale
+  "no delete" wording in docs, READMEs and PLANs finds none. PASS.
+- Test selection: T1 touches existing entities/tables, so row "apps/api touching existing ... tables" applies: api tests + apps/web e2e.
+- My `npm run e2e -w @echo/web` (dev DB already migrated by B with `npm run migration:run`): **54 passed, 33 failed, 4.9 min** (P1: 87/87, 8.3 min;
+  faster after the preflight db:reset). ALL 33 failures are one cause: 29 expect `/\/change-password$/` but the new user lands on
+  `/volunteer-portal/` (home), 4 expect the heading "Ganti kata sandi". Cause: commit 63bd3be ("stop forcing password change for new and reset
+  accounts", after P1's green run) removed the forced change; apps/web specs that create users and log in still expect it. Not related to T1
+  (no auth, login or user-creation code changed). I cannot prove this by running T1-less code (git checkout/stash forbidden), but the errors are
+  uniform and a1835ee (87/87) predates 63bd3be.
+- Not met as written: global criterion "existing tests still pass in every affected app" (web e2e red). Fixing means editing web spec ASSERTIONS about
+  the forced-change flow (apps/web, outside T1's scope, and a behavior-assertion change, not a way of finding records), so it is a hard stop.
+- (superseded below) Not done: tick, commit. T1 code is complete and uncommitted.
+
+## Web e2e chore (D-020), thirteenth step of the twelfth session
+- B-web-e2e (model: sonnet): plan, then implement. Plan: 26 of the 33 failures are one shared helper (`loginAndChange` in
+  e2e/fixtures.ts plus a private copy in schedule.spec.ts) expecting the removed forced change; 7 tests assert the forced-change page.
+  No API or UI path reaches that page any more (docs/api: nothing sets mustChangePassword), so it has unit coverage only.
+- User chose option 1: rewrite the 7 to the new behavior, removing only the forced-change expectations. routes.spec:225 ("forced password
+  change page at every width") has no equivalent left; the user has NOT said what to do with it, so it is untouched and still fails.
+- Spec diffs read by me (apps/web only; README:31 and PLAN.md:145 reworded): removed assertions are exactly the change-page ones in auth:58
+  (URL, heading, no-nav, route lock, wrong-current-password inline error, change submit), auth:143 x4 (change-page heading, screenshot,
+  overflow, axe, empty-submit block), users:163 (`/change-password` URL became `/volunteer-portal/`), helper bodies. Kept: every login-page,
+  home, reload, logout, re-login, reset-flow assertion. Added: viewport 1280 and nav visible on home in auth:58. Test titles changed. No
+  test deleted/skipped; no `any`/ts-ignore/.only/.skip added.
+- `npm run check -w @echo/web`: pass (B ran it twice, 287 tests). Not re-run by me after B's edits.
+- My full `npm run e2e -w @echo/web`: 85 passed, 2 failed, 6.4 min. Failures: routes.spec:225 (expected, awaiting user) and
+  assign.spec:221 (a 30s `toBeVisible` timeout under full-suite load); `npm run e2e -w @echo/web -- e2e/assign.spec.ts` alone: 6/6 pass,
+  so it is a load flake, not a code failure.
+- RESOLVED: user said delete routes.spec:225 ("2") and file the backend request note. B deleted that one test (nothing else removed;
+  no import became unused) and added a low-priority entry to docs/backend-requests.md (no apps/api edit). I read both diffs.
+  My `npm run check -w @echo/web`: pass (287). My full `npm run e2e -w @echo/web`: **86 passed, 0 failed, 5.6 min** (P1 baseline 8.3 min for 87;
+  teardown "123 of 123 removed"). One test fewer than before, by approval.
+- T1 acceptance, one by one (apps/api e2e, all in the 258 passing): ADMIN 204 and row gone (users, teams); PEMBINA/MEMBER/leader 403 and row kept;
+  no token 401; unknown id 404 (+ malformed id 400); cascades (memberships, assignments, unavailability, absences) for user and team; deleting yourself
+  400; last ADMIN 400 LAST_ADMIN (race test + service-level inactive-ADMIN test); blocked users 409 USER_HAS_CREATED_RECORDS (created_by incl. soft-deleted
+  service, assigned_by, recorded_by); submissions `handled_by` re-check skipped (tables do not exist yet, B2 re-checks); services soft delete untouched
+  (D-014, plan text amended by the user); docs updated and grepped. Existing endpoints kept (membership/assignment removal).
+- T1 stats: B sessions 1 agent (3 rounds: plan, plan round 2, implement); fix rounds 0; plus web e2e chore B (1 agent, plan + implement + 1 follow-up).
+  Login calls per run and T2-specific numbers are T2's.
+- Commits (two, T1 first with explicit paths since `git add -A` would mix them): T1 = apps/api, docs/api, PUBLIC_PLAN.md (user edit + tick);
+  chore = apps/web e2e fixes + docs, docs/backend-requests.md; .orchestrator logs go with the second commit.
+- (superseded) Status: T1 not committed. Waiting for the user's decision on routes.spec:225 (delete, or convert to login-page widths/axe) before the web
+  e2e can be green and T1 plus the chore can be committed. B sessions so far this run: T1 B (3 rounds), web-e2e B (2 rounds). State: branch public-site-build, HEAD a8f0451, unstaged T1 changes (apps/api, docs/api,
+  PUBLIC_PLAN.md) + .orchestrator, nothing staged. echo_dev already has the new migration.

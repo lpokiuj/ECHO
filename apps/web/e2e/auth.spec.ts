@@ -2,7 +2,6 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { messages } from '../src/lib/messages.ts'
 import { adminToken, createE2eUser, randomSuffix, seedSession } from './fixtures.ts'
-
 const widths = [360, 390, 768, 1280]
 const t = messages.auth
 
@@ -31,15 +30,6 @@ async function submitLogin(page: Page, email: string, password: string) {
   await page.getByRole('button', { name: t.loginSubmit }).click()
 }
 
-async function submitChange(page: Page, current: string, next: string) {
-  await page.getByLabel(t.currentPasswordLabel).fill(current)
-  await page.getByLabel(t.newPasswordLabel, { exact: true }).fill(next)
-  await page.getByLabel(t.confirmPasswordLabel).fill(next)
-  await page.getByRole('button', { name: t.changePasswordSubmit }).click()
-}
-
-const newPassword = () => `Np-${randomSuffix()}-${randomSuffix()}`
-
 test('wrong credentials show one generic message and stay on login', async ({ page }) => {
   const errors = collectErrors(page, [/status of 401/])
   await page.goto('login')
@@ -55,33 +45,20 @@ test('an unauthenticated visit to a protected route goes to login', async ({ pag
   await expect(page.getByRole('heading', { level: 1, name: t.loginTitle })).toBeVisible()
 })
 
-test('admin-created user logs in, completes the forced change, lands home', async ({
+test('admin-created user logs in and lands home with no forced change', async ({
   page,
   request,
 }) => {
   const errors = collectErrors(page, [/status of 401/])
   const user = await createE2eUser(request)
-  const next = newPassword()
+  await page.setViewportSize({ width: 1280, height: 800 })
 
   await page.goto('login')
   await submitLogin(page, user.email, user.password)
-  await expect(page).toHaveURL(/\/change-password$/)
-  await expect(page.getByRole('heading', { level: 1, name: t.changePasswordTitle })).toBeVisible()
-  await expect(page.getByRole('navigation', { name: messages.nav.label })).toHaveCount(0)
-
-  // No other route is reachable while the change is pending.
-  await page.goto('my-schedule')
-  await expect(page).toHaveURL(/\/change-password$/)
-  await page.goto('./')
-  await expect(page).toHaveURL(/\/change-password$/)
-
-  // A wrong current password is an inline error and does not log out.
-  await submitChange(page, 'bukan-kata-sandi-saya', next)
-  await expect(page.getByText(messages.errors.wrongCurrentPassword)).toBeVisible()
-  await expect(page).toHaveURL(/\/change-password$/)
-
-  await submitChange(page, user.password, next)
   await expect(page).toHaveURL(/\/volunteer-portal\/$/)
+  await expect(
+    page.getByRole('navigation', { name: messages.nav.label }).first(),
+  ).toBeVisible()
   await expect(
     page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
   ).toBeVisible()
@@ -94,7 +71,7 @@ test('admin-created user logs in, completes the forced change, lands home', asyn
   await menu.click()
   await page.getByRole('menuitem', { name: t.logout }).click()
   await expect(page).toHaveURL(/\/login$/)
-  await submitLogin(page, user.email, next)
+  await submitLogin(page, user.email, user.password)
   await expect(page).toHaveURL(/\/volunteer-portal\/$/)
   await expect(page.getByRole('main').getByText(user.name)).toBeVisible()
   expect(errors).toEqual([])
@@ -140,7 +117,7 @@ test('deep link survives a hard refresh under /volunteer-portal/ and never hits 
 })
 
 for (const width of widths) {
-  test(`login and forced change at ${width}px: no overflow, axe clean, no console errors`, async ({
+  test(`login and home at ${width}px: no overflow, axe clean, no console errors`, async ({
     page,
     request,
   }) => {
@@ -171,17 +148,6 @@ for (const width of widths) {
     }
 
     await submitLogin(page, user.email, user.password)
-    await expect(page.getByRole('heading', { level: 1, name: t.changePasswordTitle })).toBeVisible()
-    await page.screenshot({ path: `.screens/f4-change-${width}.png`, fullPage: true })
-    expect(await hasHorizontalScroll(page)).toBe(false)
-    expect(await seriousViolations(page)).toEqual([])
-
-    await page.getByRole('button', { name: t.changePasswordSubmit }).click()
-    await expect(page.getByText(t.required).first()).toBeVisible()
-    await page.screenshot({ path: `.screens/f4-change-errors-${width}.png`, fullPage: true })
-    expect(await seriousViolations(page)).toEqual([])
-
-    await submitChange(page, user.password, newPassword())
     await expect(
       page.getByRole('heading', { level: 1, name: messages.placeholder.title }),
     ).toBeVisible()

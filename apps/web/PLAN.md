@@ -142,7 +142,10 @@ None at the moment.
    - A user who must change the password can't reach any other route.
    - A wrong current password shows an inline error and does NOT log out.
    - Nav is correct for MEMBER, leader, PEMBINA, and ADMIN (a test per role).
-   - Playwright: an admin-created `e2e-` user logs in, completes the forced change, and lands home.
+   - Playwright: an admin-created `e2e-` user logs in and lands home. New and reset accounts are
+     no longer forced to change their password (backend change, commit 63bd3be). The forced change
+     page remains for accounts flagged `mustChangePassword`, covered by unit tests only, since no
+     API route can set the flag.
 5. **Schedules.** Full schedule and My schedule.
    - Full schedule lists each service; a Detail button opens a dialog with every team's people.
    - The `includePast` toggle works. Ended services are hidden by default.

@@ -14,7 +14,6 @@ import {
   createE2eTeam,
   createE2eUser,
   findInList,
-  randomSuffix,
   seedSession,
   type CreatedUser,
 } from './fixtures.ts'
@@ -57,18 +56,12 @@ async function createFixture(request: Parameters<typeof createE2eUser>[0]) {
   return { service, team, users }
 }
 
-/** Logs in through the UI and completes the forced password change. */
+/** Logs in through the UI; new accounts are not forced to change their password. */
 async function loginAndChange(page: Page, user: CreatedUser) {
-  const next = `Np-${randomSuffix()}-${randomSuffix()}`
   await page.goto('login')
   await page.getByLabel(a.emailLabel).fill(user.email)
   await page.getByLabel(a.passwordLabel).fill(user.password)
   await page.getByRole('button', { name: a.loginSubmit }).click()
-  await expect(page).toHaveURL(/\/change-password$/)
-  await page.getByLabel(a.currentPasswordLabel).fill(user.password)
-  await page.getByLabel(a.newPasswordLabel, { exact: true }).fill(next)
-  await page.getByLabel(a.confirmPasswordLabel).fill(next)
-  await page.getByRole('button', { name: a.changePasswordSubmit }).click()
   await expect(page).toHaveURL(/\/volunteer-portal\/$/)
 }
 
