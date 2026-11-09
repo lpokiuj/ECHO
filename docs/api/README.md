@@ -19,10 +19,11 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | [attendance.md](attendance.md) | Absent-taker, absences, miss counts |
 | [schedule.md](schedule.md) | `GET /services` (full schedule), `GET /me/schedule` |
 | [public.md](public.md) | Public site, no login: `GET /public/bidang`, `POST /public/prayer-requests`, `POST /public/volunteer-applications` |
+| [admin-submissions.md](admin-submissions.md) | ADMIN and PEMBINA: list, handle (status, note) and hard-delete prayer requests and volunteer applications, plus the NEW counts |
 | [flows.md](flows.md) | Exact call order for each screen, plus **Gotchas** |
 | [permissions.md](permissions.md) | Endpoint x role matrix |
 
-35 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`, then 3 public routes; see `permissions.md`).
+42 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`, then 3 public routes, then 7 admin submission routes; see `permissions.md`).
 
 ## Run the API locally
 
@@ -161,6 +162,8 @@ name.
 | Name | Values | Used in |
 |---|---|---|
 | `UserRole` | `ADMIN`, `PEMBINA`, `MEMBER` | `role` on users, `/me` |
+| `PrayerRequestStatus` | `NEW`, `IN_PROGRESS`, `DONE` | `status` on prayer requests |
+| `VolunteerApplicationStatus` | `NEW`, `CONTACTED`, `ACCEPTED`, `DECLINED` | `status` on volunteer applications |
 | Skip reason | `ALREADY_ASSIGNED_THIS_TEAM`, `ALREADY_ASSIGNED_OTHER_TEAM`, `UNAVAILABLE` | `skipped[].reason` |
 | Error `code` | `PASSWORD_CHANGE_REQUIRED`, `INVALID_USERS`, `SERVICE_ALREADY_STARTED`, `ALREADY_ASSIGNED`, `SERVICE_NOT_STARTED`, `CANNOT_MARK_SELF`, `HAS_ATTENDANCE_RECORDS`, `USER_HAS_CREATED_RECORDS`, `LAST_ADMIN` | error bodies |
 

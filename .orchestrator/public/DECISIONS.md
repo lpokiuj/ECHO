@@ -130,6 +130,13 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-024 (B2, plan review, mine): accepted B's recommendations
+- Body/response keys camelCase (`adminNote`; the plan text's `admin_note` was indicative). `handledBy` in list/PATCH responses is `{id, name}` or null (no email or role),
+  because a PEMBINA cannot read the users list so a bare id would be useless. Any successful PATCH sets handledBy/handledAt (even a no-op or a reset to NEW).
+  `adminNote` null or blank clears it. Empty or repeated `?status=` is 400. PATCH returns the updated item. Counts live in a small new `admin-submissions` module;
+  admin controllers go into the existing prayer-requests and volunteer-applications modules. Single-statement SQL for PATCH (CTE) and DELETE ... RETURNING is allowed
+  as long as it stays atomic and parameterised. No Status entry in apps/api/PLAN.md, as for B1. Reverse: change the DTO/response mapper, or add a nullable column later.
+
 ## D-023 (B1, plan review, mine)
 - Request keys are camelCase (`wantsFollowUp`, `fullName`, `bidangIds`, `consent`, `website`), matching existing DTOs; DB columns stay snake_case. Reverse: rename DTO fields.
 - Rate-limit test setup: resettable throttler storage override in the e2e tests only, production code and the 5 per 10 minutes values untouched (the plan says

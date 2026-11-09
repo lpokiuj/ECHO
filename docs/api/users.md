@@ -102,7 +102,8 @@ working (401 on the next request) and they cannot log in.
 | 409 | The user **created a service** (soft-deleted ones count), **assigned someone** to a service, or **recorded an absence**. Nothing is deleted. Deactivate the user instead (`PATCH isActive:false`) | `{"statusCode":409,"error":"Conflict","code":"USER_HAS_CREATED_RECORDS","message":"This user created services, assigned people, or recorded absences, so they cannot be deleted"}` |
 
 Prayer requests and volunteer applications this user handled are kept; their `handled_by` becomes
-empty and this never causes the 409.
+empty and this never causes the 409. In the admin lists ([admin-submissions.md](admin-submissions.md))
+those items then show `handledBy: null`, with status, note and `handledAt` unchanged.
 A user who was only assigned (by someone else) or only a member is deleted, with those rows.
 An absence under the deleted user's assignment is removed even if another user recorded it.
 

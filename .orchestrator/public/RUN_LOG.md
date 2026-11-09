@@ -518,3 +518,24 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - Known risk (documented in public.md): `req.ip` with no trust proxy, so behind the POC tunnel all visitors share one bucket of 5 per endpoint per 10 min.
   Heads-up for F4/F5/P2 recorded in D-023: real-backend e2e cannot reset the in-memory limiter.
 - Result: B1 verified, committing as feat(api).
+
+## B1 committed (48f5be7). B2: preflight reset, plan, implementation, verification
+- `npm run db:reset -w @echo/api` at the start of B2 (before creating B): "Reset done", "Seed done".
+- B-B2 (model: sonnet): plan, then implement (1 agent, 2 rounds, 0 fix rounds). Decisions D-024.
+- Scope: apps/api (new admin-submissions module, admin controllers/services/DTOs in the two existing modules, module registrations, PLAN.md, 5 new test files)
+  and docs/api. No migration, package.json, lockfile, apps/web or existing-test change. PASS.
+- Greps: no `any`, `@ts-ignore`, `.only`, `.skip` in the new files. PASS.
+- Code read (admin-submission.ts, both admin services, controllers, DTOs, counts service): table/enum/column names from a fixed whitelist, all values bound
+  parameters, PATCH = one `WITH ... UPDATE ... RETURNING` joined to handler name (and sorted bidang names), DELETE = `DELETE ... RETURNING` with 404, empty PATCH 400,
+  null/blank note clears, `@Roles(ADMIN, PEMBINA)` on all three controllers (leaders and members 403). PASS.
+- `npm run lint` clean; `npm test` 8/8; `npm run test:e2e` 387/387 (was 298, +89 new). B's `migration:run`: "No migrations are pending" (dev DB already had the tables
+  after the reset).
+- Test selection: B2 edits `app.module.ts` (new routes only), so I also ran the web e2e: 90 passed in 6.7 min, login calls 43, max 2 per account.
+- Acceptance (all inside the 387): all 7 routes: no token 401, MEMBER 403, team leader 403, PEMBINA and ADMIN ok; status filter and invalid/empty/repeated status 400;
+  PATCH sets handledBy/handledAt (both types), updates adminNote on both types, invalid status 400, empty body 400, unknown id 404 on PATCH and DELETE; DELETE 204,
+  row gone, no longer listed, second delete 404; volunteer delete removes join rows (teams untouched); counts after create/status change/delete; deleting a handler
+  user (PEMBINA, via DELETE /users/:id) keeps the submission with handledBy null (T1 re-check done); public routes never expose adminNote. PASS. I did not run the
+  tests individually.
+- Docs: admin-submissions.md (new), README (index, 42 routes, enums), permissions.md rows 28-34 + count, public.md pointer, users.md sentence, apps/api/PLAN.md. PASS.
+- Known risk: if the acting user is deleted mid-PATCH the UPDATE hits a FK error (500); B left it unhandled (extremely unlikely).
+- Result: B2 verified, committing as feat(api).

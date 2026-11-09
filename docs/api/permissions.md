@@ -40,8 +40,15 @@ regardless of role.
 | 25 | `GET /public/bidang` | ok | ok | ok | ok | ok |
 | 26 | `POST /public/prayer-requests` | ok (429 after 5 per 10 min per IP) | ok | ok | ok | ok |
 | 27 | `POST /public/volunteer-applications` | ok (429 after 5 per 10 min per IP) | ok | ok | ok | ok |
+| 28 | `GET /admin/prayer-requests` | 401 | 403 | 403 | ok | ok |
+| 29 | `PATCH /admin/prayer-requests/:id` | 401 | 403 | 403 | ok | ok |
+| 30 | `DELETE /admin/prayer-requests/:id` | 401 | 403 | 403 | ok | ok |
+| 31 | `GET /admin/volunteer-applications` | 401 | 403 | 403 | ok | ok |
+| 32 | `PATCH /admin/volunteer-applications/:id` | 401 | 403 | 403 | ok | ok |
+| 33 | `DELETE /admin/volunteer-applications/:id` | 401 | 403 | 403 | ok | ok |
+| 34 | `GET /admin/submissions/counts` | 401 | 403 | 403 | ok | ok |
 
-"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19 and 23-24 (a leader of
+"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19, 23-24 and 28-34 (a leader of
 a team still gets 403 on `GET /teams/:id/members` for their own team; e2e `test/teams.e2e-spec.ts`
 "returns 403 for the leader of that very team"). PEMBINA can never be a leader.
 
@@ -81,6 +88,9 @@ for the absence routes is done in the service after path-uuid validation, before
 That makes 8 new routes: 30 in total. Rows 23 and 24 (the two hard deletes, e2e only) bring it to 32.
 Rows 25-27 (the public routes, e2e only: `test/public-*.e2e-spec.ts`) bring it to 35. They need no
 token and ignore one; see [public.md](public.md).
+Rows 28-34 (the admin submission routes, e2e only: `test/admin-*.e2e-spec.ts`) bring it to 42.
+They are **ADMIN and PEMBINA only**; a leader (Ketua Bidang) has no extra rights there and gets 403
+like a MEMBER; see [admin-submissions.md](admin-submissions.md).
 
 ## Cells not verified
 None of the cells above is unverified. Not covered by this matrix: behaviour after the

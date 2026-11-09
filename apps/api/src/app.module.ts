@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions, envFilePath } from './database/data-source.js';
+import { AdminSubmissionsModule } from './admin-submissions/admin-submissions.module.js';
 import { AttendanceModule } from './attendance/attendance.module.js';
 import { AssignmentsModule } from './assignments/assignments.module.js';
 import { AvailabilityModule } from './availability/availability.module.js';
@@ -19,6 +20,7 @@ import { VolunteerApplicationsModule } from './volunteer-applications/volunteer-
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath }),
     TypeOrmModule.forRoot(dataSourceOptions),
+    AdminSubmissionsModule,
     AssignmentsModule,
     AuthModule,
     AvailabilityModule,

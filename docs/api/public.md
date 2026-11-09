@@ -60,6 +60,11 @@ setting, `X-Forwarded-For` is ignored). **Behind a proxy or tunnel that hides th
 laptop POC hosting) all visitors share one bucket**, so 5 submissions per endpoint per 10 minutes
 in total. Counters live in memory and reset when the API restarts.
 
+## Admin side
+Reading and handling these submissions (ADMIN and PEMBINA only) is in
+[admin-submissions.md](admin-submissions.md). The internal `adminNote`, `status` and handler are
+never returned by any public route.
+
 ## Notes for the frontend
 - There is no CORS (see README); use a same-origin proxy.
 - Stored text is not sanitized: render it as text, never as HTML.

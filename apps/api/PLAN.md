@@ -113,6 +113,11 @@ Attendance
 Public (no token)
 - `GET /public/bidang` (`[{id, name}]` only), `POST /public/prayer-requests`, `POST /public/volunteer-applications` (both 201 `{ ok: true }`)
 
+Admin submissions (ADMIN and PEMBINA only; MEMBER and team leaders 403)
+- `GET /admin/prayer-requests?status=`, `PATCH /admin/prayer-requests/:id` body `{ status?, adminNote? }`, `DELETE /admin/prayer-requests/:id` (204)
+- `GET /admin/volunteer-applications?status=` (items include `bidang: [{id, name}]`), `PATCH /admin/volunteer-applications/:id` body `{ status?, adminNote? }`, `DELETE /admin/volunteer-applications/:id` (204)
+- `GET /admin/submissions/counts` -> `{ prayerRequestsNew, volunteerApplicationsNew }` (status NEW only)
+
 ## Frontend notes
 - Read `X-Access-Token` from every authenticated response and store it; it renews the
   15-minute idle window. If CORS is enabled, the server must expose that header.
@@ -168,6 +173,7 @@ Public (no token)
 | Recorded absences read | `GET /services/:id/teams/:teamId/absences` -> `{ userIds }` (that team's absences for the service, ordered by id). Access: the team's taker, its leader, or ADMIN (403 otherwise, before the 404s; PEMBINA gets 403). Allowed before the service starts. Requested by the web taker screen. | After a reload the taker needs to see what is already recorded |
 | Attendance check order | Path-uuid pipes (400) run first, then the taker/leader/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
 | Public submissions | Public routes need no token and no captcha. Both POSTs require `consent: true` (server sets `consent_at`), have a hidden `website` honeypot (filled: same 201, nothing stored; validation runs first), answer only `{ ok: true }`, and are rate limited with `@nestjs/throttler` to 5 per 10 minutes per IP, per endpoint (`ThrottlerGuard` + `@Throttle` on those two handlers only; no global guard; every request counts, including 400s and honeypot hits). The IP is `req.ip` with no `trust proxy`: behind a tunnel or proxy all visitors share one bucket (known risk, trusting proxy IPs is out of scope). Unknown `bidangIds` are a plain 400, enforced by the FK inside the insert transaction (nothing stored). `bidangIds` max 20, deduped. `contact` is required when `wantsFollowUp` is true. Texts are trimmed; emails stored lowercase. Request keys are camelCase. | Public site without accounts; spam protection kept simple |
+| Admin submissions | Readable and handleable by ADMIN and PEMBINA only (`@Roles(ADMIN, PEMBINA)`; MEMBER and team leaders get 403, RolesGuard ignores leadership). Lists are newest first, no pagination, optional `?status=` (unknown, empty or repeated value is 400). Items are camelCase (`adminNote`); `handledBy` is `{id, name}` or null (null after the handler user is deleted). `PATCH { status?, adminNote? }`: an empty body is 400; any successful PATCH (status, note, both, a no-op, a reset to NEW) sets `handled_by` and `handled_at`; `adminNote` is trimmed, max 1000, and `null` or blank clears it; `status: null` is 400; the response is the updated item. PATCH is one `UPDATE ... RETURNING` (CTE joined to the handler and bidang names) and DELETE is one `DELETE ... RETURNING` (404 if none), so neither is check-then-write; column names in the SQL come from a fixed whitelist and values are bound parameters. DELETE is a hard delete (204; no soft-delete flag; the bidang join rows go by FK cascade); no bulk delete. Counts come from one query: the NEW rows per type, as numbers. `adminNote` is internal and never appears on a public route. Controllers live in the prayer-requests and volunteer-applications modules; the counts route is in `admin-submissions`. | Feature B2 of the public-site work; prayer requests are sensitive, so they are really deleted |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -175,7 +181,7 @@ Public (no token)
 - Overlapping-service warnings for the same volunteer
 - Swap requests, reports
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
-- Frontend (the public-site endpoints exist; reading and handling submissions is the later admin feature B2)
+- Frontend (the public-site and admin submission endpoints exist; the screens are web work)
 - Service notes (a notes field on services)
 - Account lockout and a global rate limit (only login and the two public POSTs are limited)
 - Token revocation: changing a password does not log out other devices, and a leaked
