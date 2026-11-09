@@ -613,3 +613,46 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - Docs: README (sections, events, tests, structure) and CLAUDE.md (structure, events rule, contact/giving placeholder rule, section order and dropped CTAs). PASS.
 - Known time bomb (final report): static event dates are in 2030 and some existing tests (useEvents, router) expect those events; after 2030-01-05 they fail until the dates roll.
 - Result: F3 verified, committing as feat(public).
+
+## F3 committed (194d5ad). F4: preflight reset, plan, implementation. HARD STOP: backend not reachable
+- `npm run db:reset -w @echo/api` at the start of F4 (before creating B): "Reset done", "Seed done". Decisions D-028 (public-POST budget, no env knob) and D-029 (F4 choices incl. the
+  429 wording changed to the plan's exact sentence).
+- B-F4 (model: sonnet): plan, then implement (1 agent, 2 rounds so far). B reports (claims): `npm run check -w @echo/public` 97 tests pass; no e2e could run because the global setup got a
+  connection error / "login failed with status 502"; real POSTs caused: 0; e2e runs used: 0 of 2.
+- My own checks (no backend needed): `git status`: only apps/public (+ .orchestrator, no root/api/web change, no package.json or lockfile change); added-line greps: no `any`, `@ts-ignore`,
+  `.only`, `.skip`, localStorage, sessionStorage; existing-file diffs read: responsive.spec additive (guard + "no prayer POST" assertion), setup.ts adds a ResizeObserver stub,
+  site.ts adds `pages.prayer.form/success` and changes `errors.rateLimited` to the plan's wording and the placeholder description; PrayerPage swaps the placeholder for the form.
+  `npm run check -w @echo/public` (mine): pass, 17 files, 97 tests (was 76).
+- HARD STOP (preflight item 3 equivalent): `curl http://localhost:3000/health` and `http://127.0.0.1:3000/health` both fail to connect (curl exit 7). The backend is not running; I may not
+  start it or Docker. The dev DB itself was reset successfully earlier today (the reset script runs without the API), so only the API process is missing.
+- Not done: F4 e2e (the real submit test, mocked specs, axe, screenshots), my full e2e run, commit, tick. F4 unticked.
+- State: branch public-site-build, HEAD 194d5ad, uncommitted F4 changes in apps/public (+ .orchestrator logs), nothing staged.
+- To resume: start the backend in watch mode (and Docker/db if needed), confirm `curl localhost:3000/health` returns 200, then re-run the prompt: the Status list says F4 is next, and rule 9
+  applies (the uncommitted apps/public changes belong to F4: they go to B to run the e2e within the budget, then I verify and commit). No db:reset is needed again before resuming this
+  feature (the reset for F4 already ran).
+
+## Run resumed (2026-11-10): F4 continues
+- Branch public-site-build, HEAD 194d5ad. Uncommitted F4 changes in apps/public (8 modified, new prayer feature files, e2e/prayer*.ts) + .orchestrator. Backend `GET /health` = 200 (no db:reset: the F4 reset already ran).
+- Baseline: `npm run check -w @echo/web` failed once (unit-test step, load average ~8 right after), re-ran `npm test -w @echo/web`: 302/302 (known load flake, see eleventh session);
+  `npm test -w @echo/api` 8/8; `npm run test:e2e -w @echo/api` 387/387. Green.
+- Rule 9: the uncommitted apps/public changes belong to F4, given to a fresh B (B-F4b, model: sonnet) to run the e2e within the public-POST budget (D-028) and finish.
+
+## F4 implemented and verified by me
+B-F4b (model: sonnet; 1 agent, 0 fix rounds by me). F4 totals: 2 B agents (B-F4 plan+implement, B-F4b run/finish). B-F4b reviewed the app code (no change) and fixed two TEST bugs in
+e2e/prayer.spec.ts: the over-2000-chars test asserts on `#content-error` (the text also sits in an sr-only live region), and the `submit` helper uses `exact: true` (the success
+screen has a "Kirim pokok doa lain" button). Real POSTs by B-F4b: 2 (the `[real]` test), plus 1 from my run = 3 in about 15 minutes, under the limit of 5.
+- Scope: `git status`: only apps/public (+ .orchestrator); no package.json or lockfile change, nothing in apps/api, apps/web or the root. PASS.
+- Greps on the new files and the diff: no `any`, `@ts-ignore`, `.only(`, `.skip(`, fixme, localStorage, sessionStorage. PASS.
+- Existing-file diffs read: responsive.spec.ts additive (prayer POST guard, `expect(sent).toEqual([])`), test/setup.ts adds a ResizeObserver stub, site.ts replaces the /doa
+  placeholder description, adds `form`/`success` copy and sets `errors.rateLimited` to the plan's sentence, PrayerPage swaps the placeholder for `PrayerForm`. No test deleted,
+  skipped or weakened. PASS.
+- Test selection: apps/public only, so public check + public e2e (nothing in web or api). `npm run check -w @echo/public` (mine): pass, 17 files, 97 tests.
+  `npm run e2e -w @echo/public` (mine, one full run): 61 passed in 1.2 min, `login calls: 1 (admin 1)`.
+- Acceptance: valid submit shows the success screen against the real backend (`[real]` test) PASS; follow-up without contact blocked client-side (prayer.spec:58, nothing posted)
+  PASS; 429 shows the rate-limit message and keeps the data (mocked route, prayer.spec:107) PASS; honeypot not reachable by Tab (prayer.spec:201) PASS. Also covered: 400, 500 and
+  network errors, disabled while sending, honeypot sent as `website`, 44px targets, axe (idle, errors, 429, success at 360 and 1280), "send another".
+- Screenshots viewed (2 of max 6 by me, 4 by B): /doa at 360 (form, footer) and the success screen at 360. Clean, no overflow; the sticky header over the card is a full-page
+  capture artifact. B viewed doa-1280, errors-360, banner429-360, success-1280: no layout problems.
+- Docs: apps/public README (prayer form copy, code, e2e, rate-limit budget) and CLAUDE.md (structure, rate-limit and `[real]` rule, forms rule) read; they match the code. No env var
+  or route changed. PASS.
+- Result: F4 verified, committing as feat(public).

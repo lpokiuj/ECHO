@@ -196,7 +196,40 @@ export const site = {
   pages: {
     prayer: {
       title: 'Kirim Pokok Doa',
-      description: 'Formulir pokok doa akan tersedia di sini.',
+      description: 'Tuliskan pokok doa Anda. Kami akan mendoakannya.',
+      form: {
+        requiredLegend: 'Tanda * wajib diisi.',
+        requiredMark: '*',
+        optional: '(opsional)',
+        nameLabel: 'Nama',
+        nameHint: 'Boleh dikosongkan jika Anda ingin tidak disebutkan.',
+        followUpLabel: 'Saya ingin dihubungi kembali',
+        followUpHint: 'Isi kontak di bawah supaya kami bisa menghubungi Anda.',
+        contactLabel: 'Kontak',
+        contactHint: 'Nomor WhatsApp atau email.',
+        contentLabel: 'Pokok doa',
+        contentHint: 'Ceritakan apa yang ingin Anda doakan.',
+        counter: { of: 'dari', unit: 'karakter' },
+        counterNearLimit: (remaining: number) => `Sisa ${remaining} karakter.`,
+        consentLabel: 'Saya setuju pokok doa ini dikirim dan dibaca.',
+        privacyNote: 'Pokok doa hanya dibaca oleh gembala/pembina.',
+        honeypotLabel: 'Website',
+        submit: 'Kirim pokok doa',
+        submitting: 'Mengirim…',
+        errors: {
+          contentRequired: 'Pokok doa wajib diisi.',
+          contentTooLong: (max: number) => `Pokok doa maksimal ${max} karakter.`,
+          nameTooLong: (max: number) => `Nama maksimal ${max} karakter.`,
+          contactRequired: 'Kontak wajib diisi jika Anda ingin dihubungi kembali.',
+          contactTooLong: (max: number) => `Kontak maksimal ${max} karakter.`,
+          consentRequired: 'Anda perlu menyetujui sebelum mengirim.',
+        },
+      },
+      success: {
+        title: 'Pokok doa sudah diterima',
+        message: 'Terima kasih. Pokok doa Anda sudah kami terima.',
+        again: 'Kirim pokok doa lain',
+      },
     },
     volunteer: {
       title: 'Daftar Relawan',
@@ -225,7 +258,7 @@ export const site = {
   // Messages for API failures. Raw server text is never shown.
   errors: {
     network: 'Tidak dapat terhubung ke server. Periksa koneksi Anda lalu coba lagi.',
-    rateLimited: 'Terlalu banyak percobaan. Coba lagi beberapa menit lagi.',
+    rateLimited: 'Terlalu banyak percobaan, coba lagi nanti.',
     validation: 'Isian belum benar. Periksa kembali formulir Anda.',
     server: 'Terjadi kesalahan di server. Coba lagi nanti.',
   },

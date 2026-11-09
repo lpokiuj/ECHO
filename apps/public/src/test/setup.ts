@@ -10,6 +10,13 @@ export const server = setupServer()
 // jsdom does not implement scrolling.
 window.scrollTo = vi.fn()
 Element.prototype.scrollIntoView = vi.fn()
+// jsdom has no ResizeObserver (Radix's checkbox uses one in forms).
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver ??= ResizeObserverStub
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 afterEach(() => {

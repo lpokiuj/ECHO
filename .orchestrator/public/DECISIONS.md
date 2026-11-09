@@ -130,6 +130,18 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-029 (F4, plan review, mine)
+- 429 copy: the plan text fixes the wording "Terlalu banyak percobaan, coba lagi nanti", so `site.errors.rateLimited` is changed to exactly that sentence (one content string; tests
+  compare through `site.errors`, not the literal). The contact the visitor typed is sent even when the follow-up box is unchecked. Neutral success wording that only says the request
+  was received. "Send another" is offered. The one real e2e test is titled with "[real]". No `maxLength` on the textarea. No new dependency, no root file.
+  Reverse: edit the content strings / client mapping.
+
+## D-028 (F4/F5/P2, user answer "do whatever easier")
+- Public-POST rate limit: NO `PUBLIC_RATE_LIMIT` knob and no backend change. Real-backend e2e sends a fixed, small number of real public POSTs per run (F4: 1 to /public/prayer-requests,
+  F5: 1 to /public/volunteer-applications, P2: as few as possible, at most 2 per endpoint per full run) with `e2e-` names; every other case uses mocked routes or client-side
+  blocking. The limit is 5 per 10 minutes per endpoint, so full e2e runs must not be repeated more than ~2 times per 10 minutes per app; B sessions get an explicit run budget.
+  Reverse: add an env-configurable limit in apps/api later and raise it in the dev env.
+
 ## D-027 (F3, plan review, mine)
 - Final home order per PUBLIC_PLAN: Hero, Ibadah, Lokasi, Acara, Tentang Kami (bidang overview inside, static), Pertama Kali?, Kontak, Persembahan. "Kegiatan" is renamed "Acara" (id `acara`).
   The F1 placeholder sections `bidang`, `prayer` (Doa CTA) and `volunteer` (Relawan CTA) are removed (not in the plan; /doa and /relawan stay reachable from the hero, header and

@@ -67,6 +67,11 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   `getEvents()` in `src/lib/events.ts`, so the source can later become an API. The Acara section
   shows only `upcomingEvents(list, now)` (sorted, `startsAt < now` hidden) through
   `useUpcomingEvents()`, with loading, error (retry) and empty states.
+- **Prayer form** (`/doa`): labels, hints, validation messages, the privacy note and the success
+  text are in `site.pages.prayer` (`form`, `success`); the 429, 400, network and server banners use
+  `site.errors`. Limits (2000, 100, 100) mirror the API in `src/features/prayer/limits.ts`. Code in
+  `src/features/prayer/` (schema, hook, form, success screen); shared field pieces are
+  `src/components/FormField.tsx` and `src/components/ui/{input,textarea,label,checkbox}.tsx`.
 - **Logo**: `src/components/Logo.tsx` (the "E" mark and the "ECHO" wordmark) and `public/favicon.svg`.
 - **Colors, radius, font**: tokens in `src/index.css`, copied from the portal so the brand matches.
 
@@ -82,6 +87,13 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   `e2e/sections.spec.ts` covers Acara (past hidden and the empty state, by fixing the page clock
   with `page.clock.setFixedTime`), the FAQ keyboard behaviour, axe with an item open, and the
   header at 1024px.
+  `e2e/prayer.spec.ts` covers /doa: client-side validation (nothing is sent), mocked 429, 400, 500
+  and network errors with the data kept, disabled-while-sending, the honeypot (not reachable by Tab,
+  sent as `website`), 44px targets and axe on the idle, error and success states. Exactly one test,
+  tagged `[real]`, posts to the real backend (name `e2e-<random>`): one real POST per full run.
+  `e2e/prayer-mocks.ts` makes that safe: every test gets a default route for the endpoint that
+  aborts the request and fails the test; a test must opt in with `prayer.mock(...)` or
+  `prayer.real()`. While iterating run `npx playwright test e2e/prayer.spec.ts --grep-invert "\[real\]"`.
   Browser tests never load Google: `e2e/maps-mock.ts` answers requests to google.com locally.
   Screenshots go to `.screens/` (gitignored).
 - **Cleanup.** `e2e/global-setup.ts` runs before every run. It logs in once as the E2E admin
@@ -92,15 +104,15 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   call. Everything a browser test submits must be named `e2e-<random>`.
 - **Rate limit.** The public POST endpoints allow 5 requests per 10 minutes per IP per endpoint, in
   memory in the backend; a real-backend e2e cannot reset it without restarting the backend. Keep
-  real submissions few (the forms in F4 and F5 are mostly covered by mocked tests). The current
-  pages send no POSTs.
+  real submissions few (the forms in F4 and F5 are mostly covered by mocked tests). The prayer
+  form's `[real]` e2e test sends 1 POST per run; the volunteer form does not exist yet.
 
 ## Structure
 
 - `src/content/`: all text and static events
 - `src/api/`: the only place that touches the network
 - `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
-  Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan)
+  Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan; `prayer/`: the /doa form)
 - `src/components/`: shared UI. `src/components/ui/`: shadcn/ui
 - `src/lib/`, `src/hooks/`, `src/routes/`, `src/test/`
 

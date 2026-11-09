@@ -20,7 +20,8 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - `src/api/`: the only place that touches the network (`client.ts`, types, errors)
 - `src/lib/`: `events.ts` (`getEvents()`, `upcomingEvents()`), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
 - `src/pages/`: the route components. `src/features/<feature>/`: feature UI and hooks (F2 to F5;
-  `home/` holds the hero and the Ibadah, Lokasi, Tentang, FAQ, Kontak and Persembahan sections)
+  `home/` holds the hero and the Ibadah, Lokasi, Tentang, FAQ, Kontak and Persembahan sections;
+  `prayer/` holds the /doa form: schema, `useSubmitPrayerRequest`, `PrayerForm`, `PrayerSuccess`)
 - `src/components/`: shared UI (Logo, header, footer, layout). `src/components/ui/`: shadcn/ui
 - `src/hooks/`, `src/routes/` (router, `PATHS`), `src/test/` (Vitest setup, render helper, MSW handlers)
 
@@ -77,7 +78,13 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
   including 400s and honeypot hits), counted in memory by the backend. A real-backend e2e cannot
   reset it and the backend must not be restarted from here. Keep real POSTs to a minimum (at most
   5 per endpoint per 10 minutes across a whole run); cover validation, 400, 429 and error states with
-  Vitest + MSW or `page.route` mocks. F1 sends no POSTs.
+  Vitest + MSW or `page.route` mocks. Only the prayer test tagged `[real]` posts to the real
+  backend (1 per full run). `e2e/prayer-mocks.ts` installs a default route on the endpoint that
+  aborts the request and fails the test, so a test must opt in with `prayer.mock()` or
+  `prayer.real()`; use the same guard for F5. Iterate with `--grep-invert "\[real\]"`.
+- Forms: client validation mirrors the API (`src/features/<feature>/schema.ts`), the honeypot is an
+  `aria-hidden` `sr-only` input with `tabIndex={-1}` and `autoComplete="off"`, the submit button is
+  disabled while sending, the data is kept on every error, and success is a screen.
 
 ## Decisions
 
