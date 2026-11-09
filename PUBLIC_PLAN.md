@@ -153,7 +153,9 @@ PATCH with an empty body is 400. No pagination (low volume). No bulk delete.
 
 ## Global acceptance criteria (apply to every feature)
 - `npm run check` passes in every app the feature touched. Backend tests pass in apps/api.
-- Existing tests in all apps still pass. No test deleted, skipped, or weakened.
+- Existing tests still pass in every app the test-selection rule (in the orchestrator
+  prompt) marks as affected. Apps the feature cannot affect are not tested for that
+  feature. No test deleted, skipped, or weakened.
 - No `any`, `@ts-ignore`, `.only`, `.skip` added.
 - Every new frontend screen: loading, error, and empty states; usable at 360px and 1280px;
   no axe violations of serious or critical level.
