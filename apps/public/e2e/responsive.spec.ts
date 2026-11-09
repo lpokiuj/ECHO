@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { site } from '../src/content/site.ts'
+import { mockGoogleMaps } from './maps-mock.ts'
 
 const pages = [
   { name: 'home', path: '/', heading: site.hero.title },
@@ -20,11 +21,26 @@ for (const width of [360, 768, 1280]) {
       })
       page.on('pageerror', (err) => errors.push(err.message))
 
+      await mockGoogleMaps(page)
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
       if (path === '/') {
         await expect(page.getByRole('heading', { name: /Kegiatan contoh 1/ })).toBeVisible()
+        await expect(
+          page.getByRole('heading', { level: 2, name: site.sections.worship.title }),
+        ).toBeVisible()
+        await expect(
+          page.getByRole('heading', { level: 2, name: site.sections.location.title }),
+        ).toBeVisible()
+        await expect(page.getByTitle(site.sections.location.map.title)).toBeAttached()
+        if (width < 1024) {
+          const heroRegion = page.getByRole('region', { name: site.hero.title })
+          for (const cta of [site.hero.primaryCta, site.hero.secondaryCta]) {
+            const box = await heroRegion.getByRole('link', { name: cta.label }).boundingBox()
+            expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+          }
+        }
       }
       await page.screenshot({ path: `.screens/${name}-${width}.png`, fullPage: true })
 

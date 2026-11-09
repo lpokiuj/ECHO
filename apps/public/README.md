@@ -52,6 +52,11 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - **Text**: everything visitors read is in `src/content/site.ts` (navigation, section titles,
   footer, contact and social placeholders, error messages). Placeholders say "akan diisi": replace
   them with real content. Components never contain copy.
+- **Home sections** (page order: hero, Ibadah, Lokasi, Kegiatan, Tentang, ...): the hero, the
+  worship schedule and "what to expect" (`sections.worship`) and the address, transport, parking and
+  map (`sections.location`) are all in `src/content/site.ts`. To point the map at the real church,
+  change `sections.location.map.query` (the embed URL is built in `src/lib/maps.ts`). The Google Maps
+  base URL there is the only external URL on the site.
 - **Events**: `src/content/events.ts` (static list). The app reads events only through
   `getEvents()` in `src/lib/events.ts`, so the source can later become an API.
 - **Logo**: `src/components/Logo.tsx` (the "E" mark and the "ECHO" wordmark) and `public/favicon.svg`.
@@ -64,7 +69,10 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - Browser tests are in `e2e/` (install the browser once with `npx playwright install chromium`):
   a smoke test at 360px through the burger menu, the footer portal link, and a responsive check at
   360, 768 and 1280px (no console errors, no horizontal scroll, 44px touch targets, axe with no
-  serious or critical violations). Screenshots go to `.screens/` (gitignored).
+  serious or critical violations). `e2e/home.spec.ts` covers the hero buttons, the header and burger
+  section links (with the sticky header offset), reduced motion and the map iframe attributes.
+  Browser tests never load Google: `e2e/maps-mock.ts` answers requests to google.com locally.
+  Screenshots go to `.screens/` (gitignored).
 - **Cleanup.** `e2e/global-setup.ts` runs before every run. It logs in once as the E2E admin
   (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`), caches the token in `.screens/e2e-session.json`
   (owner-only, atomic, removed when the run ends) and deletes, through the admin API, every prayer
@@ -80,7 +88,8 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 
 - `src/content/`: all text and static events
 - `src/api/`: the only place that touches the network
-- `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks
+- `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
+  Ibadah, Lokasi)
 - `src/components/`: shared UI. `src/components/ui/`: shadcn/ui
 - `src/lib/`, `src/hooks/`, `src/routes/`, `src/test/`
 

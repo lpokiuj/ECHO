@@ -6,14 +6,15 @@ import { site } from '@/content/site'
 
 /** Scrolls to the `#hash` section after navigation, or to the top for a new page. */
 function useHashScroll() {
-  const { pathname, hash } = useLocation()
+  // `key` changes on every navigation, so clicking the same hash link again scrolls again.
+  const { pathname, hash, key } = useLocation()
   useEffect(() => {
     if (hash) {
       document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView?.()
     } else {
       window.scrollTo(0, 0)
     }
-  }, [pathname, hash])
+  }, [pathname, hash, key])
 }
 
 export function SiteLayout() {

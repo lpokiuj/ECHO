@@ -336,7 +336,7 @@ Scope: apps/public, plus the root README.md.
 - [x] B1 Public submission endpoints
 - [x] B2 Admin submission endpoints
 - [x] F1 Public site scaffold
-- [ ] F2 Home: Hero, Ibadah, Lokasi
+- [x] F2 Home: Hero, Ibadah, Lokasi
 - [ ] F3 Home: Acara, Tentang Kami, Pertama Kali, Kontak, Persembahan
 - [ ] F4 Prayer request form
 - [ ] F5 Volunteer registration form

@@ -19,7 +19,8 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - `src/content/`: ALL user-facing text (`site.ts`) and the static events (`events.ts`)
 - `src/api/`: the only place that touches the network (`client.ts`, types, errors)
 - `src/lib/`: `events.ts` (`getEvents()`), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
-- `src/pages/`: the route components. `src/features/<feature>/`: feature UI and hooks (F2 to F5)
+- `src/pages/`: the route components. `src/features/<feature>/`: feature UI and hooks (F2 to F5;
+  `home/` holds the hero, Ibadah and Lokasi sections)
 - `src/components/`: shared UI (Logo, header, footer, layout). `src/components/ui/`: shadcn/ui
 - `src/hooks/`, `src/routes/` (router, `PATHS`), `src/test/` (Vitest setup, render helper, MSW handlers)
 
@@ -31,7 +32,10 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - All copy lives in `src/content/`. Components never hard-code text (`no-literals.test.ts`).
   Tests and e2e import text from `site.ts`. Indonesian, same terms as the portal ("Bidang",
   "Relawan", "Ibadah"). Placeholders must be obvious ("Alamat akan diisi"); never invent facts
-  (addresses, phone numbers, bank accounts, URLs). `content.test.ts` checks it.
+  (addresses, phone numbers, bank accounts, URLs). `content.test.ts` checks it. The one allowed
+  external URL is the Google Maps base in `site.sections.location.map.baseUrl` (exact match in
+  `content.test.ts`); the embed URL is built from it and `map.query` in `src/lib/maps.ts`. Unit and
+  e2e tests never load Google (e2e uses `mockGoogleMaps` from `e2e/maps-mock.ts`).
 - Events are read only through `getEvents()` (`src/lib/events.ts`, async) via the `useEvents()`
   query hook. ESLint forbids importing `@/content/events` anywhere else.
 - Never import from `apps/web` (ESLint enforces it). Copy what you need (theme tokens, Logo glyph,
@@ -78,3 +82,7 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - Theme tokens copied from apps/web without the portal-only sidebar/topbar tokens; radius is 0.75rem
   (rounder cards for the youth feel). Light theme only.
 - `react-router` (not `react-router-dom`), like apps/web.
+- Home section order follows the plan: hero, Ibadah, Lokasi, Kegiatan, Tentang, then the rest; the
+  header links follow the same order. Hash links scroll via `useHashScroll` in `SiteLayout`, which
+  also depends on `location.key` so clicking the same link twice scrolls twice. The map iframe has
+  no `sandbox` attribute (decision), and the open-in-Maps link is the fallback when it does not show.

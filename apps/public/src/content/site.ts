@@ -27,13 +27,15 @@ export const site = {
     mainNav: 'Navigasi utama',
     mobileNav: 'Navigasi seluler',
     footerNav: 'Navigasi kaki halaman',
+    opensInNewTab: '(buka di tab baru)',
   },
 
   nav: {
     items: [
-      { id: 'tentang', label: 'Tentang', to: '/#tentang' },
       { id: 'ibadah', label: 'Ibadah', to: '/#ibadah' },
+      { id: 'lokasi', label: 'Lokasi', to: '/#lokasi' },
       { id: 'kegiatan', label: 'Kegiatan', to: '/#kegiatan' },
+      { id: 'tentang', label: 'Tentang', to: '/#tentang' },
       { id: 'bidang', label: 'Bidang', to: '/#bidang' },
       { id: 'doa', label: 'Doa', to: '/doa' },
     ],
@@ -42,24 +44,71 @@ export const site = {
 
   hero: {
     id: 'beranda',
-    eyebrow: 'Eyebrow akan diisi',
-    title: 'Judul utama akan diisi',
-    description: 'Deskripsi singkat gereja akan diisi di sini.',
-    primaryCta: { label: 'Daftar Relawan', to: '/relawan' },
+    title: 'Echo Youth GLC',
+    nextService: {
+      label: 'Ibadah berikutnya',
+      value: 'Jadwal ibadah berikutnya akan diisi',
+    },
+    primaryCta: { label: 'Datang Beribadah', to: '/#ibadah' },
     secondaryCta: { label: 'Kirim Pokok Doa', to: '/doa' },
   },
 
-  // Home sections in page order. F2 and F3 fill the bodies; the ids are the nav anchors.
+  // Home sections in page order (the hero comes first). F2 and F3 fill the bodies; the ids are
+  // the nav anchors.
   sections: {
-    about: {
-      id: 'tentang',
-      title: 'Tentang Echo',
-      intro: 'Teks tentang Echo akan diisi.',
-    },
     worship: {
       id: 'ibadah',
       title: 'Ibadah',
       intro: 'Jadwal ibadah akan diisi.',
+      schedule: {
+        title: 'Jadwal ibadah',
+        items: [
+          {
+            id: 'ibadah-1',
+            name: 'Nama ibadah akan diisi',
+            day: 'Hari akan diisi',
+            time: 'Jam akan diisi',
+          },
+          {
+            id: 'ibadah-2',
+            name: 'Nama ibadah akan diisi',
+            day: 'Hari akan diisi',
+            time: 'Jam akan diisi',
+          },
+        ],
+      },
+      expect: {
+        title: 'Apa yang bisa Anda harapkan',
+        items: [
+          { id: 'musik', title: 'Poin pertama akan diisi', text: 'Penjelasan akan diisi.' },
+          { id: 'firman', title: 'Poin kedua akan diisi', text: 'Penjelasan akan diisi.' },
+          { id: 'komunitas', title: 'Poin ketiga akan diisi', text: 'Penjelasan akan diisi.' },
+          { id: 'ramah', title: 'Poin keempat akan diisi', text: 'Penjelasan akan diisi.' },
+        ],
+      },
+    },
+    location: {
+      id: 'lokasi',
+      title: 'Lokasi',
+      intro: 'Alamat dan petunjuk arah akan diisi.',
+      address: { title: 'Alamat', value: 'Alamat akan diisi' },
+      transport: {
+        title: 'Transportasi',
+        items: [
+          { id: 'angkutan-umum', text: 'Petunjuk angkutan umum akan diisi' },
+          { id: 'kendaraan-pribadi', text: 'Petunjuk kendaraan pribadi akan diisi' },
+        ],
+      },
+      parking: { title: 'Parkir', text: 'Informasi parkir akan diisi' },
+      map: {
+        // The only external URL on the site. The embed URL is built from it in src/lib/maps.ts.
+        baseUrl: 'https://www.google.com/maps',
+        // Placeholder search text: replace it with the real church address.
+        query: 'Alamat akan diisi',
+        title: 'Peta lokasi Echo Youth GLC',
+        openLabel: 'Buka di Google Maps',
+        fallback: 'Peta tidak tampil? Buka lokasi langsung di Google Maps.',
+      },
     },
     events: {
       id: 'kegiatan',
@@ -68,6 +117,11 @@ export const site = {
       empty: 'Belum ada kegiatan yang dijadwalkan.',
       error: 'Kegiatan tidak dapat dimuat.',
       timezoneLabel: 'WIB',
+    },
+    about: {
+      id: 'tentang',
+      title: 'Tentang Echo',
+      intro: 'Teks tentang Echo akan diisi.',
     },
     bidang: {
       id: 'bidang',

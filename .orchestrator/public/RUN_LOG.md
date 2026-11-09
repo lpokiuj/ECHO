@@ -565,3 +565,23 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - Not done by design (D-025): root package.json scripts, README, CLAUDE.md, docs/README.md, CI, poc-up.sh. The root CLAUDE.md still names only apps/api and apps/web (I may not
   edit it). Listed for the final report.
 - Result: F1 verified, committing as feat(public).
+
+## F1 committed (2a10db6). F2: preflight reset, plan, implementation, verification
+- `npm run db:reset -w @echo/api` at the start of F2 (before creating B): "Reset done", "Seed done".
+- B-F2 (model: sonnet): plan, then implement (1 agent, 2 rounds, 0 fix rounds). Decisions D-026 (section order follows the plan, no iframe sandbox, Lokasi nav item).
+- Scope: `git status`: only apps/public (+ .orchestrator); nothing in package.json, lockfile, apps/web, apps/api. PASS.
+- Greps on added lines: no `any`, `@ts-ignore`, `.only`, `.skip`, localStorage, sessionStorage; the only `sandbox` hit is a doc line. PASS.
+- Existing-test diffs read: content.test.ts: the URL rule now skips exactly `site.sections.location.map.baseUrl` (exact-match allow-list), all other rules kept, 3 tests added
+  (baseUrl equals the literal, query clean, unique ids, nav in page order); responsive.spec.ts additive only (Google route mock, Ibadah/Lokasi h2 visible, iframe attached,
+  hero links >= 44px below 1024px); smoke.spec.ts untouched; SiteLayout `useHashScroll` deps gained `key`. No test deleted or skipped. PASS.
+- `npm run check -w @echo/public`: pass, 14 files, 56 tests (was 43).
+- Test selection: apps/public only (no root/lockfile change), so public check + public e2e only. `npm run e2e -w @echo/public` (mine): 29 passed in 37.4 s, cleanup 0/0, 1 admin login,
+  no POSTs sent.
+- Acceptance: sections render from content (Hero, Ibadah with schedule and "what to expect", Lokasi with address/transport/parking/map) PASS; header links scroll to sections (1280 desktop
+  Ibadah/Lokasi/Kegiatan, 360 burger Ibadah/Lokasi, section below the sticky header, reduced-motion case) PASS; hero buttons work ("Datang Beribadah" scrolls to Ibadah, "Kirim Pokok Doa" ->
+  /doa, at 360 and 1280, 44px+ targets) PASS; map iframe has a title attribute (and lazy loading, referrerPolicy, no sandbox) PASS; e2e covers the hero buttons PASS (home.spec.ts, 14 tests).
+  Google is never loaded in tests (route mock). axe serious/critical clean and no console errors on `/` at 360/768/1280 (inside responsive.spec).
+- Screenshots viewed (3 of max 6): lokasi 360 (after B's caption tweak), ibadah 360, hero 1280. Clean; the header floating over a card is a Playwright element-screenshot artifact.
+- Docs: README (where to edit worship/location/map, structure, tests) and CLAUDE.md (structure, the one allowed external URL, no Google in tests, section order, hash-scroll key, no sandbox).
+- Not verified (needs network): the real Google embed with the placeholder query (expected: a generic search result). For the user's manual check list.
+- Result: F2 verified, committing as feat(public).

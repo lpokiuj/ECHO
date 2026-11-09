@@ -130,6 +130,14 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-026 (F2, plan review, mine)
+- Section ORDER follows PUBLIC_PLAN (Hero, Ibadah, Lokasi, Acara, Tentang, then the F3 placeholders), not F1's placeholder order: F2 moves the F1 "Tentang" placeholder below
+  Kegiatan. B's suggestion to keep F1's order is rejected (the plan text is authoritative). Tones re-alternate accordingly. Header/burger nav gets "Lokasi" (after Ibadah).
+- Hero h1 = brand church name "Echo Youth GLC" (already in the repo). "Next service time" stays static placeholder text. Placeholder text for "what to expect" items.
+- The Maps iframe has NO `sandbox` attribute (the standard embed has none and the sandbox cannot be verified offline); it keeps `loading="lazy"`, `referrerPolicy`, a title,
+  no allowfullscreen. The base URL is the only allow-listed external URL (exact match in content.test.ts). Tests never load Google (route mock).
+- `useHashScroll` also depends on `location.key` so a repeated hash click scrolls again. Reverse: remove the dependency / re-add the sandbox attribute.
+
 ## D-025 (F1, plan review, mine)
 - Logo: the favicon "E" mark (copied from apps/web) inline plus the "ECHO" wordmark, in one `<Logo />`. Root files are NOT edited in F1 (scope is apps/public; the workspace
   glob `apps/*` already lists the app): no `dev:public` or root build/lint/test/check changes, no root README/CLAUDE.md/CI/poc-up edits. They go into the final report as
