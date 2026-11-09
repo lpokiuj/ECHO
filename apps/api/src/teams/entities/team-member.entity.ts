@@ -24,11 +24,12 @@ export class TeamMember {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 
-  @ManyToOne(() => Team, { onDelete: 'RESTRICT', nullable: false })
+  // Deleting a team or a user removes their memberships
+  @ManyToOne(() => Team, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'team_id' })
   team: Relation<Team>;
 
-  @ManyToOne(() => User, { onDelete: 'RESTRICT', nullable: false })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: Relation<User>;
 }

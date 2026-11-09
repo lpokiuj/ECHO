@@ -16,7 +16,7 @@ One orchestrated run over the whole repo. Features run in the order of the Statu
 | Retention | No auto-delete. ADMIN/PEMBINA manage status and can delete a submission manually. Delete is a HARD delete (the row is gone, no soft-delete flag), because prayer requests are sensitive and "deleted" must mean deleted. The UI always confirms before deleting. |
 | Inbox alerts | A NEW-count badge on the two inbox nav entries. No email or WhatsApp notifications. |
 | E2E test data | E2E tests keep using echo_dev. Everything a test creates is named with the prefix `e2e-` (user emails `e2e-<random>@test.local`, names, bidang names, service titles, submission names). At the START of every e2e run, a Playwright global setup logs in as the E2E admin and deletes all `e2e-` data through the API. Nothing without the prefix is ever deleted, and the E2E admin account itself is never deleted. Cleanup failure fails the run loudly. |
-| Deleting users, bidang, services | Hard delete through the API and the portal. Users and bidang: ADMIN only. Services: whoever can already edit services (ADMIN, PEMBINA). Deleting cascades to the record's memberships and assignments; submission `handled_by` becomes NULL. A user cannot delete themselves, and the last ADMIN cannot be deleted. Every delete in the portal asks for confirmation. |
+| Deleting users, bidang, services | Hard delete of users and bidang through the API and the portal (ADMIN only). Services keep their existing soft delete (whoever can already edit services: ADMIN, PEMBINA); no change to that endpoint. Deleting a user or bidang cascades to the record's memberships and assignments; submission `handled_by` becomes NULL. A user cannot delete themselves, and the last ADMIN cannot be deleted. Every delete in the portal asks for confirmation. |
 | Events | Static content in v1, but read only through one data function (`getEvents()`) via TanStack Query, so it can later be switched to a portal-managed API without touching components. |
 | Volunteer registration | Lands in the portal inbox. Admin contacts the person on WhatsApp, then creates the account with the existing user-creation flow. No automatic account creation. |
 | Logo | Echo logo lives in one `<Logo />` component. If `apps/web` already has a logo asset, copy it. Otherwise a text wordmark "ECHO" as a placeholder. |
@@ -331,7 +331,7 @@ Scope: apps/public, plus the root README.md.
 
 ## Status
 - [x] P1 Move portal to /volunteer-portal
-- [ ] T1 Delete endpoints for users, bidang, services
+- [x] T1 Delete endpoints for users, bidang, services
 - [ ] T2 Portal delete buttons + e2e cleanup
 - [ ] B1 Public submission endpoints
 - [ ] B2 Admin submission endpoints

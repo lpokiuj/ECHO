@@ -25,7 +25,8 @@ export class ServiceUnavailability {
   @JoinColumn({ name: 'service_id' })
   service: Relation<Service>;
 
-  @ManyToOne(() => User, { onDelete: 'RESTRICT', nullable: false })
+  // Deleting a user removes their unavailability marks
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: Relation<User>;
 }

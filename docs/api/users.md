@@ -1,6 +1,6 @@
 # Users (admin)
 
-All four routes are **ADMIN only**: PEMBINA, MEMBER and team leaders get `403 {"message":"Forbidden","statusCode":403}`;
+All five routes are **ADMIN only**: PEMBINA, MEMBER and team leaders get `403 {"message":"Forbidden","statusCode":403}`;
 no token gets 401. (A user whose `mustChangePassword` is true gets `PASSWORD_CHANGE_REQUIRED` first.)
 Conventions: [README.md](README.md).
 
@@ -83,6 +83,26 @@ An empty body `{}` is **not** an error: it returns the user unchanged (200).
 Deactivating a user does **not** remove them from teams or from existing assignments: they stay
 visible on the schedule, are marked `isActive:false` in the team roster, and disappear from
 candidate lists. Their open sessions get 401 on the next request.
+
+## DELETE /users/:id
+Hard delete: the row is gone for good. **ADMIN only.** **204**, empty body.
+
+The database cascades the user's rows: team memberships, assignments (the user as the assigned
+volunteer), unavailability marks, and absence records about the user. Attendance history of that
+user is lost. Services, teams and other users are untouched. The deleted user's token stops
+working (401 on the next request) and they cannot log in.
+
+| Status | Condition | Body |
+|---|---|---|
+| 400 | Malformed id | standard |
+| 400 | **Deleting yourself** (checked first) | `{"message":"You cannot delete yourself","error":"Bad Request","statusCode":400}` |
+| 400 | Deleting the **last ADMIN** (counts every ADMIN row, active or not; concurrent deletes are serialized by a row lock) | `{"statusCode":400,"error":"Bad Request","code":"LAST_ADMIN","message":"The last ADMIN cannot be deleted"}` |
+| 401 / 403 | | |
+| 404 | Unknown user id | `{"message":"User not found","error":"Not Found","statusCode":404}` |
+| 409 | The user **created a service** (soft-deleted ones count), **assigned someone** to a service, or **recorded an absence**. Nothing is deleted. Deactivate the user instead (`PATCH isActive:false`) | `{"statusCode":409,"error":"Conflict","code":"USER_HAS_CREATED_RECORDS","message":"This user created services, assigned people, or recorded absences, so they cannot be deleted"}` |
+
+A user who was only assigned (by someone else) or only a member is deleted, with those rows.
+An absence under the deleted user's assignment is removed even if another user recorded it.
 
 ## POST /users/:id/reset-password
 Set the password back to the server's default and force a change at next login.

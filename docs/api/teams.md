@@ -1,8 +1,8 @@
 # Teams and membership (admin)
 
-All six routes are **ADMIN only**. A team leader (even of that very team), a PEMBINA and a MEMBER
+All seven routes are **ADMIN only**. A team leader (even of that very team), a PEMBINA and a MEMBER
 all get `403 {"message":"Forbidden","statusCode":403}`; no token is 401. Conventions:
-[README.md](README.md). There is **no endpoint to delete a team** and none to delete a user.
+[README.md](README.md).
 
 ## Objects
 
@@ -76,6 +76,17 @@ creates a duplicate; it updates `isLeader`. A team may have zero, one or several
 
 A PEMBINA may be a plain member (`isLeader: false`). Leader changes apply on that user's next
 request (see Gotchas in [flows.md](flows.md)).
+
+## DELETE /teams/:id
+Hard delete of a team (bidang). **ADMIN only.** **204**, empty body. The database cascades the
+team's memberships, its assignments (past and future) and its absence records (attendance history
+of that team is lost). Users and services stay.
+
+| Status | Condition | Body |
+|---|---|---|
+| 400 | Malformed uuid | standard |
+| 401 / 403 | | |
+| 404 | Unknown team | `{"message":"Team not found","error":"Not Found","statusCode":404}` |
 
 ## DELETE /teams/:id/members/:userId
 Remove a member. In one transaction the server also deletes **that team's** assignments of that

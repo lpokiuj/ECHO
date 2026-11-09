@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -30,6 +31,12 @@ export class TeamsController {
   @Get()
   findAll() {
     return this.teams.findAll();
+  }
+
+  @Delete(':id')
+  @HttpCode(204)
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.teams.remove(id);
   }
 
   @Get(':id/members')

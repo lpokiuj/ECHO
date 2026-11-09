@@ -296,14 +296,99 @@ describe('Teams (e2e)', () => {
         .send({ name: 'x' })
         .expect(404);
     });
+  });
 
-    it('has no delete-team route', async () => {
+  describe('DELETE /teams/:id', () => {
+    const teamExists = (id: string) =>
+      dataSource.getRepository(Team).existsBy({ id });
+
+    const countRows = async (table: string, teamId: string) =>
+      Number(
+        (
+          (await dataSource.query(
+            `SELECT count(*) AS n FROM ${table} WHERE team_id = $1`,
+            [teamId],
+          )) as { n: string }[]
+        )[0].n,
+      );
+
+    it('ADMIN gets 204 and the team is gone', async () => {
       const team = await createTeam();
       const headers = await adminToken();
       await request(http())
         .delete(`/teams/${team.id}`)
         .set(headers)
+        .expect(204);
+      expect(await teamExists(team.id)).toBe(false);
+    });
+
+    it('401 without a token', async () => {
+      const team = await createTeam();
+      await request(http()).delete(`/teams/${team.id}`).expect(401);
+      expect(await teamExists(team.id)).toBe(true);
+    });
+
+    it('403 for PEMBINA, MEMBER and a leader of that team', async () => {
+      const team = await createTeam();
+      const leader = await createUser();
+      await addMember(team.id, leader.id, true);
+      for (const user of [
+        await createUser({ role: UserRole.PEMBINA }),
+        await createUser(),
+        leader,
+      ]) {
+        const headers = bearer(await tokenFor(user));
+        await request(http())
+          .delete(`/teams/${team.id}`)
+          .set(headers)
+          .expect(403);
+      }
+      expect(await teamExists(team.id)).toBe(true);
+    });
+
+    it('404 for an unknown id, 400 for a non-UUID id', async () => {
+      const headers = await adminToken();
+      await request(http())
+        .delete(`/teams/${UNKNOWN_ID}`)
+        .set(headers)
         .expect(404);
+      await request(http())
+        .delete('/teams/not-a-uuid')
+        .set(headers)
+        .expect(400);
+    });
+
+    it('cascades memberships, assignments and absences; users and services stay', async () => {
+      const admin = await createUser({ role: UserRole.ADMIN });
+      const headers = bearer(await tokenFor(admin));
+      const team = await createTeam();
+      const other = await createTeam();
+      const member = await createUser();
+      await addMember(team.id, member.id);
+      await addMember(other.id, member.id);
+      const service = await createService(admin.id, 2 * DAY);
+      const otherService = await createService(admin.id, 3 * DAY);
+      await assign(service.id, member.id, team.id, admin.id);
+      await assign(otherService.id, member.id, other.id, admin.id);
+      await dataSource.query(
+        `INSERT INTO service_absences (service_id, user_id, team_id, recorded_by)
+         VALUES ($1, $2, $3, $4)`,
+        [service.id, member.id, team.id, admin.id],
+      );
+
+      await request(http())
+        .delete(`/teams/${team.id}`)
+        .set(headers)
+        .expect(204);
+
+      expect(await countRows('team_members', team.id)).toBe(0);
+      expect(await countRows('service_assignments', team.id)).toBe(0);
+      expect(await countRows('service_absences', team.id)).toBe(0);
+      // The other team's rows and the users and services are untouched
+      expect(await countRows('team_members', other.id)).toBe(1);
+      expect(await countRows('service_assignments', other.id)).toBe(1);
+      expect(await dataSource.getRepository(User).existsBy({ id: member.id })).toBe(true);
+      expect(await dataSource.getRepository(Service).countBy({})).toBe(2);
     });
   });
 

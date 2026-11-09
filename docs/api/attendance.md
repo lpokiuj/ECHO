@@ -75,4 +75,8 @@ Same shape and order as `GET /me/absences`, for one active member of the team (a
 - `DELETE .../assignments/:userId` and `DELETE /teams/:id/members/:userId` answer
   `409 HAS_ATTENDANCE_RECORDS` if a recorded absence points at the assignment (normally only
   reachable after a started service is moved back into the future). Nothing is removed.
+- Deleting a user (`DELETE /users/:id`) or a team (`DELETE /teams/:id`) cascades their absence
+  records: that user's or team's attendance history is erased and the miss counters drop. Only
+  the direct unassign / member removal above are blocked by recorded absences. Deleting a user
+  who recorded absences for others is blocked (`409 USER_HAS_CREATED_RECORDS`).
 - Unassigning a taker (only possible before the service starts) clears the role.

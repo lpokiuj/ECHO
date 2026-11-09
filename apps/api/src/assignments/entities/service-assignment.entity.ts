@@ -51,15 +51,18 @@ export class ServiceAssignment {
   @JoinColumn({ name: 'service_id' })
   service: Relation<Service>;
 
-  @ManyToOne(() => User, { onDelete: 'RESTRICT', nullable: false })
+  // Deleting the assigned user or the team removes the assignment
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: Relation<User>;
 
-  @ManyToOne(() => Team, { onDelete: 'RESTRICT', nullable: false })
+  @ManyToOne(() => Team, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'team_id' })
   team: Relation<Team>;
 
-  @ManyToOne(() => User, { onDelete: 'RESTRICT', nullable: false })
+  // NO ACTION: blocks like RESTRICT but is checked at the end of the statement,
+  // so a self-assigned user is not blocked by their own cascaded row
+  @ManyToOne(() => User, { onDelete: 'NO ACTION', nullable: false })
   @JoinColumn({ name: 'assigned_by' })
   assigner: Relation<User>;
 }

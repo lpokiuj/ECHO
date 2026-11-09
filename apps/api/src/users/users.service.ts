@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcryptjs';
-import { QueryFailedError, Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { TeamMember } from '../teams/entities/team-member.entity.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
@@ -15,6 +15,14 @@ import { User, UserRole } from './entities/user.entity.js';
 import { normalizeEmail } from './normalize-email.js';
 
 const UNIQUE_VIOLATION = '23505';
+const FOREIGN_KEY_VIOLATION = '23503';
+
+// services.created_by, service_assignments.assigned_by, service_absences.recorded_by
+const RECORD_OWNER_CONSTRAINTS = new Set([
+  'FK_c896350eb4a5969991bccfb0759',
+  'FK_61553c0ad11b34715acac09190d',
+  'FK_b2148224ec3f5d42d809f721232',
+]);
 
 @Injectable()
 export class UsersService {
@@ -24,6 +32,7 @@ export class UsersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     @InjectRepository(TeamMember)
     private readonly teamMembers: Repository<TeamMember>,
+    private readonly dataSource: DataSource,
     config: ConfigService,
   ) {
     this.defaultPassword = config.getOrThrow<string>('DEFAULT_USER_PASSWORD');
@@ -97,6 +106,55 @@ export class UsersService {
       mustChangePassword: false,
     });
     if (!result.affected) throw new NotFoundException();
+  }
+
+  // Hard delete. The database cascades memberships, assignments, unavailability
+  // and the user's absences. Rows the user created, assigned or recorded block it.
+  async remove(actor: User, id: string): Promise<void> {
+    if (id === actor.id) {
+      throw new BadRequestException('You cannot delete yourself');
+    }
+    try {
+      await this.dataSource.transaction(async (manager) => {
+        // Row lock on every ADMIN: two concurrent deletes of admins queue up,
+        // so each one sees the other's result when it counts the admins.
+        const admins: { id: string }[] = await manager.query(
+          `SELECT id FROM users WHERE role = 'ADMIN' ORDER BY id FOR UPDATE`,
+        );
+        const target = await manager.findOneBy(User, { id });
+        if (!target) throw new NotFoundException('User not found');
+        if (target.role === UserRole.ADMIN && admins.length <= 1) {
+          throw new BadRequestException({
+            statusCode: 400,
+            error: 'Bad Request',
+            code: 'LAST_ADMIN',
+            message: 'The last ADMIN cannot be deleted',
+          });
+        }
+        await manager.delete(User, { id });
+      });
+    } catch (err) {
+      throw this.mapDeleteError(err);
+    }
+  }
+
+  private mapDeleteError(err: unknown): unknown {
+    if (
+      err instanceof QueryFailedError &&
+      (err.driverError as { code?: string }).code === FOREIGN_KEY_VIOLATION &&
+      RECORD_OWNER_CONSTRAINTS.has(
+        (err.driverError as { constraint?: string }).constraint ?? '',
+      )
+    ) {
+      return new ConflictException({
+        statusCode: 409,
+        error: 'Conflict',
+        code: 'USER_HAS_CREATED_RECORDS',
+        message:
+          'This user created services, assigned people, or recorded absences, so they cannot be deleted',
+      });
+    }
+    return err;
   }
 
   private mapError(err: unknown): unknown {

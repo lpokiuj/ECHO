@@ -9,6 +9,7 @@ import { configureApp } from '../src/app.setup.js';
 import { TeamMember } from '../src/teams/entities/team-member.entity.js';
 import { Team } from '../src/teams/entities/team.entity.js';
 import { User, UserRole } from '../src/users/entities/user.entity.js';
+import { UsersService } from '../src/users/users.service.js';
 import { cleanDatabase } from './utils/test-app.js';
 
 const PASSWORD = 'password123';
@@ -81,6 +82,7 @@ describe('Users (e2e)', () => {
       ['post', '/users'],
       ['patch', `/users/${UNKNOWN_ID}`],
       ['post', `/users/${UNKNOWN_ID}/reset-password`],
+      ['delete', `/users/${UNKNOWN_ID}`],
     ] as const)('%s %s: 401 without token', async (method, url) => {
       await request(http())[method](url).expect(401);
     });
@@ -105,6 +107,10 @@ describe('Users (e2e)', () => {
           .post(`/users/${user.id}/reset-password`)
           .set(h)
           .expect(403);
+        await request(http()).delete(`/users/${user.id}`).set(h).expect(403);
+        expect(await dataSource.getRepository(User).existsBy({ id: user.id })).toBe(
+          true,
+        );
       },
     );
   });
@@ -413,6 +419,263 @@ describe('Users (e2e)', () => {
         .post('/users/not-a-uuid/reset-password')
         .set(bearer(token))
         .expect(400);
+    });
+  });
+  describe('DELETE /users/:id', () => {
+    const exists = (id: string) =>
+      dataSource.getRepository(User).existsBy({ id });
+
+    const count = async (sql: string, params: unknown[]) =>
+      Number(((await dataSource.query(sql, params)) as { n: string }[])[0].n);
+
+    async function createTeam(name = `e2e-team-${Math.random()}`) {
+      return dataSource.getRepository(Team).save({ name });
+    }
+
+    async function createService(createdBy: string) {
+      const [row] = await dataSource.query(
+        `INSERT INTO services (title, starts_at, ends_at, created_by)
+         VALUES ('e2e-service', now() + interval '2 days', now() + interval '2 days 2 hours', $1)
+         RETURNING id`,
+        [createdBy],
+      );
+      return row.id as string;
+    }
+
+    const assign = (
+      serviceId: string,
+      userId: string,
+      teamId: string,
+      assignedBy: string,
+    ) =>
+      dataSource.query(
+        `INSERT INTO service_assignments (service_id, user_id, team_id, assigned_by)
+         VALUES ($1, $2, $3, $4)`,
+        [serviceId, userId, teamId, assignedBy],
+      );
+
+    const absence = (
+      serviceId: string,
+      userId: string,
+      teamId: string,
+      recordedBy: string,
+    ) =>
+      dataSource.query(
+        `INSERT INTO service_absences (service_id, user_id, team_id, recorded_by)
+         VALUES ($1, $2, $3, $4)`,
+        [serviceId, userId, teamId, recordedBy],
+      );
+
+    it('ADMIN gets 204, the row is gone and the user can no longer log in', async () => {
+      const { token } = await adminToken();
+      const target = await createUser();
+      await request(http())
+        .delete(`/users/${target.id}`)
+        .set(bearer(token))
+        .expect(204);
+      expect(await exists(target.id)).toBe(false);
+      await loginWith(target.email, PASSWORD).expect(401);
+    });
+
+    it('is 403 for a team leader and the row stays', async () => {
+      const leader = await createUser();
+      const team = await createTeam();
+      await dataSource
+        .getRepository(TeamMember)
+        .save({ teamId: team.id, userId: leader.id, isLeader: true });
+      const target = await createUser();
+      const headers = bearer(await tokenFor(leader));
+      await request(http())
+        .delete(`/users/${target.id}`)
+        .set(headers)
+        .expect(403);
+      expect(await exists(target.id)).toBe(true);
+    });
+
+    it('404 for an unknown id, 400 for a non-UUID id', async () => {
+      const { token } = await adminToken();
+      await request(http())
+        .delete(`/users/${UNKNOWN_ID}`)
+        .set(bearer(token))
+        .expect(404);
+      await request(http())
+        .delete('/users/not-a-uuid')
+        .set(bearer(token))
+        .expect(400);
+    });
+
+    it('400 when an admin deletes themselves, and the row stays', async () => {
+      await createUser({ role: UserRole.ADMIN });
+      const { admin, token } = await adminToken();
+      await request(http())
+        .delete(`/users/${admin.id}`)
+        .set(bearer(token))
+        .expect(400);
+      expect(await exists(admin.id)).toBe(true);
+    });
+
+    it('rejects deleting the last ADMIN row (concurrent deletes of two admins leave one)', async () => {
+      const a = await createUser({ role: UserRole.ADMIN, name: 'A' });
+      const b = await createUser({ role: UserRole.ADMIN, name: 'B' });
+      const ha = bearer(await tokenFor(a));
+      const hb = bearer(await tokenFor(b));
+      const results = await Promise.all([
+        request(http()).delete(`/users/${b.id}`).set(ha),
+        request(http()).delete(`/users/${a.id}`).set(hb),
+      ]);
+      const statuses = results.map((r) => r.status).sort((x, y) => x - y);
+      expect(statuses.filter((s) => s === 204)).toHaveLength(1);
+      expect(statuses.every((s) => [204, 400, 401].includes(s))).toBe(true);
+      expect(
+        await dataSource
+          .getRepository(User)
+          .countBy({ role: UserRole.ADMIN }),
+      ).toBe(1);
+      const lastAdminBody = results.find((r) => r.status === 400)?.body;
+      if (lastAdminBody) expect(lastAdminBody.code).toBe('LAST_ADMIN');
+    });
+
+    it('rejects deleting the last ADMIN row with 400 LAST_ADMIN (inactive ADMINs count as rows)', async () => {
+      // Over HTTP the caller is itself an ADMIN row, so the one-row case is only
+      // reachable below the controller: call the service as a non-admin actor.
+      const users = app.get(UsersService);
+      const actor = await createUser();
+      const onlyAdmin = await createUser({
+        role: UserRole.ADMIN,
+        isActive: false,
+      });
+      await expect(users.remove(actor, onlyAdmin.id)).rejects.toMatchObject({
+        status: 400,
+        response: { code: 'LAST_ADMIN' },
+      });
+      expect(await exists(onlyAdmin.id)).toBe(true);
+
+      const second = await createUser({ role: UserRole.ADMIN });
+      await users.remove(actor, second.id);
+      expect(await exists(second.id)).toBe(false);
+      await expect(users.remove(actor, onlyAdmin.id)).rejects.toMatchObject({
+        status: 400,
+      });
+    });
+
+    it('cascades memberships, assignments, unavailability and absences of the user', async () => {
+      const { admin, token } = await adminToken();
+      const target = await createUser();
+      const team = await createTeam();
+      await dataSource
+        .getRepository(TeamMember)
+        .save({ teamId: team.id, userId: target.id });
+      const service = await createService(admin.id);
+      await assign(service, target.id, team.id, admin.id);
+      await absence(service, target.id, team.id, admin.id);
+      await dataSource.query(
+        `INSERT INTO service_unavailability (service_id, user_id) VALUES ($1, $2)`,
+        [await createService(admin.id), target.id],
+      );
+
+      await request(http())
+        .delete(`/users/${target.id}`)
+        .set(bearer(token))
+        .expect(204);
+
+      for (const table of [
+        'team_members',
+        'service_assignments',
+        'service_absences',
+        'service_unavailability',
+      ]) {
+        expect(
+          await count(`SELECT count(*) AS n FROM ${table} WHERE user_id = $1`, [
+            target.id,
+          ]),
+        ).toBe(0);
+      }
+      expect(await exists(admin.id)).toBe(true);
+      expect(await count(`SELECT count(*) AS n FROM services`, [])).toBe(2);
+      expect(await dataSource.getRepository(Team).existsBy({ id: team.id })).toBe(true);
+    });
+
+    it('deletes a user who was only assigned, even if another user recorded their absence', async () => {
+      const { admin, token } = await adminToken();
+      const recorder = await createUser();
+      const target = await createUser();
+      const team = await createTeam();
+      const service = await createService(admin.id);
+      await assign(service, target.id, team.id, admin.id);
+      await absence(service, target.id, team.id, recorder.id);
+      await request(http())
+        .delete(`/users/${target.id}`)
+        .set(bearer(token))
+        .expect(204);
+      expect(await count(`SELECT count(*) AS n FROM service_absences`, [])).toBe(0);
+      expect(await exists(recorder.id)).toBe(true);
+    });
+
+    it('deletes a user who assigned themselves', async () => {
+      const { admin, token } = await adminToken();
+      const target = await createUser();
+      const team = await createTeam();
+      const service = await createService(admin.id);
+      await assign(service, target.id, team.id, target.id);
+      await request(http())
+        .delete(`/users/${target.id}`)
+        .set(bearer(token))
+        .expect(204);
+      expect(await exists(target.id)).toBe(false);
+    });
+
+    describe('409 USER_HAS_CREATED_RECORDS', () => {
+      const expectBlocked = async (token: string, id: string) => {
+        const res = await request(http())
+          .delete(`/users/${id}`)
+          .set(bearer(token))
+          .expect(409);
+        expect(res.body).toMatchObject({
+          statusCode: 409,
+          error: 'Conflict',
+          code: 'USER_HAS_CREATED_RECORDS',
+        });
+        expect(await exists(id)).toBe(true);
+      };
+
+      it('when the user created a service (also a soft-deleted one)', async () => {
+        const { token } = await adminToken();
+        const creator = await createUser({ role: UserRole.PEMBINA });
+        const service = await createService(creator.id);
+        await expectBlocked(token, creator.id);
+        await dataSource.query(
+          `UPDATE services SET deleted_at = now() WHERE id = $1`,
+          [service],
+        );
+        await expectBlocked(token, creator.id);
+      });
+
+      it('when the user assigned someone, and keeps the assignment', async () => {
+        const { admin, token } = await adminToken();
+        const assigner = await createUser();
+        const volunteer = await createUser();
+        const team = await createTeam();
+        const service = await createService(admin.id);
+        await assign(service, volunteer.id, team.id, assigner.id);
+        await expectBlocked(token, assigner.id);
+        expect(
+          await count(`SELECT count(*) AS n FROM service_assignments`, []),
+        ).toBe(1);
+      });
+
+      it('when the user recorded an absence, and keeps the absence', async () => {
+        const { admin, token } = await adminToken();
+        const recorder = await createUser();
+        const volunteer = await createUser();
+        const team = await createTeam();
+        const service = await createService(admin.id);
+        await assign(service, volunteer.id, team.id, admin.id);
+        await absence(service, volunteer.id, team.id, recorder.id);
+        await expectBlocked(token, recorder.id);
+        expect(
+          await count(`SELECT count(*) AS n FROM service_absences`, []),
+        ).toBe(1);
+      });
     });
   });
 });

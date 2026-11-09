@@ -35,8 +35,10 @@ regardless of role.
 | 17 | `PATCH /teams/:id` | 401 | 403 | 403 | 403 | ok |
 | 18 | `PUT /teams/:id/members/:userId` | 401 | 403 | 403 | 403 | ok |
 | 19 | `DELETE /teams/:id/members/:userId` | 401 | 403 | 403 | 403 | ok |
+| 23 | `DELETE /users/:id` | 401 | 403 | 403 | 403 | ok (400 self, 400 `LAST_ADMIN`, 409 `USER_HAS_CREATED_RECORDS`) |
+| 24 | `DELETE /teams/:id` | 401 | 403 | 403 | 403 | ok |
 
-"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19 (a leader of
+"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19 and 23-24 (a leader of
 a team still gets 403 on `GET /teams/:id/members` for their own team; e2e `test/teams.e2e-spec.ts`
 "returns 403 for the leader of that very team"). PEMBINA can never be a leader.
 
@@ -73,7 +75,7 @@ the next call is 403 even with the same token.
 
 Same unknown-team rule as above for the leader routes (non-admin 403, ADMIN 404). The taker/leader check
 for the absence routes is done in the service after path-uuid validation, before the 404s.
-That makes 8 new routes: 30 in total.
+That makes 8 new routes: 30 in total. Rows 23 and 24 (the two hard deletes, e2e only) bring it to 32.
 
 ## Cells not verified
 None of the cells above is unverified. Not covered by this matrix: behaviour after the

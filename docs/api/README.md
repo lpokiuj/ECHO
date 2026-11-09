@@ -11,8 +11,8 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | File | Contents |
 |---|---|
 | [auth.md](auth.md) | `POST /auth/login`, `POST /auth/change-password`, `GET /me` |
-| [users.md](users.md) | Admin user management |
-| [teams.md](teams.md) | Teams, membership, leader flag |
+| [users.md](users.md) | Admin user management, including hard delete |
+| [teams.md](teams.md) | Teams, membership, leader flag, hard delete |
 | [services.md](services.md) | Create / edit / soft-delete services |
 | [assignments.md](assignments.md) | Candidates, assign, unassign (leader screen) |
 | [availability.md](availability.md) | `PUT/DELETE /services/:id/unavailability`, `GET /me/unavailability` |
@@ -21,7 +21,7 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | [flows.md](flows.md) | Exact call order for each screen, plus **Gotchas** |
 | [permissions.md](permissions.md) | Endpoint x role matrix |
 
-30 routes in total (22 before availability and attendance added 8; see `permissions.md`).
+32 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`; see `permissions.md`).
 
 ## Run the API locally
 
@@ -127,7 +127,7 @@ status first, then on `code` when present. `message` is **a string or an array o
 | 404 bare | `{"message":"Not Found","statusCode":404}` (no `error` key) |
 | Unknown route | `{"message":"Cannot GET /nope","error":"Not Found","statusCode":404}` |
 | 409 | `{"message":"Email already in use","error":"Conflict","statusCode":409}` |
-| Coded errors | `PASSWORD_CHANGE_REQUIRED` (403), `INVALID_USERS` (400, adds `invalidUserIds`), `CANNOT_MARK_SELF` (400), `SERVICE_ALREADY_STARTED`, `SERVICE_NOT_STARTED`, `ALREADY_ASSIGNED`, `HAS_ATTENDANCE_RECORDS` (all 409) |
+| Coded errors | `PASSWORD_CHANGE_REQUIRED` (403), `INVALID_USERS` (400, adds `invalidUserIds`), `CANNOT_MARK_SELF` (400), `SERVICE_ALREADY_STARTED`, `SERVICE_NOT_STARTED`, `ALREADY_ASSIGNED`, `HAS_ATTENDANCE_RECORDS`, `USER_HAS_CREATED_RECORDS` (all 409), `LAST_ADMIN` (400) |
 
 Because keys differ (`error` is sometimes missing), read `statusCode` / HTTP status, not `error`.
 Unhandled server errors would be a 500 `{"statusCode":500,"message":"Internal server error"}`
@@ -159,7 +159,7 @@ name.
 |---|---|---|
 | `UserRole` | `ADMIN`, `PEMBINA`, `MEMBER` | `role` on users, `/me` |
 | Skip reason | `ALREADY_ASSIGNED_THIS_TEAM`, `ALREADY_ASSIGNED_OTHER_TEAM`, `UNAVAILABLE` | `skipped[].reason` |
-| Error `code` | `PASSWORD_CHANGE_REQUIRED`, `INVALID_USERS`, `SERVICE_ALREADY_STARTED`, `ALREADY_ASSIGNED`, `SERVICE_NOT_STARTED`, `CANNOT_MARK_SELF`, `HAS_ATTENDANCE_RECORDS` | error bodies |
+| Error `code` | `PASSWORD_CHANGE_REQUIRED`, `INVALID_USERS`, `SERVICE_ALREADY_STARTED`, `ALREADY_ASSIGNED`, `SERVICE_NOT_STARTED`, `CANNOT_MARK_SELF`, `HAS_ATTENDANCE_RECORDS`, `USER_HAS_CREATED_RECORDS`, `LAST_ADMIN` | error bodies |
 
 "Team leader" is **not** a role: it is `isLeader: true` on a team membership (see `GET /me` ->
 `memberships`). A person can lead one team and be a plain member of another. A PEMBINA can never

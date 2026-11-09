@@ -142,7 +142,7 @@ other teams stay.
 14. Login email matching is case-insensitive (emails are stored lowercase); `Authorization` scheme must be exactly `Bearer`.
 15. Tokens are not revoked: a password change or reset does not log out other devices.
 16. `GET /services` items have `id`; `GET /me/schedule` items have `serviceId`.
-17. Deleting users or teams is not possible; deactivate users instead.
+17. `DELETE /users/:id` and `DELETE /teams/:id` are hard deletes (ADMIN only, 204). They cascade memberships, assignments, unavailability and absences, so attendance history of that user or team is lost: confirm in the UI. A user who created services, assigned people or recorded absences answers `409 USER_HAS_CREATED_RECORDS` (deactivate instead); deleting yourself or the last ADMIN is `400` (`LAST_ADMIN`).
 18. **Unavailable users are skipped, not rejected**: `reason: "UNAVAILABLE"` in `skipped`, and the
     candidate keeps `unavailable: true` until they unmark themselves.
 19. **Absences are history**: removing a member or unassigning someone with a recorded absence is

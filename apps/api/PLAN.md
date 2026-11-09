@@ -54,7 +54,7 @@ A leader of team B can:
 12. While `must_change_password` is true, every endpoint except
     `POST /auth/change-password` and `GET /me` returns 403.
 13. Inactive users (`is_active = false`) cannot log in, and their requests are rejected
-    even with a previously issued token. Users are deactivated, never deleted, in v1.
+    even with a previously issued token. Users can be deactivated, or hard deleted by an ADMIN (`DELETE /users/:id`, see "User and team deletion" below).
 14. Changing a service's time after assignments exist is allowed. Assignments are kept.
     No notification in v1.
 
@@ -78,8 +78,8 @@ Auth
 - `GET /me` (profile, role, `must_change_password`, memberships with `is_leader`)
 
 Admin (ADMIN)
-- `POST /users`, `GET /users`, `PATCH /users/:id`, `POST /users/:id/reset-password`
-- `POST /teams`, `GET /teams` (ADMIN and PEMBINA, read-only for the web recap), `PATCH /teams/:id`
+- `POST /users`, `GET /users`, `PATCH /users/:id`, `DELETE /users/:id`, `POST /users/:id/reset-password`
+- `POST /teams`, `GET /teams` (ADMIN and PEMBINA, read-only for the web recap), `PATCH /teams/:id`, `DELETE /teams/:id`
 - `PUT /teams/:id/members/:userId` (body: `is_leader`), `DELETE /teams/:id/members/:userId`
 - `GET /teams/:id/members`
 
@@ -139,10 +139,11 @@ Attendance
 | Schedule window | `GET /services` and `GET /me/schedule` list only services with `ends_at > now` by default; `?includePast=true` lists all. Note this differs from "started" above, which uses `starts_at`. | Volunteers care about what is current or upcoming |
 | ADMIN unassign | ADMIN removes another team's assignment through the same DELETE route, using the holding team's id (visible as `heldByTeam`). No separate admin endpoint. | Keeps one code path |
 | Candidate list | Users already assigned by this team are shown and marked as assigned. Users assigned by another team are excluded. | Leader sees their full roster for the service |
+| User and team deletion | `DELETE /users/:id` and `DELETE /teams/:id` are ADMIN-only hard deletes (204; 404 unknown; services keep their soft delete). CASCADE: `team_members.team_id/user_id`, `service_assignments.user_id/team_id`, `service_unavailability.user_id`, `service_absences.user_id/team_id` (new FKs). Attendance history of the deleted user/team is lost (accepted). `services.created_by`, `service_assignments.assigned_by`, `service_absences.recorded_by` block the delete (NO ACTION/RESTRICT): 409 `USER_HAS_CREATED_RECORDS`, mapped only on those three constraints. A user cannot delete themselves (400). The last ADMIN row (active or not) cannot be deleted: 400 `LAST_ADMIN`, race-safe by `SELECT ... FOR UPDATE` on all ADMIN rows in the delete transaction. | Decided by the user for the public-site work (T1); migration `CascadeUserTeamDeletes` |
 | Seed admin | `npm run seed` reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env and creates one ADMIN with `must_change_password = false`. `.env.example` uses `ADMIN_EMAIL=admin@echo.local`, `ADMIN_PASSWORD=password` for local development only. The seed refuses to run when `NODE_ENV=production`. It targets `echo_dev` only; tests create their own fixtures. | A known password is acceptable on a local dev DB only if it can't reach production |
 | Terminology | English "team" (not the Indonesian "bidang"); "team leader" (not "Ketua Bidang"). "Ketua ECHO" stays as a title. | Avoids confusion in code and docs |
 | Roles storage | `users.role` is a Postgres enum named `user_role` (ADMIN, PEMBINA, MEMBER). | The DB rejects unknown roles |
-| Foreign keys | Plain FKs with `ON DELETE RESTRICT`. "A team assigns only its own members" (rule 7) is checked in the service layer, not by a composite FK. | A composite FK to `team_members` would conflict with rule 9 (past assignments are kept after removal) |
+| Foreign keys | Plain FKs with `ON DELETE RESTRICT`, except the user/team deletion cascades listed under "User and team deletion". "A team assigns only its own members" (rule 7) is checked in the service layer, not by a composite FK. | A composite FK to `team_members` would conflict with rule 9 (past assignments are kept after removal) |
 | Seed data | Teams: Worship, Music, Sound, Multimedia, Usher, Stage Manager. People and assignments live in `src/database/seed-data.ts`, edited by hand (ships with marked examples). Insert-only, dev DB only (`echo_dev`). Fake users share `SEED_USER_PASSWORD` and have `must_change_password = false`. Hashing uses `bcryptjs` (pure JS, no native build). | Try assignment conflicts by hand before the admin endpoints exist |
 | Default password | Env `DEFAULT_USER_PASSWORD` (required, min 8 chars, app refuses to start without it) is the password for every account the admin creates or resets. `.env.example` uses `changeme123` for local development only. | No email service in v1; admin hands the password over out of band and users may change it voluntarily via `POST /auth/change-password` (no forced change since 2026-11-09) |
 | User admin safety | An admin cannot change their own role or `isActive` (400). | Prevents leaving the system with no active admin |
@@ -156,7 +157,7 @@ Attendance
 | Absent-taker | One per team per service (`is_absent_taker`, partial unique index). Leader of the team or ADMIN designates with `PUT .../absent-taker {userId}` at any time; target must be assigned by that team (400 `INVALID_USERS`). Designation is serialized with an advisory lock and replaces the previous taker in one transaction. | Matches the confirmed spec; no two takers |
 | Recording absences | `PUT/DELETE .../absences/:userId` by the team's taker, a leader of that team, or ADMIN (403 otherwise, checked before the 404s). The leader need not be assigned to the service, and leaders and ADMIN can record for past services with no taker. 409 `SERVICE_NOT_STARTED` before `starts_at`. Target must be assigned by that team (400 `INVALID_USERS`). Nobody can mark themselves, leader and ADMIN included (400 `CANNOT_MARK_SELF`). PUT/DELETE idempotent. | Only recorded absences count; leaders own their team's attendance, so they can fix or fill in what the taker missed |
 | Miss counter | Derived: `COUNT(*)` over `service_absences`. `GET /me/absences` -> `{count, items:[{serviceId,title,startsAt}]}` newest first; `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN) -> `[{userId,name,count}]` for active members, counted across all teams. Soft-deleted services still count. `GET /teams/:teamId/absences/:userId` -> same `{count, items}` shape as `/me/absences` for one active member of that team (404 otherwise); it backs the web recap Detail button. | No stored counter, no drift |
-| Absences vs unassign | The composite FK from `service_absences` to the assignment row is RESTRICT. Unassign and member removal that would delete such an assignment answer 409 `HAS_ATTENDANCE_RECORDS` and change nothing (reachable only if a started service is moved to the future). Unassigning a taker (pre-start) clears the role. | History is never silently erased |
+| Absences vs unassign | The composite FK from `service_absences` to the assignment row is NO ACTION (blocks a direct delete like RESTRICT; user/team deletion removes the absences first through their own cascading FKs). Unassign and member removal that would delete such an assignment answer 409 `HAS_ATTENDANCE_RECORDS` and change nothing (reachable only if a started service is moved to the future). Unassigning a taker (pre-start) clears the role. | History is never silently erased |
 | Recorded absences read | `GET /services/:id/teams/:teamId/absences` -> `{ userIds }` (that team's absences for the service, ordered by id). Access: the team's taker, its leader, or ADMIN (403 otherwise, before the 404s; PEMBINA gets 403). Allowed before the service starts. Requested by the web taker screen. | After a reload the taker needs to see what is already recorded |
 | Attendance check order | Path-uuid pipes (400) run first, then the taker/leader/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
 

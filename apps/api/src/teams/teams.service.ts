@@ -60,6 +60,12 @@ export class TeamsService {
     return this.teams.findOneByOrFail({ id });
   }
 
+  // Hard delete. The database cascades memberships, assignments and absences.
+  async remove(id: string): Promise<void> {
+    const result = await this.teams.delete({ id });
+    if (!result.affected) throw new NotFoundException('Team not found');
+  }
+
   async listMembers(teamId: string): Promise<TeamMemberView[]> {
     if (!(await this.teams.existsBy({ id: teamId }))) {
       throw new NotFoundException('Team not found');

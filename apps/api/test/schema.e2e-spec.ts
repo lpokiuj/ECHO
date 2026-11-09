@@ -93,7 +93,7 @@ describe('database schema (e2e)', () => {
     await expect(assign(teamB)).rejects.toMatchObject({ code: '23505' });
   });
 
-  it('refuses to delete a user who has a team membership (RESTRICT)', async () => {
+  it('deleting a user cascades their team membership', async () => {
     const user = await insertUser('f@echo.test');
     const [{ id: team }] = await ds.query(
       `INSERT INTO teams (name) VALUES ('T') RETURNING id`,
@@ -102,8 +102,42 @@ describe('database schema (e2e)', () => {
       `INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)`,
       [team, user],
     );
+    await ds.query(`DELETE FROM users WHERE id = $1`, [user]);
+    const rows = await ds.query(`SELECT 1 FROM team_members WHERE team_id = $1`, [
+      team,
+    ]);
+    expect(rows).toHaveLength(0);
+  });
+
+  it('refuses to delete a user who created a service (RESTRICT)', async () => {
+    const admin = await insertUser('g@echo.test');
+    await insertService(admin);
     await expect(
-      ds.query(`DELETE FROM users WHERE id = $1`, [user]),
+      ds.query(`DELETE FROM users WHERE id = $1`, [admin]),
+    ).rejects.toMatchObject({ code: '23503' });
+  });
+
+  it('refuses to delete an assignment that has a recorded absence', async () => {
+    const admin = await insertUser('h@echo.test');
+    const volunteer = await insertUser('i@echo.test');
+    const service = await insertService(admin);
+    const [{ id: team }] = await ds.query(
+      `INSERT INTO teams (name) VALUES ('T2') RETURNING id`,
+    );
+    await ds.query(
+      `INSERT INTO service_assignments (service_id, user_id, team_id, assigned_by)
+       VALUES ($1, $2, $3, $4)`,
+      [service, volunteer, team, admin],
+    );
+    await ds.query(
+      `INSERT INTO service_absences (service_id, user_id, team_id, recorded_by)
+       VALUES ($1, $2, $3, $4)`,
+      [service, volunteer, team, admin],
+    );
+    await expect(
+      ds.query(`DELETE FROM service_assignments WHERE service_id = $1`, [
+        service,
+      ]),
     ).rejects.toMatchObject({ code: '23503' });
   });
 });
