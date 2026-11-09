@@ -110,7 +110,7 @@ describe('Users (e2e)', () => {
   });
 
   describe('POST /users', () => {
-    it('creates a MEMBER with the default password and must_change_password', async () => {
+    it('creates a MEMBER with the default password', async () => {
       const { token } = await adminToken();
       const res = await request(http())
         .post('/users')
@@ -121,7 +121,7 @@ describe('Users (e2e)', () => {
         name: 'New Person',
         email: 'new@echo.test',
         role: UserRole.MEMBER,
-        mustChangePassword: true,
+        mustChangePassword: false,
         isActive: true,
       });
       expect(res.body.passwordHash).toBeUndefined();
@@ -390,9 +390,9 @@ describe('Users (e2e)', () => {
   });
 
   describe('POST /users/:id/reset-password', () => {
-    it('resets to the default password and requires a change', async () => {
+    it('resets to the default password and clears must_change_password', async () => {
       const { token } = await adminToken();
-      const target = await createUser();
+      const target = await createUser({ mustChangePassword: true });
       await request(http())
         .post(`/users/${target.id}/reset-password`)
         .set(bearer(token))
@@ -400,7 +400,7 @@ describe('Users (e2e)', () => {
 
       await loginWith(target.email, PASSWORD).expect(401);
       await loginWith(target.email, defaultPassword).expect(200);
-      expect((await loadUser(target.id)).mustChangePassword).toBe(true);
+      expect((await loadUser(target.id)).mustChangePassword).toBe(false);
     });
 
     it('404 for an unknown id, 400 for a non-UUID id', async () => {

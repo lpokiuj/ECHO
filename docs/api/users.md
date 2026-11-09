@@ -13,7 +13,7 @@ Returned by `POST /users`, `GET /users`, `PATCH /users/:id`. The password hash i
 | `name` | string | |
 | `email` | string | unique, case-insensitive; always returned in lowercase |
 | `role` | `ADMIN` \| `PEMBINA` \| `MEMBER` | |
-| `mustChangePassword` | boolean | `true` for new and reset accounts |
+| `mustChangePassword` | boolean | `false` for new and reset accounts |
 | `isActive` | boolean | `false` = cannot log in; existing tokens get 401 immediately |
 | `createdAt` | ISO 8601 UTC | |
 
@@ -21,7 +21,7 @@ There are no memberships in this object. Get them from [`GET /teams/:id/members`
 
 ## POST /users
 Create an account with the shared default password (`DEFAULT_USER_PASSWORD` from the server env;
-the admin tells the person out of band). The user must change it at first login.
+the admin tells the person out of band). No forced change at first login.
 
 | Body field | Type | Required | Rules |
 |---|---|---|---|
@@ -33,7 +33,7 @@ the admin tells the person out of band). The user must change it at first login.
 
 **201**
 ```json
-{"id":"d50ed778-821b-47f1-8992-475f525b4097","name":"Docs Example Lead A","email":"docs-example-lead-a@echo.local","role":"MEMBER","mustChangePassword":true,"isActive":true,"createdAt":"2026-10-31T18:31:12.432Z"}
+{"id":"d50ed778-821b-47f1-8992-475f525b4097","name":"Docs Example Lead A","email":"docs-example-lead-a@echo.local","role":"MEMBER","mustChangePassword":false,"isActive":true,"createdAt":"2026-10-31T18:31:12.432Z"}
 ```
 
 | Status | Condition | Body |
@@ -68,7 +68,7 @@ An empty body `{}` is **not** an error: it returns the user unchanged (200).
 
 **200** the updated User object:
 ```json
-{"id":"85c483d5-d17f-495d-a088-78f652357e4d","name":"Docs Example Member 2","email":"docs-example-m2@echo.local","role":"MEMBER","mustChangePassword":true,"isActive":false,"createdAt":"2026-10-31T18:31:21.077Z"}
+{"id":"85c483d5-d17f-495d-a088-78f652357e4d","name":"Docs Example Member 2","email":"docs-example-m2@echo.local","role":"MEMBER","mustChangePassword":false,"isActive":false,"createdAt":"2026-10-31T18:31:21.077Z"}
 ```
 
 | Status | Condition | Body |

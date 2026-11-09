@@ -89,14 +89,14 @@ describe('seed (e2e)', () => {
     });
   });
 
-  it('creates the admin with must_change_password and a bcrypt hash', async () => {
+  it('creates the admin without must_change_password and a bcrypt hash', async () => {
     await runSeed(ds, fixture, options);
     const [admin] = await ds.query(
       `SELECT role, must_change_password, password_hash FROM users WHERE email = $1`,
       [options.adminEmail],
     );
     expect(admin.role).toBe('ADMIN');
-    expect(admin.must_change_password).toBe(true);
+    expect(admin.must_change_password).toBe(false);
     expect(
       await bcrypt.compare(options.adminPassword, admin.password_hash),
     ).toBe(true);

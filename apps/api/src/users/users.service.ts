@@ -39,7 +39,7 @@ export class UsersService {
         email: normalizeEmail(dto.email),
         role: dto.role ?? UserRole.MEMBER,
         passwordHash: await bcrypt.hash(this.defaultPassword, 10),
-        mustChangePassword: true,
+        mustChangePassword: false,
         isActive: true,
       });
       // Reload: save() echoes the hash back, while a find honors select: false
@@ -94,7 +94,7 @@ export class UsersService {
   async resetPassword(id: string): Promise<void> {
     const result = await this.users.update(id, {
       passwordHash: await bcrypt.hash(this.defaultPassword, 10),
-      mustChangePassword: true,
+      mustChangePassword: false,
     });
     if (!result.affected) throw new NotFoundException();
   }

@@ -82,7 +82,7 @@ Inputs: a service (from `GET /services`) and a team where `/me` says `isLeader: 
 ## 5. Admin flows (ADMIN)
 
 **Create a user**: `POST /users {name, email, role?}` -> `201`. Tell the person the shared default
-password out of band; they must change it at first login. `409` = email taken.
+password out of band; no forced change at first login. `409` = email taken.
 
 **Reset a password**: `POST /users/{id}/reset-password` -> `204`. The user's open sessions get
 `PASSWORD_CHANGE_REQUIRED` on their next call.

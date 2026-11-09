@@ -88,7 +88,7 @@ async function seedAdmin(m: EntityManager, o: SeedOptions): Promise<string> {
         email: o.adminEmail,
         passwordHash: hashes.get(o.adminEmail),
         role: UserRole.ADMIN,
-        mustChangePassword: true,
+        mustChangePassword: false,
       })
       .orIgnore()
       .execute();
@@ -122,7 +122,7 @@ async function seedUsers(m: EntityManager, data: SeedData, password: string) {
       passwordHash: hashes.get(u.email),
       role: u.role ?? UserRole.MEMBER,
       isActive: u.isActive ?? true,
-      mustChangePassword: false, // dev convenience: log in without the change-password step
+      mustChangePassword: false,
     }));
   if (rows.length > 0) {
     await m

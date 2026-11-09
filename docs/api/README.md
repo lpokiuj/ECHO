@@ -42,7 +42,7 @@ Env files live at the repo root (`.env`, gitignored; template `.env.example`). P
 |---|---|---|
 | Admin | `ADMIN_EMAIL` (`.env.example`: `admin@echo.local`) | `ADMIN_PASSWORD` |
 | Every seeded user below | listed below | `SEED_USER_PASSWORD` |
-| Any user created or reset through the API | whatever the admin entered | `DEFAULT_USER_PASSWORD` (user must change it at first login) |
+| Any user created or reset through the API | whatever the admin entered | `DEFAULT_USER_PASSWORD` (no forced change; users may change it voluntarily) |
 
 Seeded users (`apps/api/src/database/seed-data.ts`; they have `mustChangePassword: false`):
 
@@ -101,7 +101,7 @@ The scheme is case-sensitive: `bearer <token>` gives 401. Everything is protecte
 | 403 | Authenticated but not allowed: wrong role, not leader of that team, or password change required | Read `code`: `PASSWORD_CHANGE_REQUIRED` -> change-password screen; otherwise show "not allowed" |
 
 ### `PASSWORD_CHANGE_REQUIRED`
-While `mustChangePassword` is `true` (new accounts, after an admin reset) every authenticated
+While `mustChangePassword` is `true` (only accounts that have the flag set; new and reset accounts get `false`) every authenticated
 route returns:
 ```json
 {"statusCode":403,"error":"Forbidden","code":"PASSWORD_CHANGE_REQUIRED","message":"You must change your password first"}
