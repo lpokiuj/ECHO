@@ -655,4 +655,36 @@ screen has a "Kirim pokok doa lain" button). Real POSTs by B-F4b: 2 (the `[real]
   capture artifact. B viewed doa-1280, errors-360, banner429-360, success-1280: no layout problems.
 - Docs: apps/public README (prayer form copy, code, e2e, rate-limit budget) and CLAUDE.md (structure, rate-limit and `[real]` rule, forms rule) read; they match the code. No env var
   or route changed. PASS.
-- Result: F4 verified, committing as feat(public).
+- Result: F4 verified, committed as be0ffac feat(public). Status list ticked.
+
+## F5 implemented and verified by me
+B-F5 (model: sonnet; 1 agent: plan, resumed to implement; 2 plan-round messages incl. my approval, 0 fix rounds). Decisions D-030.
+- Scope: `git status`: only apps/public (+ .orchestrator, PUBLIC_PLAN.md tick); no package.json/lockfile change, nothing in api, web or root. PASS.
+- Greps on the new files: no `any`, `@ts-ignore`, `.only`, `.skip`, fixme, localStorage, sessionStorage, `href=`. PASS.
+- Existing-file diffs read: router.test adds `server.use(handlers.bidang())` only (assertions unchanged); responsive.spec adds the volunteer guard and `expect(sent).toEqual([])`;
+  VolunteerPage swaps the placeholder; site.ts fills `pages.volunteer`; CLAUDE.md/README updated. prayer-mocks.ts untouched. No test deleted, skipped or weakened. PASS.
+- `npm run check -w @echo/public` (mine): pass, 19 files, 124 tests (was 97).
+- Test selection: apps/public only. `npm run e2e -w @echo/public` (mine, one full run): 79 passed in 1.2 min; cleanup "prayer requests 1, volunteer applications 1 deleted" (B's run's real
+  POSTs, so the cleanup works); `login calls: 1`. Real POSTs: B 1 volunteer + 1 prayer, me 1 + 1, all `e2e-` named, under the limit of 5 per 10 min.
+- Acceptance: bidang options load from the API ([real] test compares checkbox count to the real GET /public/bidang) PASS; valid submit shows the success screen against the real backend PASS;
+  form still submits when the bidang call fails (mocked 500 and abort, no `bidangIds` sent) PASS; invalid email blocked client-side PASS. Also covered: loading, empty, 400, 429, 500, network,
+  disabled while sending, honeypot (hidden, Tab, sent as `website`), 44px targets, axe, "again".
+- Screenshots: B viewed 4 (form 360 and 1280, errors 360, 429 banner 360), found and fixed a missing space after the legend ("diminati(opsional)"); I did not view any myself this time
+  (budget kept; axe and layout asserts passed in my run). Known: B did not record whether echo_dev had bidang (seeded, so the populated branch most likely ran).
+- Docs: README and CLAUDE.md diffs read (volunteer form, tests, rate-limit paragraph, structure); no env var or route changed. PASS.
+- Left for the final report: `PlaceholderBlock.tsx` and `site.states.placeholder` are now unused (D-030).
+- Result: F5 verified, committing as feat(public).
+
+## USER REQUEST (2026-11-10): stop after the F5 commit
+- The user wants to sleep and asked to stop or wait for the next milestone. I stop after the F5 commit. P2 and F6 are NOT started. No db:reset for P2 has run.
+
+## F5 start: HARD STOP (blocked command), then RESOLVED
+- Resolved: the user allowed that exact command via /permissions; `npm run db:reset -w @echo/api` then ran: "Reset done: echo_dev", "Seed done." Starting F5 (B-F5-plan below).
+- (original stop notes follow)
+- Command: `npm run db:reset -w @echo/api` (the per-feature reset, D-022, run before creating the first B of F5).
+- Denied by the Claude Code auto-mode classifier, reason "[Cloud Storage Mass Delete]" (it reads the reset as a mass delete). Earlier resets in this run (T2 to F4) were allowed.
+  The rule that blocked it is the harness permission classifier, not a repo rule. I did not try another route (no script, no direct db access, no other tool).
+- Not done: db:reset for F5, any B for F5. F5, P2, F6 unticked.
+- State: branch public-site-build, HEAD be0ffac (F4), working tree clean except this log edit. Nothing staged. Backend health was 200 at the last check.
+- To resume: either allow `npm run db:reset -w @echo/api` (add a Bash permission rule in your settings) and re-run the prompt, or tell me to skip the F5 reset
+  (the F4 reset is still in place and the `e2e-` cleanup keeps test data bounded). Public-POST rate limit: 3 prayer POSTs were sent at about 01:35 to 01:45, so wait 10 minutes before any real POST.

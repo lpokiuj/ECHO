@@ -339,7 +339,7 @@ Scope: apps/public, plus the root README.md.
 - [x] F2 Home: Hero, Ibadah, Lokasi
 - [x] F3 Home: Acara, Tentang Kami, Pertama Kali, Kontak, Persembahan
 - [x] F4 Prayer request form
-- [ ] F5 Volunteer registration form
+- [x] F5 Volunteer registration form
 - [ ] P2 Portal submissions inbox
 - [ ] F6 Public polish
 

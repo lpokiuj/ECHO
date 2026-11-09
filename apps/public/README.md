@@ -72,6 +72,13 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   `site.errors`. Limits (2000, 100, 100) mirror the API in `src/features/prayer/limits.ts`. Code in
   `src/features/prayer/` (schema, hook, form, success screen); shared field pieces are
   `src/components/FormField.tsx` and `src/components/ui/{input,textarea,label,checkbox}.tsx`.
+- **Volunteer form** (`/relawan`): labels, hints, validation messages, the bidang notes (loading, failed,
+  empty) and the success text are in `site.pages.volunteer` (`form`, `success`); error banners use
+  `site.errors`. Limits (100, 30, 255, 500, 1000, 20 bidang) mirror the API in
+  `src/features/volunteer/limits.ts`. The bidang come from `GET /public/bidang` (`useBidang`, no retry)
+  and render as a checkbox group; if the call fails or the list is empty the group is hidden, a short
+  note shows and the form still submits without `bidangIds`. Code in `src/features/volunteer/`
+  (schema, hooks, `BidangPicker`, form, success screen).
 - **Logo**: `src/components/Logo.tsx` (the "E" mark and the "ECHO" wordmark) and `public/favicon.svg`.
 - **Colors, radius, font**: tokens in `src/index.css`, copied from the portal so the brand matches.
 
@@ -94,6 +101,12 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   `e2e/prayer-mocks.ts` makes that safe: every test gets a default route for the endpoint that
   aborts the request and fails the test; a test must opt in with `prayer.mock(...)` or
   `prayer.real()`. While iterating run `npx playwright test e2e/prayer.spec.ts --grep-invert "\[real\]"`.
+  `e2e/volunteer.spec.ts` covers /relawan the same way: bidang options from the API (real in the
+  `[real]` test, stubbed with `mockBidang` elsewhere), the bidang loading, empty and failed states
+  (the form still submits), client-side blocking (invalid email, missing fields), mocked 429, 400, 500
+  and network errors, honeypot, 44px targets and axe. Exactly one test, tagged `[real]`, posts to the
+  real backend (`fullName` `e2e-<random>`). `e2e/volunteer-mocks.ts` is the same default-route guard
+  as `prayer-mocks.ts` for `/public/volunteer-applications` (`volunteer.mock(...)` / `volunteer.real()`).
   Browser tests never load Google: `e2e/maps-mock.ts` answers requests to google.com locally.
   Screenshots go to `.screens/` (gitignored).
 - **Cleanup.** `e2e/global-setup.ts` runs before every run. It logs in once as the E2E admin
@@ -105,14 +118,15 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - **Rate limit.** The public POST endpoints allow 5 requests per 10 minutes per IP per endpoint, in
   memory in the backend; a real-backend e2e cannot reset it without restarting the backend. Keep
   real submissions few (the forms in F4 and F5 are mostly covered by mocked tests). The prayer
-  form's `[real]` e2e test sends 1 POST per run; the volunteer form does not exist yet.
+  form's `[real]` e2e test sends 1 POST per run, and so does the volunteer form's (each endpoint has
+  its own counter).
 
 ## Structure
 
 - `src/content/`: all text and static events
 - `src/api/`: the only place that touches the network
 - `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
-  Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan; `prayer/`: the /doa form)
+  Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan; `prayer/`: the /doa form; `volunteer/`: the /relawan form)
 - `src/components/`: shared UI. `src/components/ui/`: shadcn/ui
 - `src/lib/`, `src/hooks/`, `src/routes/`, `src/test/`
 

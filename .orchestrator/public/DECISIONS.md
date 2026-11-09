@@ -130,6 +130,13 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-030 (F5, plan review, mine): accepted B's recommendations
+- Bidang picker = fieldset + legend + the existing Checkbox/Label per bidang (no combobox, no new primitive). Failed bidang call: group hidden, non-blocking `role="status"` note,
+  no retry button; `useBidang` uses `retry: false`. Empty list: note, no group. No query invalidation after a 400. `FormField` keeps reading the prayer required/optional marks
+  (shared cleanup later). Mock guard for the volunteer endpoint is a COPY of `prayer-mocks.ts` (F4 files untouched). The `[real]` test branches explicitly on an empty bidang list.
+- Allowed test-setup edits: `server.use(handlers.bidang())` in the router.test "renders /relawan" test (assertions unchanged), and a volunteer POST guard in responsive.spec.ts.
+- `PlaceholderBlock.tsx` (and `site.states.placeholder`) become unused: NOT deleted in F5 (nothing outside the feature's needs); listed in the final report. Reverse: delete both.
+
 ## D-029 (F4, plan review, mine)
 - 429 copy: the plan text fixes the wording "Terlalu banyak percobaan, coba lagi nanti", so `site.errors.rateLimited` is changed to exactly that sentence (one content string; tests
   compare through `site.errors`, not the literal). The contact the visitor typed is sent even when the follow-up box is unchecked. Neutral success wording that only says the request

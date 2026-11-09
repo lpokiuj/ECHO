@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 import { site } from '../src/content/site.ts'
 import { mockGoogleMaps } from './maps-mock.ts'
 import { guardPrayerPosts } from './prayer-mocks.ts'
+import { guardVolunteerPosts } from './volunteer-mocks.ts'
 
 const pages = [
   { name: 'home', path: '/', heading: site.hero.title },
@@ -25,6 +26,7 @@ for (const width of [360, 768, 1280]) {
       await mockGoogleMaps(page)
       // No page here may POST to the rate-limited prayer endpoint (it would count for real).
       const prayerGuard = await guardPrayerPosts(page)
+      const volunteerGuard = await guardVolunteerPosts(page)
       await page.setViewportSize({ width, height: 800 })
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
@@ -85,6 +87,7 @@ for (const width of [360, 768, 1280]) {
       expect(serious.map((v) => v.id)).toEqual([])
       expect(errors).toEqual([])
       expect(prayerGuard.sent).toEqual([])
+      expect(volunteerGuard.sent).toEqual([])
     })
   }
 }

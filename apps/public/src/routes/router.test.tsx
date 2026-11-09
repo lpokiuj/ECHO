@@ -1,7 +1,9 @@
 import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { site } from '@/content/site'
+import { handlers } from '@/test/handlers'
 import { renderApp } from '@/test/render'
+import { server } from '@/test/setup'
 
 describe('router', () => {
   it('renders the home shell with the hero and every section anchor', async () => {
@@ -31,6 +33,7 @@ describe('router', () => {
   })
 
   it('renders /relawan', () => {
+    server.use(handlers.bidang())
     renderApp('/relawan')
     expect(
       screen.getByRole('heading', { level: 1, name: site.pages.volunteer.title }),
