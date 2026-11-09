@@ -18,10 +18,11 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | [availability.md](availability.md) | `PUT/DELETE /services/:id/unavailability`, `GET /me/unavailability` |
 | [attendance.md](attendance.md) | Absent-taker, absences, miss counts |
 | [schedule.md](schedule.md) | `GET /services` (full schedule), `GET /me/schedule` |
+| [public.md](public.md) | Public site, no login: `GET /public/bidang`, `POST /public/prayer-requests`, `POST /public/volunteer-applications` |
 | [flows.md](flows.md) | Exact call order for each screen, plus **Gotchas** |
 | [permissions.md](permissions.md) | Endpoint x role matrix |
 
-32 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`; see `permissions.md`).
+35 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`, then 3 public routes; see `permissions.md`).
 
 ## Run the API locally
 
@@ -77,7 +78,8 @@ list returns the whole array). There is no `/api` prefix.
 Authorization: Bearer <accessToken>
 ```
 The scheme is case-sensitive: `bearer <token>` gives 401. Everything is protected except
-`GET /health` and `POST /auth/login`.
+`GET /health`, `POST /auth/login` and the three public routes in [public.md](public.md)
+(`GET /public/bidang`, `POST /public/prayer-requests`, `POST /public/volunteer-applications`).
 
 ### Token renewal: `X-Access-Token`
 - The token lifetime is an **idle window of 15 minutes** (`JWT_EXPIRES_IN`, default `15m`).
@@ -107,7 +109,7 @@ route returns:
 {"statusCode":403,"error":"Forbidden","code":"PASSWORD_CHANGE_REQUIRED","message":"You must change your password first"}
 ```
 Exempt routes: `POST /auth/change-password`, `GET /me` (and the public `GET /health`,
-`POST /auth/login`). This check runs **before** role checks, so such a user gets this error even
+`POST /auth/login` and the three `/public/...` routes). This check runs **before** role checks, so such a user gets this error even
 on admin routes.
 
 ### Error body shape
@@ -127,6 +129,7 @@ status first, then on `code` when present. `message` is **a string or an array o
 | 404 bare | `{"message":"Not Found","statusCode":404}` (no `error` key) |
 | Unknown route | `{"message":"Cannot GET /nope","error":"Not Found","statusCode":404}` |
 | 409 | `{"message":"Email already in use","error":"Conflict","statusCode":409}` |
+| 429 | `{"statusCode":429,"message":"ThrottlerException: Too Many Requests"}` (no `error` key, `Retry-After` header). Only `POST /auth/login` and the two public POSTs |
 | Coded errors | `PASSWORD_CHANGE_REQUIRED` (403), `INVALID_USERS` (400, adds `invalidUserIds`), `CANNOT_MARK_SELF` (400), `SERVICE_ALREADY_STARTED`, `SERVICE_NOT_STARTED`, `ALREADY_ASSIGNED`, `HAS_ATTENDANCE_RECORDS`, `USER_HAS_CREATED_RECORDS` (all 409), `LAST_ADMIN` (400) |
 
 Because keys differ (`error` is sometimes missing), read `statusCode` / HTTP status, not `error`.

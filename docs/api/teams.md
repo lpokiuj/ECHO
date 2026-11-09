@@ -80,7 +80,8 @@ request (see Gotchas in [flows.md](flows.md)).
 ## DELETE /teams/:id
 Hard delete of a team (bidang). **ADMIN only.** **204**, empty body. The database cascades the
 team's memberships, its assignments (past and future) and its absence records (attendance history
-of that team is lost). Users and services stay.
+of that team is lost). Users and services stay. Volunteer applications stay too; only their
+interest in this bidang is removed (see [public.md](public.md)).
 
 | Status | Condition | Body |
 |---|---|---|

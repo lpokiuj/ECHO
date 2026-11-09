@@ -113,6 +113,13 @@ other teams stay.
 - Delete: `DELETE /services/{id}` -> `204` (soft delete). Remove it from your local lists.
   Re-fetch `GET /services` afterwards.
 
+## 6. Public site (no login)
+1. Volunteer form: `GET /public/bidang` -> `[{id, name}]` for the interest checkboxes.
+2. Submit: `POST /public/volunteer-applications` or `POST /public/prayer-requests` (bodies in
+   [public.md](public.md)) -> `201 {"ok":true}`. Send `consent: true`; keep the hidden `website`
+   field empty. `400` -> show field errors; `429` -> "try again later" (5 per 10 minutes per IP
+   per endpoint; behind a tunnel everyone shares one IP, so it can trigger for unrelated visitors).
+
 ## Gotchas
 
 1. **Leader/role/active changes apply on the next request**, with the same token. After an admin

@@ -130,6 +130,20 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-023 (B1, plan review, mine)
+- Request keys are camelCase (`wantsFollowUp`, `fullName`, `bidangIds`, `consent`, `website`), matching existing DTOs; DB columns stay snake_case. Reverse: rename DTO fields.
+- Rate-limit test setup: resettable throttler storage override in the e2e tests only, production code and the 5 per 10 minutes values untouched (the plan says
+  fix the test setup, not the limit). Rejected: a PUBLIC_RATE_LIMIT env knob (new config surface). Heads-up logged for F4/F5/P2: real-backend e2e cannot reset the
+  in-memory limiter without restarting the backend (forbidden), so more than 5 public POSTs per endpoint per 10 minutes from one IP will return 429 there.
+  That is a decision for the user before F4 (likely a PUBLIC_RATE_LIMIT knob set in the dev env, like LOGIN_RATE_LIMIT).
+- No extra DB CHECK constraints (schema additions the plan does not imply); DTO validation only. Reverse: a later migration adding the checks.
+- Unknown bidang ids: plain 400 (standard body, message), no new error code. Honeypot: validate first, so an invalid body is still 400. `wantsFollowUp` optional,
+  default false. `bidangIds` max 20, duplicates ignored. Contact/whatsapp: length and non-empty only, no format check. `handled_by` FKs ON DELETE SET NULL, join
+  `bidang_id` FK ON DELETE CASCADE (so DELETE /teams/:id is never blocked). No CORS work.
+- apps/api/PLAN.md: update the data model, API, decisions and out-of-scope text; do NOT add a Status entry (its Status is for the numbered features). The root CLAUDE.md POC
+  caveat B suggested is outside B1's scope (apps/api only): not done; the shared-IP rate-limit risk goes in the final report instead.
+- Reverse: n/a, plan-level choices as listed.
+
 ## D-022 (T2, user answers after the plan hard stop)
 - 1. Undeletable PEMBINA: option A. One fixed shared e2e PEMBINA account, excluded from cleanup like the E2E admin (a second permanent exception
   to the plan's e2e rule, approved by the user). All PEMBINA actions that create services use it. Reverse: backend `created_by ON DELETE SET NULL`

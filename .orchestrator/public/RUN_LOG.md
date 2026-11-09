@@ -494,3 +494,27 @@ B-T2 (model: sonnet; 1 agent: plan, resumed to implement; 0 fix rounds; 2 plan r
 - (superseded) Status: T1 not committed. Waiting for the user's decision on routes.spec:225 (delete, or convert to login-page widths/axe) before the web
   e2e can be green and T1 plus the chore can be committed. B sessions so far this run: T1 B (3 rounds), web-e2e B (2 rounds). State: branch public-site-build, HEAD a8f0451, unstaged T1 changes (apps/api, docs/api,
   PUBLIC_PLAN.md) + .orchestrator, nothing staged. echo_dev already has the new migration.
+
+## T2 committed (75b13a9). B1: preflight reset, plan, implementation, verification
+- Per the user's new rule I ran `npm run db:reset -w @echo/api` at the start of B1 (before creating B): "Reset done", "Seed done", health 200.
+- B-B1 (model: sonnet): plan, then implement (1 agent, 2 rounds, 0 fix rounds besides B's own test fix). Decisions D-023.
+- Scope: apps/api (3 new feature folders, new migration 1794242787286-AddPublicSubmissions.ts, app.module.ts, entities.ts, PLAN.md, 4 new test
+  files) and docs/api. No package.json/lockfile change, no apps/web change, no existing test file changed (all test changes are new files). PASS.
+- Greps: no `any`, `@ts-ignore`, `.only`, `.skip` in the new files (one comment contains the words "any real value"). PASS.
+- Code read: DTOs (consent `@Equals(true)`, conditional contact via ValidateIf, content 1-2000, bidangIds max 20 uuids, website declared), services (honeypot
+  returns `{ok:true}` without storing; transaction; unknown bidang id fails the FK, rolls back, plain 400), controllers (`@Public()`, `ThrottlerGuard` +
+  `@Throttle` 5/600000 only on the two POSTs, none on GET /public/bidang), PublicBidangController (explicit `{id,name}`), migration SQL (only the 3 new tables,
+  2 enums, 4 FKs: handled_by SET NULL x2, join CASCADE x2; down() reverses). PASS.
+- `npm run lint` clean; `npm test` 8/8; `npm run test:e2e` 298/298 (was 258, +40 new). B ran `migration:run` for echo_dev.
+- Test selection: B1 edits `app.module.ts` (new tables/routes only, but the row names app.module), so I also ran the web e2e: `npm run e2e -w @echo/web`
+  90 passed in 5.7 min, login calls 43 (admin 1, pembina 1, max 2 per account); cleanup 0/0/0 (fresh DB).
+- Acceptance: 201 + stored row (minimal, full, trimmed, lowercase email, deduped bidang); 400 missing/non-true consent; 400 missing contact with
+  follow-up; 400 too-long content and fields (boundaries pass); 400 unknown/malformed bidang ids, nothing stored; honeypot 201 stores nothing (valid-first);
+  6th request 429 per endpoint (honeypot and 400s count; GET bidang, login, health unaffected); GET /public/bidang only id+name, ordered; protected routes
+  still 401; user delete keeps submissions with handled_by NULL (T1 re-check done early, B2 re-checks with the admin endpoints); team delete not blocked.
+  PASS. I did not re-run each of these tests individually; they are inside the 298 passing.
+- Docs: docs/api/public.md (new), README (index, 35 routes, protected-routes line, 429 row), permissions.md rows 25-27, users.md, teams.md, flows.md section 6,
+  apps/api/PLAN.md (data model, API, FK row, decision row, out-of-scope). PASS.
+- Known risk (documented in public.md): `req.ip` with no trust proxy, so behind the POC tunnel all visitors share one bucket of 5 per endpoint per 10 min.
+  Heads-up for F4/F5/P2 recorded in D-023: real-backend e2e cannot reset the in-memory limiter.
+- Result: B1 verified, committing as feat(api).

@@ -69,6 +69,10 @@ A leader of team B can:
   UNIQUE `(service_id, user_id)`; partial UNIQUE `(service_id, team_id) WHERE is_absent_taker`
 - `service_unavailability(service_id, user_id, created_at)` PK `(service_id, user_id)`
 - `service_absences(service_id, user_id, team_id, recorded_by, created_at)` PK `(service_id, user_id)`, FK `(service_id, user_id)` to `service_assignments`
+- `prayer_requests(id uuid, name null, contact null, wants_follow_up, content text, consent_at, status enum NEW|IN_PROGRESS|DONE, admin_note null, handled_by null, handled_at null, created_at)`; `handled_by` FK to `users` ON DELETE SET NULL
+- `volunteer_applications(id uuid, full_name, whatsapp, email null, availability null, message null, consent_at, status enum NEW|CONTACTED|ACCEPTED|DECLINED, admin_note null, handled_by null, handled_at null, created_at)`; `handled_by` FK to `users` ON DELETE SET NULL
+- `volunteer_application_bidang(application_id, bidang_id)` PK both; FKs to `volunteer_applications` and `teams`, both ON DELETE CASCADE
+- (`status`, `admin_note`, `handled_by`, `handled_at` are for the later admin feature B2; nothing writes them yet.)
 
 ## API (draft)
 
@@ -105,6 +109,9 @@ Attendance
 - `GET /me/absences`, `GET /teams/:teamId/absences` (leader of that team, PEMBINA, ADMIN)
 - `GET /teams/:teamId/absences/:userId` (same access): the services one active member of the team missed
 - `GET /services/:id/teams/:teamId/absences` (that team's absent-taker, leader of that team, ADMIN): `{ userIds }` already recorded
+
+Public (no token)
+- `GET /public/bidang` (`[{id, name}]` only), `POST /public/prayer-requests`, `POST /public/volunteer-applications` (both 201 `{ ok: true }`)
 
 ## Frontend notes
 - Read `X-Access-Token` from every authenticated response and store it; it renews the
@@ -143,7 +150,7 @@ Attendance
 | Seed admin | `npm run seed` reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from env and creates one ADMIN with `must_change_password = false`. `.env.example` uses `ADMIN_EMAIL=admin@echo.local`, `ADMIN_PASSWORD=password` for local development only. The seed refuses to run when `NODE_ENV=production`. It targets `echo_dev` only; tests create their own fixtures. | A known password is acceptable on a local dev DB only if it can't reach production |
 | Terminology | English "team" (not the Indonesian "bidang"); "team leader" (not "Ketua Bidang"). "Ketua ECHO" stays as a title. | Avoids confusion in code and docs |
 | Roles storage | `users.role` is a Postgres enum named `user_role` (ADMIN, PEMBINA, MEMBER). | The DB rejects unknown roles |
-| Foreign keys | Plain FKs with `ON DELETE RESTRICT`, except the user/team deletion cascades listed under "User and team deletion". "A team assigns only its own members" (rule 7) is checked in the service layer, not by a composite FK. | A composite FK to `team_members` would conflict with rule 9 (past assignments are kept after removal) |
+| Foreign keys | Plain FKs with `ON DELETE RESTRICT`, except the user/team deletion cascades listed under "User and team deletion" and the public-submission FKs (`handled_by` SET NULL so deleting a user keeps submissions; `volunteer_application_bidang` CASCADE on both sides so deleting a team or application is never blocked). "A team assigns only its own members" (rule 7) is checked in the service layer, not by a composite FK. | A composite FK to `team_members` would conflict with rule 9 (past assignments are kept after removal) |
 | Seed data | Teams: Worship, Music, Sound, Multimedia, Usher, Stage Manager. People and assignments live in `src/database/seed-data.ts`, edited by hand (ships with marked examples). Insert-only, dev DB only (`echo_dev`). Fake users share `SEED_USER_PASSWORD` and have `must_change_password = false`. Hashing uses `bcryptjs` (pure JS, no native build). | Try assignment conflicts by hand before the admin endpoints exist |
 | Default password | Env `DEFAULT_USER_PASSWORD` (required, min 8 chars, app refuses to start without it) is the password for every account the admin creates or resets. `.env.example` uses `changeme123` for local development only. | No email service in v1; admin hands the password over out of band and users may change it voluntarily via `POST /auth/change-password` (no forced change since 2026-11-09) |
 | User admin safety | An admin cannot change their own role or `isActive` (400). | Prevents leaving the system with no active admin |
@@ -160,6 +167,7 @@ Attendance
 | Absences vs unassign | The composite FK from `service_absences` to the assignment row is NO ACTION (blocks a direct delete like RESTRICT; user/team deletion removes the absences first through their own cascading FKs). Unassign and member removal that would delete such an assignment answer 409 `HAS_ATTENDANCE_RECORDS` and change nothing (reachable only if a started service is moved to the future). Unassigning a taker (pre-start) clears the role. | History is never silently erased |
 | Recorded absences read | `GET /services/:id/teams/:teamId/absences` -> `{ userIds }` (that team's absences for the service, ordered by id). Access: the team's taker, its leader, or ADMIN (403 otherwise, before the 404s; PEMBINA gets 403). Allowed before the service starts. Requested by the web taker screen. | After a reload the taker needs to see what is already recorded |
 | Attendance check order | Path-uuid pipes (400) run first, then the taker/leader/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
+| Public submissions | Public routes need no token and no captcha. Both POSTs require `consent: true` (server sets `consent_at`), have a hidden `website` honeypot (filled: same 201, nothing stored; validation runs first), answer only `{ ok: true }`, and are rate limited with `@nestjs/throttler` to 5 per 10 minutes per IP, per endpoint (`ThrottlerGuard` + `@Throttle` on those two handlers only; no global guard; every request counts, including 400s and honeypot hits). The IP is `req.ip` with no `trust proxy`: behind a tunnel or proxy all visitors share one bucket (known risk, trusting proxy IPs is out of scope). Unknown `bidangIds` are a plain 400, enforced by the FK inside the insert transaction (nothing stored). `bidangIds` max 20, deduped. `contact` is required when `wantsFollowUp` is true. Texts are trimmed; emails stored lowercase. Request keys are camelCase. | Public site without accounts; spam protection kept simple |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -167,9 +175,9 @@ Attendance
 - Overlapping-service warnings for the same volunteer
 - Swap requests, reports
 - Extra Pembina / Ketua ECHO capabilities (splitting ADMIN into two roles)
-- Frontend, public site
+- Frontend (the public-site endpoints exist; reading and handling submissions is the later admin feature B2)
 - Service notes (a notes field on services)
-- Account lockout and a global (non-login) rate limit
+- Account lockout and a global rate limit (only login and the two public POSTs are limited)
 - Token revocation: changing a password does not log out other devices, and a leaked
   token works until it expires (15 minutes after last use)
 

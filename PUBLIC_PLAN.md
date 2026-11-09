@@ -333,7 +333,7 @@ Scope: apps/public, plus the root README.md.
 - [x] P1 Move portal to /volunteer-portal
 - [x] T1 Delete endpoints for users, bidang, services
 - [x] T2 Portal delete buttons + e2e cleanup
-- [ ] B1 Public submission endpoints
+- [x] B1 Public submission endpoints
 - [ ] B2 Admin submission endpoints
 - [ ] F1 Public site scaffold
 - [ ] F2 Home: Hero, Ibadah, Lokasi

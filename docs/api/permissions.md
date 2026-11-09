@@ -37,6 +37,9 @@ regardless of role.
 | 19 | `DELETE /teams/:id/members/:userId` | 401 | 403 | 403 | 403 | ok |
 | 23 | `DELETE /users/:id` | 401 | 403 | 403 | 403 | ok (400 self, 400 `LAST_ADMIN`, 409 `USER_HAS_CREATED_RECORDS`) |
 | 24 | `DELETE /teams/:id` | 401 | 403 | 403 | 403 | ok |
+| 25 | `GET /public/bidang` | ok | ok | ok | ok | ok |
+| 26 | `POST /public/prayer-requests` | ok (429 after 5 per 10 min per IP) | ok | ok | ok | ok |
+| 27 | `POST /public/volunteer-applications` | ok (429 after 5 per 10 min per IP) | ok | ok | ok | ok |
 
 "Leader" here means a leader of any team: leaders have no extra rights on routes 1-19 and 23-24 (a leader of
 a team still gets 403 on `GET /teams/:id/members` for their own team; e2e `test/teams.e2e-spec.ts`
@@ -76,6 +79,8 @@ the next call is 403 even with the same token.
 Same unknown-team rule as above for the leader routes (non-admin 403, ADMIN 404). The taker/leader check
 for the absence routes is done in the service after path-uuid validation, before the 404s.
 That makes 8 new routes: 30 in total. Rows 23 and 24 (the two hard deletes, e2e only) bring it to 32.
+Rows 25-27 (the public routes, e2e only: `test/public-*.e2e-spec.ts`) bring it to 35. They need no
+token and ignore one; see [public.md](public.md).
 
 ## Cells not verified
 None of the cells above is unverified. Not covered by this matrix: behaviour after the
