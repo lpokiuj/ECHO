@@ -3,6 +3,8 @@ import {
   HomeIcon,
   CalendarDaysIcon,
   CalendarIcon,
+  ClipboardListIcon,
+  HandHeartIcon,
   SettingsIcon,
   UserCheckIcon,
   UserCogIcon,
@@ -19,6 +21,8 @@ export interface NavItem {
   icon: LucideIcon
   /** False until the feature that builds the route lands (DECISIONS D-012). */
   routeExists: boolean
+  /** Shows the NEW count of this submission type next to the label. */
+  badge?: 'prayerRequestsNew' | 'volunteerApplicationsNew'
 }
 
 /** Every item the user is meant to have, from GET /me. Hiding is UX only; the backend decides. */
@@ -64,6 +68,24 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       icon: SettingsIcon,
       routeExists: true,
     })
+    items.push(
+      {
+        id: 'prayerRequests',
+        to: '/prayer-requests',
+        label: messages.nav.prayerRequests,
+        icon: HandHeartIcon,
+        routeExists: true,
+        badge: 'prayerRequestsNew',
+      },
+      {
+        id: 'volunteerApplications',
+        to: '/volunteer-applications',
+        label: messages.nav.volunteerApplications,
+        icon: ClipboardListIcon,
+        routeExists: true,
+        badge: 'volunteerApplicationsNew',
+      },
+    )
   }
   if (me.role === 'ADMIN') {
     items.push(

@@ -76,14 +76,18 @@ export function RequireRole({
   roles,
   noAccessTitle = messages.services.noAccessTitle,
   noAccessDescription = messages.services.noAccessDescription,
+  redirectTo,
 }: {
   roles: readonly UserRole[]
   noAccessTitle?: string
   noAccessDescription?: string
+  /** Send other roles to this path (replace) instead of showing the no-access state. */
+  redirectTo?: string
 }) {
   const me = useMe()
   if (!me.data) return <Outlet />
   if (roles.includes(me.data.role)) return <Outlet />
+  if (redirectTo) return <Navigate to={redirectTo} replace />
   return <ErrorState title={noAccessTitle} description={noAccessDescription} />
 }
 

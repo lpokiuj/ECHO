@@ -9,5 +9,9 @@ export const PATHS = {
   attendance: '/attendance',
   users: '/users',
   teams: '/teams',
+  prayerRequests: '/prayer-requests',
+  prayerRequest: (id: string) => `/prayer-requests/${encodeURIComponent(id)}`,
+  volunteerApplications: '/volunteer-applications',
+  volunteerApplication: (id: string) => `/volunteer-applications/${encodeURIComponent(id)}`,
   team: (id: string) => `/teams/${encodeURIComponent(id)}`,
 } as const

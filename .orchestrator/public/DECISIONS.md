@@ -130,6 +130,14 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-031 (P2, plan review, mine): accepted B's recommendations
+- Detail is its own route, derived from the unfiltered list (the contract has no GET-by-id). Routes: `/prayer-requests`, `/prayer-requests/:id`, `/volunteer-applications`,
+  `/volunteer-applications/:id` (English slugs like the existing ones; the plan implies pages and a detail view, not the slugs). Other roles are redirected to home through a new
+  optional `redirectTo` prop on `RequireRole` (existing uses unchanged). One explicit "Simpan" for status plus note. Delete only on the detail view. The two lists are added to
+  `routes.spec.ts` (additive). `nav-items.test.ts` expected lists gain the two new ids (required by the feature, not a weakening; I verify the diff).
+- E2E budget: submissions.spec makes exactly 1 real POST per public endpoint per run. B may run it at most twice in any 10 minutes and must not run the full web suite; I run the full suite once.
+- Reverse: edit routes/paths, remove the `redirectTo` prop, or switch to a dialog or auto-save later.
+
 ## D-030 (F5, plan review, mine): accepted B's recommendations
 - Bidang picker = fieldset + legend + the existing Checkbox/Label per bidang (no combobox, no new primitive). Failed bidang call: group hidden, non-blocking `role="status"` note,
   no retry button; `useBidang` uses `retry: false`. Empty list: note, no group. No query invalidation after a 400. `FormField` keeps reading the prayer required/optional marks

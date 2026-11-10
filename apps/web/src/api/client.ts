@@ -18,6 +18,12 @@ import type {
   MyAbsences,
   ServiceTeamAbsences,
   MyScheduleItem,
+  PrayerRequest,
+  PrayerRequestStatus,
+  SubmissionCounts,
+  UpdateSubmissionBody,
+  VolunteerApplication,
+  VolunteerApplicationStatus,
   RemoveMemberResult,
   Service,
   ServiceSchedule,
@@ -292,4 +298,55 @@ export function getMemberAbsences(teamId: string, userId: string): Promise<MyAbs
 
 export function getTeamAbsences(teamId: string): Promise<TeamAbsenceRow[]> {
   return request<TeamAbsenceRow[]>(`/teams/${encodeURIComponent(teamId)}/absences`)
+}
+
+// --- Submissions inbox (admin-submissions.md) ---
+
+const statusQuery = (status?: string) =>
+  status ? `?status=${encodeURIComponent(status)}` : ''
+
+export function getPrayerRequests(status?: PrayerRequestStatus): Promise<PrayerRequest[]> {
+  return request<PrayerRequest[]>(`/admin/prayer-requests${statusQuery(status)}`)
+}
+
+export function updatePrayerRequest(
+  id: string,
+  body: UpdateSubmissionBody<PrayerRequestStatus>,
+): Promise<PrayerRequest> {
+  return request<PrayerRequest>(`/admin/prayer-requests/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+  })
+}
+
+/** Hard delete, 204 with an empty body. */
+export function deletePrayerRequest(id: string): Promise<void> {
+  return request<void>(`/admin/prayer-requests/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function getVolunteerApplications(
+  status?: VolunteerApplicationStatus,
+): Promise<VolunteerApplication[]> {
+  return request<VolunteerApplication[]>(`/admin/volunteer-applications${statusQuery(status)}`)
+}
+
+export function updateVolunteerApplication(
+  id: string,
+  body: UpdateSubmissionBody<VolunteerApplicationStatus>,
+): Promise<VolunteerApplication> {
+  return request<VolunteerApplication>(`/admin/volunteer-applications/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+  })
+}
+
+/** Hard delete, 204 with an empty body. */
+export function deleteVolunteerApplication(id: string): Promise<void> {
+  return request<void>(`/admin/volunteer-applications/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
+export function getSubmissionCounts(): Promise<SubmissionCounts> {
+  return request<SubmissionCounts>('/admin/submissions/counts')
 }

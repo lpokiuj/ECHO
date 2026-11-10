@@ -63,6 +63,11 @@ async function deleteAll(path: string, ids: string[], token: string) {
   return { deleted, failures }
 }
 
+/** Ids of the items whose picked field is a string starting with the prefix (null never matches). */
+function idsWithPrefix<T extends Item>(items: T[], pick: (item: T) => string | null): string[] {
+  return items.filter((item) => pick(item)?.startsWith(PREFIX) ?? false).map((item) => item.id)
+}
+
 async function ensurePembina(adminToken: string): Promise<void> {
   const users = await getList<{ email: string }>('/users', adminToken)
   if (users.some((u) => u.email.toLowerCase() === PEMBINA_EMAIL)) return
@@ -89,7 +94,23 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     return (await response.json()) as Item
   })()
 
-  // Order matters: services first (soft delete), then teams (the database cascades their
+  // Public submissions first: they relate to nothing else. Matched by `name` (prayer requests) and
+  // `fullName` (volunteer applications) with the prefix; a null name never matches, so tests always
+  // send an `e2e-` name. Same strict rule as everything below: any status but 204 fails the run.
+  const prayerRequests = idsWithPrefix(
+    await getList<Item & { name: string | null }>('/admin/prayer-requests', token),
+    (r) => r.name,
+  )
+  const applications = idsWithPrefix(
+    await getList<Item & { fullName: string }>('/admin/volunteer-applications', token),
+    (a) => a.fullName,
+  )
+  const submissions = {
+    prayer: await deleteAll('/admin/prayer-requests', prayerRequests, token),
+    volunteer: await deleteAll('/admin/volunteer-applications', applications, token),
+  }
+
+  // Order matters for the rest: services first (soft delete), then teams (the database cascades their
   // assignments and absences, which frees leaders and absence takers), then users.
   const services = (
     await getList<Item & { title: string }>('/services?includePast=true', token)
@@ -121,15 +142,21 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     token,
   )
 
-  const failed = [...results.services.failures, ...results.teams.failures, ...userResult.failures]
-  const summary = `e2e cleanup: services ${results.services.deleted}, teams ${results.teams.deleted}, users ${userResult.deleted} deleted in ${Date.now() - started} ms`
+  const failed = [
+    ...submissions.prayer.failures,
+    ...submissions.volunteer.failures,
+    ...results.services.failures,
+    ...results.teams.failures,
+    ...userResult.failures,
+  ]
+  const summary = `e2e cleanup: prayer requests ${submissions.prayer.deleted}, volunteer applications ${submissions.volunteer.deleted}, services ${results.services.deleted}, teams ${results.teams.deleted}, users ${userResult.deleted} deleted in ${Date.now() - started} ms`
   console.log(summary)
   if (failed.length > 0) {
     const byStatus = new Map<number, number>()
     for (const status of failed) byStatus.set(status, (byStatus.get(status) ?? 0) + 1)
     const detail = [...byStatus].map(([status, count]) => `${count} x ${status}`).join(', ')
     throw new Error(
-      `e2e cleanup failed: services ${results.services.failures.length}, teams ${results.teams.failures.length}, users ${userResult.failures.length} not deleted (${detail})`,
+      `e2e cleanup failed: prayer requests ${submissions.prayer.failures.length}, volunteer applications ${submissions.volunteer.failures.length}, services ${results.services.failures.length}, teams ${results.teams.failures.length}, users ${userResult.failures.length} not deleted (${detail})`,
     )
   }
 

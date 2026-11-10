@@ -218,3 +218,54 @@ export interface TeamAbsenceRow {
   name: string
   count: number
 }
+
+// --- Submissions inbox (admin-submissions.md) ---
+
+export type PrayerRequestStatus = 'NEW' | 'IN_PROGRESS' | 'DONE'
+export type VolunteerApplicationStatus = 'NEW' | 'CONTACTED' | 'ACCEPTED' | 'DECLINED'
+
+/** `handledBy` of a submission: the last person who did a PATCH. */
+export interface SubmissionHandler {
+  id: string
+  name: string
+}
+
+interface SubmissionBase<S extends string> {
+  id: string
+  consentAt: string
+  status: S
+  adminNote: string | null
+  handledBy: SubmissionHandler | null
+  handledAt: string | null
+  createdAt: string
+}
+
+/** GET /admin/prayer-requests item. */
+export interface PrayerRequest extends SubmissionBase<PrayerRequestStatus> {
+  name: string | null
+  contact: string | null
+  wantsFollowUp: boolean
+  content: string
+}
+
+/** GET /admin/volunteer-applications item. */
+export interface VolunteerApplication extends SubmissionBase<VolunteerApplicationStatus> {
+  fullName: string
+  whatsapp: string
+  email: string | null
+  availability: string | null
+  message: string | null
+  bidang: { id: string; name: string }[]
+}
+
+/** PATCH body of both types: at least one field. A null or blank note clears it. */
+export interface UpdateSubmissionBody<S extends string> {
+  status?: S
+  adminNote?: string | null
+}
+
+/** GET /admin/submissions/counts: rows with status NEW per type. */
+export interface SubmissionCounts {
+  prayerRequestsNew: number
+  volunteerApplicationsNew: number
+}

@@ -153,6 +153,45 @@ export async function createStartingSoonService(
   return service
 }
 
+/**
+ * Real public POSTs are rate limited (5 per 10 minutes per IP per endpoint, in memory, not
+ * resettable): call each of these AT MOST ONCE per full run (submissions.spec does). The name
+ * always carries the `e2e-` prefix; a nameless prayer request could never be cleaned up.
+ */
+async function publicPost(
+  request: APIRequestContext,
+  path: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  if (!String(data.name ?? data.fullName).startsWith('e2e-'))
+    throw new Error('Public e2e submissions must be named with the e2e- prefix')
+  const response = await request.post(`${baseUrl}/api${path}`, { data })
+  if (response.status() !== 201) throw new Error(`POST ${path} failed with status ${response.status()}`)
+}
+
+/** Sends one prayer request through the public API; returns its `e2e-` name and content. */
+export async function createE2ePrayerRequest(
+  request: APIRequestContext,
+): Promise<{ name: string; content: string }> {
+  const suffix = randomSuffix()
+  const created = { name: `e2e-${suffix}`, content: `e2e-isi-${suffix}` }
+  await publicPost(request, '/public/prayer-requests', { ...created, consent: true })
+  return created
+}
+
+/** Sends one volunteer application through the public API; returns its `e2e-` full name. */
+export async function createE2eVolunteerApplication(
+  request: APIRequestContext,
+): Promise<{ fullName: string }> {
+  const created = { fullName: `e2e-${randomSuffix()}` }
+  await publicPost(request, '/public/volunteer-applications', {
+    ...created,
+    whatsapp: '0800000000',
+    consent: true,
+  })
+  return created
+}
+
 /** Creates an `e2e-` team as admin (POST /teams). */
 export async function createE2eTeam(
   request: APIRequestContext,

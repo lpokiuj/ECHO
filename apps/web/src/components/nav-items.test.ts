@@ -24,22 +24,26 @@ describe('buildNavItems (full intended set)', () => {
       'assign',
     ])
   })
-  it('PEMBINA: adds services, no admin items', () => {
+  it('PEMBINA: adds services and the two inbox pages, no admin items', () => {
     expect(ids(asMe(ME_BY_ROLE.pembina))).toEqual([
       'home',
       'mySchedule',
       'fullSchedule',
       'attendance',
       'services',
+      'prayerRequests',
+      'volunteerApplications',
     ])
   })
-  it('ADMIN: adds services, users and teams', () => {
+  it('ADMIN: adds services, the two inbox pages, users and teams', () => {
     expect(ids(asMe(ME_BY_ROLE.admin))).toEqual([
       'home',
       'mySchedule',
       'fullSchedule',
       'attendance',
       'services',
+      'prayerRequests',
+      'volunteerApplications',
       'users',
       'teams',
     ])
@@ -51,6 +55,8 @@ describe('buildNavItems (full intended set)', () => {
       'fullSchedule',
       'attendance',
       'services',
+      'prayerRequests',
+      'volunteerApplications',
       'users',
       'teams',
     ])

@@ -141,6 +141,12 @@ for (const width of widths) {
       { name: 'services', path: 'services', heading: messages.services.title },
       { name: 'users', path: 'users', heading: messages.users.title },
       { name: 'teams', path: 'teams', heading: messages.teams.title },
+      { name: 'prayer-requests', path: 'prayer-requests', heading: messages.submissions.prayer.title },
+      {
+        name: 'volunteer-applications',
+        path: 'volunteer-applications',
+        heading: messages.submissions.volunteer.title,
+      },
       { name: 'team-detail', path: `teams/${team.id}`, heading: team.name },
       { name: 'not-found', path: 'tidak-ada', heading: messages.notFound.title },
       {

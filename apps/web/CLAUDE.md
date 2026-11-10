@@ -64,7 +64,10 @@ STOP and ask me before:
 
 - echo_dev is free to use for development and Playwright runs. Create, edit, and deactivate
   data through the API as much as you need. Every e2e run starts by deleting all `e2e-` data
-  through the API (`e2e/global-setup.ts`), so leftovers never accumulate and need no report.
+  through the API (`e2e/global-setup.ts`: services, teams, users, and `e2e-` prayer requests by
+  `name` and volunteer applications by `fullName`), so leftovers never accumulate and need no report.
+  Public submissions are created only through the two public POSTs, always with an `e2e-` name, at
+  most one real POST per endpoint per run (rate limit 5 per 10 minutes, see README).
 - You may run the backend's own `migration:run` and `seed` scripts against echo_dev when the
   baseline is missing. Nothing else on the backend or the database: no SQL, no drops or
   truncation, no volume wipes, no edits under `apps/api`. If you think a wipe is needed, tell me.

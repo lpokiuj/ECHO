@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router'
 import type { NavItem } from '@/components/nav-items'
+import { Badge } from '@/components/ui/badge'
+import { useSubmissionCounts } from '@/features/submissions/useSubmissions'
 import { cn } from '@/lib/utils'
 import { messages } from '@/lib/messages'
 
@@ -9,10 +11,13 @@ interface NavLinksProps {
 }
 
 export function NavLinks({ items, onNavigate }: NavLinksProps) {
+  const counts = useSubmissionCounts({ enabled: items.some((i) => i.badge) })
   return (
     <nav aria-label={messages.nav.label}>
       <ul className="flex flex-col gap-1">
-        {items.map(({ id, to, label, icon: Icon }) => (
+        {items.map(({ id, to, label, icon: Icon, badge }) => {
+          const count = badge ? counts.data?.[badge] : undefined
+          return (
           <li key={id}>
             <NavLink
               to={to}
@@ -35,11 +40,18 @@ export function NavLinks({ items, onNavigate }: NavLinksProps) {
                     aria-hidden="true"
                   />
                   <span className="min-w-0 flex-1 truncate">{label}</span>
+                  {count ? (
+                    <Badge variant="info">
+                      <span aria-hidden="true">{count}</span>
+                      <span className="sr-only">{`, ${messages.submissions.newCount(count)}`}</span>
+                    </Badge>
+                  ) : null}
                 </>
               )}
             </NavLink>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </nav>
   )

@@ -63,9 +63,14 @@ export const ERROR_BODIES = {
 export const respond = (status: number, body: unknown, headers?: Record<string, string>) =>
   HttpResponse.json(body as Record<string, unknown>, { status, headers })
 
+// Bodies copied from ../../docs/api/admin-submissions.md.
+export const SUBMISSION_COUNTS_EXAMPLE = { prayerRequestsNew: 3, volunteerApplicationsNew: 1 }
+
 export const handlers = {
   me: (headers?: Record<string, string>, body: typeof ME_EXAMPLE = ME_EXAMPLE) =>
     http.get('*/api/me', () => HttpResponse.json(body, { headers })),
+  counts: (body: typeof SUBMISSION_COUNTS_EXAMPLE = SUBMISSION_COUNTS_EXAMPLE) =>
+    http.get('*/api/admin/submissions/counts', () => HttpResponse.json(body)),
 }
 
 // Bodies copied verbatim from ../../docs/api/schedule.md.
@@ -415,5 +420,52 @@ export const ATTENDANCE_ERROR_BODIES = {
     error: 'Bad Request',
     code: 'CANNOT_MARK_SELF',
     message: '...',
+  },
+}
+
+// Items copied from ../../docs/api/admin-submissions.md (GET lists). The volunteer example there
+// shows "..." for the ids and dates; those are filled with fixed values, the shape is unchanged.
+export const PRAYER_REQUEST_EXAMPLE = {
+  id: '5c0e6a4a-0b7e-4f6e-9a55-3a3d6a1c9e01',
+  name: 'Budi',
+  contact: '0812',
+  wantsFollowUp: true,
+  content: 'Please pray',
+  consentAt: '2026-03-01T00:00:00.000Z',
+  status: 'NEW',
+  adminNote: null,
+  handledBy: null,
+  handledAt: null,
+  createdAt: '2026-03-01T00:00:00.000Z',
+}
+export const VOLUNTEER_APPLICATION_EXAMPLE = {
+  id: '7d2f1c88-2a43-4c1e-8f0b-9b6f0f3a7e02',
+  fullName: 'Sari',
+  whatsapp: '0813',
+  email: null,
+  availability: 'Sundays',
+  message: null,
+  bidang: [
+    { id: 'a3ff8b91-dc3a-4175-af7b-1ac7c5b58bdb', name: 'Music' },
+    { id: 'aba2c1ed-b318-467b-8388-e97b051dec22', name: 'Worship' },
+  ],
+  consentAt: '2026-03-01T00:00:00.000Z',
+  status: 'NEW',
+  adminNote: null,
+  handledBy: null,
+  handledAt: null,
+  createdAt: '2026-03-01T00:00:00.000Z',
+}
+export const SUBMISSION_ERROR_BODIES = {
+  forbidden: { message: 'Forbidden', statusCode: 403 },
+  prayerNotFound: {
+    message: 'Prayer request not found',
+    error: 'Not Found',
+    statusCode: 404,
+  },
+  emptyPatch: {
+    message: 'Provide status or adminNote',
+    error: 'Bad Request',
+    statusCode: 400,
   },
 }

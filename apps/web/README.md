@@ -51,11 +51,14 @@ Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 - Browser tests are in `e2e/`. Install the browser once with `npx playwright install chromium`.
   They need the backend running on echo_dev and the `E2E_*` variables above.
 - **The `e2e-` prefix rule.** Everything a browser test creates is named with the prefix `e2e-`:
-  user emails (`e2e-<random>@echo.local`), team names and service titles. Never create test data
+  user emails (`e2e-<random>@echo.local`), team names, service titles, the `name` of a prayer
+  request and the `fullName` of a volunteer application. Never create test data
   without it, and never give seeded data that prefix.
 - **Cleanup.** A Playwright global setup (`e2e/global-setup.ts`) runs before every run. It logs
   in as the E2E admin and deletes, through the API and in this order, every `e2e-` service
-  (matched by title), team (by name) and user (by email). Teams go before users because the
+  (matched by title), team (by name) and user (by email), after first deleting every `e2e-`
+  prayer request (matched by `name`) and volunteer application (by `fullName`). A prayer request
+  without a name cannot be matched, so tests always send an `e2e-` name. Teams go before users because the
   team delete also removes the assignments and absence records that would otherwise block
   deleting their leaders and absence takers. It never deletes anything without the prefix, the
   E2E admin (matched by `E2E_ADMIN_EMAIL` and by id) or the shared PEMBINA. It prints counts
@@ -72,6 +75,11 @@ Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
   log in as those users, once each; the login-flow tests do too, never as the E2E admin. The
   run ends with a count of login calls by account type (counts only), and the design keeps
   every account at 5 logins or fewer (the backend's default `LOGIN_RATE_LIMIT`).
+- **Public POST budget.** The public submission endpoints allow 5 requests per 10 minutes per IP
+  per endpoint, counted in memory by the backend and not resettable from here. `e2e/submissions.spec.ts`
+  makes exactly one real `POST /public/prayer-requests` and one `POST /public/volunteer-applications`
+  per run (helpers in `e2e/fixtures.ts`); every other case uses data from those or mocked routes.
+  Do not run it more than twice in 10 minutes.
 - Lists are paginated, so specs find records with `findInList` (and `expectNotInList`) in
   `e2e/fixtures.ts`, never by assuming page 1.
 - `e2e/routes.spec.ts` visits every route at 360, 390, 768 and 1280px: no console errors, no
@@ -82,6 +90,23 @@ Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 - Users that created a service, assigned someone or recorded an absence cannot be deleted by the
   API (409). The cleanup relies on deleting teams first. Leftovers from runs made before the
   cleanup existed may include such users, which then fail the setup: reset echo_dev once.
+
+## Submissions inbox
+
+What visitors send through the public site, read and handled in the portal. Visible to **ADMIN and
+PEMBINA only**; other roles get no nav entry and a direct URL redirects them home. Both pages have a
+status filter (`?status=`), a detail view with a status select, an admin note and one Simpan
+button, and a NEW-count badge on the nav entry (from `GET /admin/submissions/counts`, hidden at 0,
+refreshed after every change or delete and on window focus).
+
+| Page | Route (under `/volunteer-portal/`) | Detail |
+| ---- | ---------------------------------- | ------ |
+| Pokok Doa | `/prayer-requests` | `/prayer-requests/:id` |
+| Pendaftaran Relawan | `/volunteer-applications` | `/volunteer-applications/:id` |
+
+**Delete is permanent** (hard delete, no undo). It lives on the detail view and always opens a
+confirmation dialog ("Hapus permanen? Data tidak bisa dikembalikan."). The API has no GET by id, so
+the detail is found in the list.
 
 ## Structure
 

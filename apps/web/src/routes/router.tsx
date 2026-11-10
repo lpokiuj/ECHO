@@ -12,6 +12,10 @@ import { ServicesPage } from '@/features/services/ServicesPage'
 import { TeamDetailPage } from '@/features/teams/TeamDetailPage'
 import { TeamsPage } from '@/features/teams/TeamsPage'
 import { UsersPage } from '@/features/users/UsersPage'
+import { PrayerRequestDetailPage } from '@/features/submissions/PrayerRequestDetailPage'
+import { PrayerRequestsPage } from '@/features/submissions/PrayerRequestsPage'
+import { VolunteerApplicationDetailPage } from '@/features/submissions/VolunteerApplicationDetailPage'
+import { VolunteerApplicationsPage } from '@/features/submissions/VolunteerApplicationsPage'
 import { PlaceholderPage } from '@/features/placeholder/PlaceholderPage'
 import {
   PublicOnly,
@@ -68,6 +72,24 @@ export const routes = [
               {
                 element: <RequireRole roles={['ADMIN', 'PEMBINA']} />,
                 children: [{ path: PATHS.services.slice(1), element: <ServicesPage /> }],
+              },
+              {
+                element: <RequireRole roles={['ADMIN', 'PEMBINA']} redirectTo={PATHS.home} />,
+                children: [
+                  { path: PATHS.prayerRequests.slice(1), element: <PrayerRequestsPage /> },
+                  {
+                    path: `${PATHS.prayerRequests.slice(1)}/:id`,
+                    element: <PrayerRequestDetailPage />,
+                  },
+                  {
+                    path: PATHS.volunteerApplications.slice(1),
+                    element: <VolunteerApplicationsPage />,
+                  },
+                  {
+                    path: `${PATHS.volunteerApplications.slice(1)}/:id`,
+                    element: <VolunteerApplicationDetailPage />,
+                  },
+                ],
               },
               {
                 element: (
