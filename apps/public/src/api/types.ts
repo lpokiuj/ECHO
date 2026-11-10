@@ -32,3 +32,12 @@ export interface VolunteerApplicationBody {
 export interface SubmissionResult {
   ok: true
 }
+
+/** GET /public/events: one upcoming event. `startsAt` is an ISO 8601 UTC string. */
+export interface EventItem {
+  id: string
+  title: string
+  startsAt: string
+  location: string
+  description: string
+}

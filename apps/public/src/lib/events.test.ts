@@ -1,22 +1,43 @@
+import { existsSync } from 'node:fs'
+import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { events } from '@/content/events'
+import { ApiError } from '@/api/errors'
+import { eventsExample } from '@/test/handlers'
+import { server } from '@/test/setup'
 import { getEvents, upcomingEvents } from './events'
 
 describe('getEvents', () => {
-  it('resolves the static list, sorted by start time', async () => {
-    const result = await getEvents()
-    expect(result).toHaveLength(events.length)
-    const times = result.map((e) => Date.parse(e.startsAt))
-    expect(times).toEqual([...times].sort((a, b) => a - b))
+  it('reads GET /api/public/events through the client, as the API returned it', async () => {
+    let url = ''
+    let auth: string | null = 'unset'
+    server.use(
+      http.get('*/api/public/events', ({ request }) => {
+        url = new URL(request.url).pathname
+        auth = request.headers.get('Authorization')
+        return HttpResponse.json(eventsExample)
+      }),
+    )
+    expect(await getEvents()).toEqual(eventsExample)
+    expect(url).toBe('/api/public/events')
+    expect(auth).toBeNull()
   })
 
-  it('returns copies, so callers cannot change the source', async () => {
-    const first = await getEvents()
-    first[0]!.title = 'changed'
-    first.pop()
-    const second = await getEvents()
-    expect(second).toHaveLength(events.length)
-    expect(second.map((e) => e.title)).not.toContain('changed')
+  it('exposes only the five contract fields in the example', () => {
+    for (const event of eventsExample) {
+      expect(Object.keys(event).sort()).toEqual(
+        ['description', 'id', 'location', 'startsAt', 'title'].sort(),
+      )
+      expect(event.startsAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/)
+    }
+  })
+
+  it('rejects when the API fails', async () => {
+    server.use(http.get('*/api/public/events', () => HttpResponse.json({}, { status: 500 })))
+    await expect(getEvents()).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('no longer has static event data in the content folder', () => {
+    expect(existsSync(new URL('../content/events.ts', import.meta.url))).toBe(false)
   })
 })
 

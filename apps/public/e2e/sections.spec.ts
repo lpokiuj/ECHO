@@ -1,7 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test, type Page } from '@playwright/test'
-import { events } from '../src/content/events.ts'
+import { expect, test } from '@playwright/test'
 import { site } from '../src/content/site.ts'
+import { mockEvents, mockEvent } from './events-mocks.ts'
+import { createE2eEvent, deleteE2eEvent } from './fixtures.ts'
 import { mockGoogleMaps } from './maps-mock.ts'
 
 const HEADER_HEIGHT = 64 // 4rem sticky header
@@ -10,14 +11,6 @@ test.beforeEach(async ({ page }) => {
   await mockGoogleMaps(page)
 })
 
-const DAY = 24 * 60 * 60 * 1000
-const startOf = (i: number) => Date.parse(events[i]!.startsAt)
-
-/** Fixes the page clock (Date only, timers keep running) before the app loads. */
-async function setNow(page: Page, time: number) {
-  await page.clock.setFixedTime(time)
-}
-
 for (const [label, size] of [
   ['360px', { width: 360, height: 740 }],
   ['1280px', { width: 1280, height: 800 }],
@@ -25,23 +18,56 @@ for (const [label, size] of [
   test.describe(`new home sections at ${label}`, () => {
     test.use({ viewport: size })
 
-    test('Acara hides past events and keeps the rest in date order', async ({ page }) => {
-      await setNow(page, startOf(0) + DAY) // after the first event, before the second
-      await page.goto('/')
-      const section = page.locator(`#${site.sections.events.id}`)
-      await expect(section.getByRole('heading', { level: 3, name: events[1]!.title })).toBeVisible()
-      await expect(section.getByRole('heading', { level: 3, name: events[0]!.title })).toHaveCount(0)
-      const titles = await section.getByRole('heading', { level: 3 }).allTextContents()
-      expect(titles).toEqual([events[1]!.title, events[2]!.title])
-      await section.screenshot({ path: `.screens/f3-acara-${size.width}.png` })
+    test('Acara shows an event created through the admin API', async ({ page }) => {
+      const created = await createE2eEvent()
+      try {
+        await page.goto('/')
+        const section = page.locator(`#${site.sections.events.id}`)
+        const card = section.getByRole('listitem').filter({ hasText: created.title })
+        await expect(card.getByRole('heading', { level: 3, name: created.title })).toBeVisible()
+        await expect(card.getByText(created.location)).toBeVisible()
+        await expect(card.getByText(created.description)).toBeVisible()
+        // Date label always; the time is deterministic (Asia/Jakarta, 10:00 as created).
+        await expect(card.getByText(new RegExp(site.sections.events.timezoneLabel))).toBeVisible()
+        await expect(card.getByText(/10[.:]00/)).toBeVisible()
+        await card.scrollIntoViewIfNeeded()
+        await section.screenshot({ path: `.screens/f3-acara-${size.width}.png` })
+      } finally {
+        await deleteE2eEvent(created.id)
+      }
     })
 
-    test('Acara shows the empty state when every event is past', async ({ page }) => {
-      await setNow(page, startOf(events.length - 1) + DAY)
+    test('Acara hides past events and keeps the rest in date order (mocked)', async ({ page }) => {
+      await mockEvents(page, 200, [
+        mockEvent('akhir', 20),
+        mockEvent('lewat', -3),
+        mockEvent('awal', 4),
+      ])
+      await page.goto('/')
+      const section = page.locator(`#${site.sections.events.id}`)
+      await expect(section.getByRole('heading', { level: 3, name: 'Acara awal' })).toBeVisible()
+      await expect(section.getByRole('heading', { level: 3, name: 'Acara lewat' })).toHaveCount(0)
+      const titles = await section.getByRole('heading', { level: 3 }).allTextContents()
+      expect(titles).toEqual(['Acara awal', 'Acara akhir'])
+    })
+
+    test('Acara shows the empty state when the API has no events (mocked)', async ({ page }) => {
+      await mockEvents(page, 200, [])
       await page.goto('/')
       const section = page.locator(`#${site.sections.events.id}`)
       await expect(section.getByText(site.sections.events.empty)).toBeVisible()
       await expect(section.getByRole('heading', { level: 3 })).toHaveCount(0)
+    })
+
+    test('Acara shows an error with a retry that recovers (mocked)', async ({ page }) => {
+      const answer = await mockEvents(page, 500, { message: 'boom' })
+      await page.goto('/')
+      const section = page.locator(`#${site.sections.events.id}`)
+      await expect(section.getByRole('alert')).toContainText(site.sections.events.error)
+      await expect(section.getByText('boom')).toHaveCount(0)
+      answer(200, [mockEvent('pulih', 6)])
+      await section.getByRole('button', { name: site.states.retry }).click()
+      await expect(section.getByRole('heading', { level: 3, name: 'Acara pulih' })).toBeVisible()
     })
 
     test('the FAQ works with the keyboard and the focused trigger clears the header', async ({

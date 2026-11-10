@@ -9,7 +9,8 @@ import {
 
 // Before every run: log in once as the E2E admin, cache the session (see session.ts) and delete,
 // through the admin API (docs/api/admin-submissions.md), every prayer request whose `name` starts
-// with `e2e-` and every volunteer application whose `fullName` starts with `e2e-`. Prefix only:
+// with `e2e-`, every volunteer application whose `fullName` starts with `e2e-` and every event
+// (docs/api/events.md) whose `title` starts with `e2e-`. Prefix only:
 // nothing else is ever deleted. Output is counts only: never a name, an email, a credential or an
 // environment value. Any failed list or delete call fails the whole run.
 const PREFIX = 'e2e-'
@@ -86,19 +87,22 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     await getList('/admin/volunteer-applications', token),
     'fullName',
   )
+  const eventIds = idsWithPrefix(await getList('/admin/events', token), 'title')
   const prayers = await deleteAll('/admin/prayer-requests', prayerIds, token)
   const applications = await deleteAll('/admin/volunteer-applications', applicationIds, token)
 
+  const events = await deleteAll('/admin/events', eventIds, token)
+
   console.log(
-    `e2e cleanup: prayer requests ${prayers.deleted}, volunteer applications ${applications.deleted} deleted in ${Date.now() - started} ms`,
+    `e2e cleanup: prayer requests ${prayers.deleted}, volunteer applications ${applications.deleted}, events ${events.deleted} deleted in ${Date.now() - started} ms`,
   )
-  const failed = [...prayers.failures, ...applications.failures]
+  const failed = [...prayers.failures, ...applications.failures, ...events.failures]
   if (failed.length > 0) {
     const byStatus = new Map<number, number>()
     for (const status of failed) byStatus.set(status, (byStatus.get(status) ?? 0) + 1)
     const detail = [...byStatus].map(([status, count]) => `${count} x ${status}`).join(', ')
     throw new Error(
-      `e2e cleanup failed: prayer requests ${prayers.failures.length}, volunteer applications ${applications.failures.length} not deleted (${detail})`,
+      `e2e cleanup failed: prayer requests ${prayers.failures.length}, volunteer applications ${applications.failures.length}, events ${events.failures.length} not deleted (${detail})`,
     )
   }
 

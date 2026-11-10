@@ -69,10 +69,10 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   those are pages, reached from the hero, the header and the burger. To point the map at the real church,
   change `sections.location.map.query` (the embed URL is built in `src/lib/maps.ts`). The Google Maps
   base URL there is the only external URL on the site.
-- **Events**: `src/content/events.ts` (static list). The app reads events only through
-  `getEvents()` in `src/lib/events.ts`, so the source can later become an API. The Acara section
-  shows only `upcomingEvents(list, now)` (sorted, `startsAt < now` hidden) through
-  `useUpcomingEvents()`, with loading, error (retry) and empty states.
+- **Events**: read from `GET /public/events` through the API client (`getEvents()` in
+  `src/lib/events.ts`); there is no static event data. The Acara section shows
+  `upcomingEvents(list, now)` (sorted, `startsAt < now` hidden) through `useUpcomingEvents()`, with
+  loading, error (retry) and empty states.
 - **Prayer form** (`/doa`): labels, hints, validation messages, the privacy note and the success
   text are in `site.pages.prayer` (`form`, `success`); the 429, 400, network and server banners use
   `site.errors`. Limits (2000, 100, 100) mirror the API in `src/features/prayer/limits.ts`. Code in
@@ -97,8 +97,8 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   360, 768 and 1280px (no console errors, no horizontal scroll, 44px touch targets, axe with no
   serious or critical violations). `e2e/home.spec.ts` covers the hero buttons, the header and burger
   section links (with the sticky header offset), reduced motion and the map iframe attributes.
-  `e2e/sections.spec.ts` covers Acara (past hidden and the empty state, by fixing the page clock
-  with `page.clock.setFixedTime`), the FAQ keyboard behaviour, axe with an item open, and the
+  `e2e/sections.spec.ts` covers Acara (an `e2e-` event created through the admin API appears and is deleted
+  again; past hidden, empty and error with retry via mocked responses), the FAQ keyboard behaviour, axe with an item open, and the
   header at 1024px.
   `e2e/prayer.spec.ts` covers /doa: client-side validation (nothing is sent), mocked 429, 400, 500
   and network errors with the data kept, disabled-while-sending, the honeypot (not reachable by Tab,
@@ -119,7 +119,7 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
   (`E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`), caches the token in `.screens/e2e-session.json`
   (owner-only, atomic, removed when the run ends) and deletes, through the admin API, every prayer
   request whose `name` starts with `e2e-` and every volunteer application whose `fullName` starts
-  with `e2e-`. It deletes nothing else, prints counts only and fails the whole run on any failed
+  with `e2e-` and every event whose `title` starts with `e2e-`. It deletes nothing else, prints counts only and fails the whole run on any failed
   call. Everything a browser test submits must be named `e2e-<random>`.
 - **Rate limit.** The public POST endpoints allow 5 requests per 10 minutes per IP per endpoint, in
   memory in the backend; a real-backend e2e cannot reset it without restarting the backend. Keep
@@ -129,7 +129,7 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 
 ## Structure
 
-- `src/content/`: all text and static events
+- `src/content/`: all text
 - `src/api/`: the only place that touches the network
 - `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
   Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan; `prayer/`: the /doa form; `volunteer/`: the /relawan form)

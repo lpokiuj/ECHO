@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { events } from './events'
 import { site } from './site'
 
 /** Every string in a content value (functions are called with a sample year). */
@@ -28,11 +27,9 @@ describe('site content', () => {
   })
 
   it('contains no real-looking facts: no URLs, emails, phone-like digit runs', () => {
-    // `startsAt` is a date, not a fact; every other event field is copy.
-    const eventCopy = events.flatMap((e) => [e.id, e.title, e.location, e.description])
     // The only URL allowed is the Google Maps base used for the Lokasi embed, matched exactly.
     const allowedUrls: string[] = [site.sections.location.map.baseUrl]
-    for (const text of [...strings(site), ...eventCopy]) {
+    for (const text of strings(site)) {
       if (!allowedUrls.includes(text)) expect(text).not.toMatch(/https?:\/\//i)
       expect(text).not.toMatch(/\S+@\S+/)
       expect(text.replace(/\D/g, '').length).toBeLessThan(7)
@@ -88,10 +85,8 @@ describe('home content', () => {
 })
 
 describe('no real bank, phone or contact numbers', () => {
-  const eventCopy = events.flatMap((e) => [e.id, e.title, e.location, e.description])
-
   it('has no long digit runs, phone prefixes or grouped numbers in any string', () => {
-    for (const raw of [...strings(site), ...eventCopy]) {
+    for (const raw of strings(site)) {
       // A standalone year (the footer copyright sample) is the only 4-digit number allowed.
       const text = raw.replace(/\b(?:19|20)\d{2}\b/g, '')
       expect(text).not.toMatch(/\d{4,}/)
@@ -113,16 +108,5 @@ describe('no real bank, phone or contact numbers', () => {
       g.qris.placeholder,
     ]
     for (const value of values) expect(value).toMatch(/akan diisi$/)
-  })
-})
-
-describe('events content', () => {
-  it('has unique ids and ISO 8601 dates with an explicit offset, marked as examples', () => {
-    expect(new Set(events.map((e) => e.id)).size).toBe(events.length)
-    for (const event of events) {
-      expect(event.startsAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|[+-]\d{2}:\d{2})$/)
-      expect(Number.isNaN(Date.parse(event.startsAt))).toBe(false)
-      expect(event.title).toContain('(contoh)')
-    }
   })
 })

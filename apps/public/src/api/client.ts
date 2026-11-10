@@ -1,7 +1,7 @@
 // The only place that touches the network. No auth: no token, no cookies, no storage.
 // Dev proxy: /api -> backend (prefix stripped).
 import { fromResponse, networkError } from './errors'
-import type { Bidang, PrayerRequestBody, SubmissionResult, VolunteerApplicationBody } from './types'
+import type { Bidang, EventItem, PrayerRequestBody, SubmissionResult, VolunteerApplicationBody } from './types'
 
 const BASE_URL = '/api'
 
@@ -44,6 +44,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 /** GET /public/bidang: the teams a volunteer can pick, ordered by name. */
 export function getBidang(signal?: AbortSignal): Promise<Bidang[]> {
   return request<Bidang[]>('/public/bidang', { signal })
+}
+
+/** GET /public/events: upcoming events only, `startsAt` ascending. */
+export function getEvents(signal?: AbortSignal): Promise<EventItem[]> {
+  return request<EventItem[]>('/public/events', { signal })
 }
 
 /** POST /public/prayer-requests. 5 per 10 minutes per IP; a 429 becomes a `rateLimited` error. */

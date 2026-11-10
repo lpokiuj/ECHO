@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { site } from '../src/content/site.ts'
+import { mockEvent, mockEvents } from './events-mocks.ts'
 import { mockGoogleMaps } from './maps-mock.ts'
 import { guardPrayerPosts } from './prayer-mocks.ts'
 import { guardVolunteerPosts } from './volunteer-mocks.ts'
@@ -35,6 +36,8 @@ for (const width of [360, 768, 1280]) {
       page.on('pageerror', (err) => errors.push(err.message))
 
       await mockGoogleMaps(page)
+      // The card state is checked deterministically; the real list may be empty.
+      await mockEvents(page, 200, [mockEvent('contoh', 7)])
       // No page here may POST to the rate-limited prayer endpoint (it would count for real).
       const prayerGuard = await guardPrayerPosts(page)
       const volunteerGuard = await guardVolunteerPosts(page)
@@ -42,7 +45,7 @@ for (const width of [360, 768, 1280]) {
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
       if (path === '/') {
-        await expect(page.getByRole('heading', { name: /Kegiatan contoh 1/ })).toBeVisible()
+        await expect(page.getByRole('heading', { name: 'Acara contoh' })).toBeVisible()
         await expect(
           page.getByRole('heading', { level: 2, name: site.sections.worship.title }),
         ).toBeVisible()

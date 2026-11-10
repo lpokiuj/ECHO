@@ -1,19 +1,24 @@
 import { screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { site } from '@/content/site'
-import { handlers } from '@/test/handlers'
+import { eventsExample, handlers } from '@/test/handlers'
 import { renderApp } from '@/test/render'
 import { server } from '@/test/setup'
 
 describe('router', () => {
   it('renders the home shell with the hero and every section anchor', async () => {
+    server.use(
+      handlers.events([
+        { ...eventsExample[0]!, startsAt: new Date(Date.now() + 7 * 86_400_000).toISOString() },
+      ]),
+    )
     const { container } = renderApp('/')
     expect(screen.getByRole('heading', { level: 1, name: site.hero.title })).toBeInTheDocument()
     for (const section of Object.values(site.sections)) {
       expect(container.querySelector(`section#${section.id}`)).not.toBeNull()
       expect(screen.getByRole('heading', { level: 2, name: section.title })).toBeInTheDocument()
     }
-    expect(await screen.findByRole('heading', { name: /Kegiatan contoh 1/ })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: eventsExample[0]!.title })).toBeInTheDocument()
     expect(document.title).toBe(site.brand.name)
   })
 

@@ -16,9 +16,9 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 
 ## Structure
 
-- `src/content/`: ALL user-facing text (`site.ts`) and the static events (`events.ts`)
+- `src/content/`: ALL user-facing text (`site.ts`). There is no static event data
 - `src/api/`: the only place that touches the network (`client.ts`, types, errors)
-- `src/lib/`: `events.ts` (`getEvents()`, `upcomingEvents()`), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
+- `src/lib/`: `events.ts` (`getEvents()` calls `GET /public/events` through the client, `upcomingEvents()` is a client-side safety filter), `env.ts` (`getPortalUrl()`), `dates.ts`, `utils.ts`
 - `src/pages/`: the route components. `src/features/<feature>/`: feature UI and hooks (F2 to F5;
   `home/` holds the hero and the Ibadah, Lokasi, Tentang, FAQ, Kontak and Persembahan sections;
   `prayer/` holds the /doa form: schema, `useSubmitPrayerRequest`, `PrayerForm`, `PrayerSuccess`;
@@ -35,7 +35,7 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 ## Rules
 
 - No auth at all: no token, no login code, no cookies, no `localStorage`/`sessionStorage` (ESLint
-  enforces it). All HTTP goes through `src/api/client.ts` (`getBidang`, `submitPrayerRequest`,
+  enforces it). All HTTP goes through `src/api/client.ts` (`getBidang`, `getEvents`, `submitPrayerRequest`,
   `submitVolunteerApplication`). No `fetch` in components. Never send an Authorization header.
 - All copy lives in `src/content/`. Components never hard-code text (`no-literals.test.ts`).
   Tests and e2e import text from `site.ts`. Indonesian, same terms as the portal ("Bidang",
@@ -45,7 +45,9 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
   `content.test.ts`); the embed URL is built from it and `map.query` in `src/lib/maps.ts`. Unit and
   e2e tests never load Google (e2e uses `mockGoogleMaps` from `e2e/maps-mock.ts`).
 - Events are read only through `getEvents()` (`src/lib/events.ts`, async) via the `useEvents()`
-  query hook. ESLint forbids importing `@/content/events` anywhere else. The home page shows
+  query hook; the `EventItem` type lives in `src/api/types.ts`. Tests mock `GET /api/public/events`
+  with MSW (`handlers.events()`; the default test handler returns `[]`) and never use fixed
+  calendar dates for "upcoming". The home page shows
   `useUpcomingEvents()` (`upcomingEvents(list, now)`: sorted, `startsAt < now` hidden; `now` is
   injected, so tests fix the clock).
 - Contact and giving values (WhatsApp, Instagram, email, bank, QRIS) are plain-text placeholders
@@ -74,10 +76,15 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
 - Every e2e run starts with `e2e/global-setup.ts`: it logs in ONCE as the E2E admin, caches the token
   in `.screens/e2e-session.json` (gitignored, mode 0600, atomic rename, removed at teardown, never
   printed) and deletes through the admin API every prayer request whose `name` starts with `e2e-` and
-  every volunteer application whose `fullName` starts with `e2e-`. Prefix only; nothing else is
+  every volunteer application whose `fullName` starts with `e2e-` and every event whose `title`
+  starts with `e2e-` (`GET /admin/events`). Prefix only; nothing else is
   deleted. It prints counts only (never names, emails, credentials). Any failed list or delete call
   (any status other than 200 / 204) fails the whole run. Tests never log in again (`adminToken()`
   in `e2e/fixtures.ts`; pass response headers to `refreshFrom` after admin calls).
+- Event e2e tests create their event with `createE2eEvent()` (`e2e/fixtures.ts`: `POST /admin/events`,
+  `e2e-` title, future `startsAt` with `+07:00`, cached token, no login) and delete it in a `finally`
+  with `deleteE2eEvent()`. Empty, error and past-hidden states use `mockEvents()` (`e2e/events-mocks.ts`).
+  The real list on echo_dev may hold other events: assert by the `e2e-` title, never by count.
 - **F4 and F5 tests MUST always send an `e2e-` name** (`name` of a prayer request, `fullName` of an
   application; use `e2eName()`). A prayer request without a name cannot be matched by the cleanup
   and would stay in echo_dev forever.

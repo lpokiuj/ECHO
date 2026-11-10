@@ -45,17 +45,13 @@ export default tseslint.config(
               group: ['**/apps/web/**', '**/web/src/**', '@echo/web', '@echo/web/*'],
               message: 'Never import code from apps/web. Copy what is needed.',
             },
-            {
-              group: ['@/content/events', '**/content/events'],
-              message: 'Read events only through getEvents() in src/lib/events.ts.',
-            },
           ],
         },
       ],
     },
   },
   {
-    // The events data is read in exactly one module (and its test); tests may import it too.
+    // Same rule for the lib, tests and e2e files.
     files: ['src/lib/events.ts', '**/*.test.{ts,tsx}', 'e2e/**/*.ts'],
     rules: {
       'no-restricted-imports': [

@@ -1,9 +1,9 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { handlers, bidangExample } from '@/test/handlers'
+import { handlers, bidangExample, eventsExample } from '@/test/handlers'
 import { server } from '@/test/setup'
 import { site } from '@/content/site'
-import { getBidang, submitPrayerRequest, submitVolunteerApplication } from './client'
+import { getBidang, getEvents, submitPrayerRequest, submitVolunteerApplication } from './client'
 import { ApiError, errorMessage } from './errors'
 
 describe('getBidang', () => {
@@ -20,6 +20,30 @@ describe('getBidang', () => {
     expect(await getBidang()).toEqual(bidangExample)
     expect(auth).toBeNull()
     expect(cookies).toBeNull()
+  })
+})
+
+describe('getEvents (client)', () => {
+  it('returns the list, with no Authorization header and no cookies', async () => {
+    let auth: string | null = 'unset'
+    let cookies: string | null = 'unset'
+    server.use(
+      http.get('*/api/public/events', ({ request }) => {
+        auth = request.headers.get('Authorization')
+        cookies = request.headers.get('Cookie')
+        return HttpResponse.json(eventsExample)
+      }),
+    )
+    expect(await getEvents()).toEqual(eventsExample)
+    expect(auth).toBeNull()
+    expect(cookies).toBeNull()
+  })
+
+  it('throws an ApiError on 500 and on a network failure', async () => {
+    server.use(http.get('*/api/public/events', () => HttpResponse.json({}, { status: 500 })))
+    await expect(getEvents()).rejects.toBeInstanceOf(ApiError)
+    server.use(http.get('*/api/public/events', () => HttpResponse.error()))
+    await expect(getEvents()).rejects.toBeInstanceOf(ApiError)
   })
 })
 
