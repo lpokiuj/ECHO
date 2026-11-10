@@ -139,9 +139,14 @@ for (const width of widths) {
       { name: 'my-schedule', path: 'my-schedule', heading: s.myTitle },
       { name: 'schedule', path: 'schedule', heading: s.fullTitle },
       { name: 'services', path: 'services', heading: messages.services.title },
+      { name: 'events', path: 'events', heading: messages.events.title },
       { name: 'users', path: 'users', heading: messages.users.title },
       { name: 'teams', path: 'teams', heading: messages.teams.title },
-      { name: 'prayer-requests', path: 'prayer-requests', heading: messages.submissions.prayer.title },
+      {
+        name: 'prayer-requests',
+        path: 'prayer-requests',
+        heading: messages.submissions.prayer.title,
+      },
       {
         name: 'volunteer-applications',
         path: 'volunteer-applications',

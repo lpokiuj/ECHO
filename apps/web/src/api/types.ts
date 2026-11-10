@@ -111,6 +111,28 @@ export interface CreateServiceBody {
 /** Any non-empty subset. Send only what changed. */
 export type UpdateServiceBody = Partial<CreateServiceBody>
 
+/** Admin event object (docs/api/events.md). */
+export interface EventItem {
+  id: string
+  title: string
+  startsAt: string
+  location: string
+  description: string
+  createdBy: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateEventBody {
+  title: string
+  startsAt: string
+  location: string
+  description: string
+}
+
+/** Any non-empty subset. Send only what changed. */
+export type UpdateEventBody = Partial<CreateEventBody>
+
 /** GET /services/:id/teams/:teamId/candidates item (assignments.md). */
 export interface Candidate {
   userId: string

@@ -213,7 +213,7 @@ describe('navigation per role (rendered)', () => {
     const manages = key === 'pembina' || key === 'admin'
     const leads = key === 'leader'
     const admin = key === 'admin'
-    expect(links).toHaveLength(4 + (manages ? 3 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
+    expect(links).toHaveLength(4 + (manages ? 4 : 0) + (leads ? 1 : 0) + (admin ? 2 : 0))
     expect(within(nav).queryByRole('link', { name: messages.nav.assign }) !== null).toBe(leads)
     const names = [
       messages.nav.home,
@@ -225,6 +225,7 @@ describe('navigation per role (rendered)', () => {
       expect(within(nav).getByRole('link', { name })).toBeInTheDocument()
     }
     expect(within(nav).queryByRole('link', { name: messages.nav.services }) !== null).toBe(manages)
+    expect(within(nav).queryByRole('link', { name: messages.nav.events }) !== null).toBe(manages)
     expect(within(nav).queryByRole('link', { name: messages.nav.users }) !== null).toBe(admin)
     expect(within(nav).queryByRole('link', { name: messages.nav.teams }) !== null).toBe(admin)
     const role = ME_BY_ROLE[key].role as keyof typeof messages.roles

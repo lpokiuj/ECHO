@@ -11,6 +11,9 @@ import type {
   LoginResponse,
   MeResponse,
   CreateServiceBody,
+  CreateEventBody,
+  EventItem,
+  UpdateEventBody,
   CreateUserBody,
   UpdateUserBody,
   User,
@@ -130,6 +133,22 @@ export function updateService(id: string, body: UpdateServiceBody): Promise<Serv
 
 export function deleteService(id: string): Promise<void> {
   return request<void>(`/services/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function getEvents(): Promise<EventItem[]> {
+  return request<EventItem[]>('/admin/events')
+}
+
+export function createEvent(body: CreateEventBody): Promise<EventItem> {
+  return request<EventItem>('/admin/events', { method: 'POST', body })
+}
+
+export function updateEvent(id: string, body: UpdateEventBody): Promise<EventItem> {
+  return request<EventItem>(`/admin/events/${encodeURIComponent(id)}`, { method: 'PATCH', body })
+}
+
+export function deleteEvent(id: string): Promise<void> {
+  return request<void>(`/admin/events/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 function assignmentsPath(serviceId: string, teamId: string): string {
@@ -302,8 +321,7 @@ export function getTeamAbsences(teamId: string): Promise<TeamAbsenceRow[]> {
 
 // --- Submissions inbox (admin-submissions.md) ---
 
-const statusQuery = (status?: string) =>
-  status ? `?status=${encodeURIComponent(status)}` : ''
+const statusQuery = (status?: string) => (status ? `?status=${encodeURIComponent(status)}` : '')
 
 export function getPrayerRequests(status?: PrayerRequestStatus): Promise<PrayerRequest[]> {
   return request<PrayerRequest[]>(`/admin/prayer-requests${statusQuery(status)}`)

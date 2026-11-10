@@ -31,6 +31,7 @@ describe('buildNavItems (full intended set)', () => {
       'fullSchedule',
       'attendance',
       'services',
+      'events',
       'prayerRequests',
       'volunteerApplications',
     ])
@@ -42,6 +43,7 @@ describe('buildNavItems (full intended set)', () => {
       'fullSchedule',
       'attendance',
       'services',
+      'events',
       'prayerRequests',
       'volunteerApplications',
       'users',
@@ -55,6 +57,7 @@ describe('buildNavItems (full intended set)', () => {
       'fullSchedule',
       'attendance',
       'services',
+      'events',
       'prayerRequests',
       'volunteerApplications',
       'users',

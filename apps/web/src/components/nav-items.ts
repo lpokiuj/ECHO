@@ -3,6 +3,7 @@ import {
   HomeIcon,
   CalendarDaysIcon,
   CalendarIcon,
+  CalendarHeartIcon,
   ClipboardListIcon,
   HandHeartIcon,
   SettingsIcon,
@@ -66,6 +67,13 @@ export function buildNavItems(me: MeResponse): NavItem[] {
       to: '/services',
       label: messages.nav.services,
       icon: SettingsIcon,
+      routeExists: true,
+    })
+    items.push({
+      id: 'events',
+      to: '/events',
+      label: messages.nav.events,
+      icon: CalendarHeartIcon,
       routeExists: true,
     })
     items.push(

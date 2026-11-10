@@ -6,6 +6,7 @@ import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { ErrorPage } from '@/features/errors/ErrorPage'
 import { NotFoundPage } from '@/features/errors/NotFoundPage'
+import { EventsPage } from '@/features/events/EventsPage'
 import { FullSchedulePage } from '@/features/schedule/FullSchedulePage'
 import { MySchedulePage } from '@/features/schedule/MySchedulePage'
 import { ServicesPage } from '@/features/services/ServicesPage'
@@ -76,6 +77,7 @@ export const routes = [
               {
                 element: <RequireRole roles={['ADMIN', 'PEMBINA']} redirectTo={PATHS.home} />,
                 children: [
+                  { path: PATHS.events.slice(1), element: <EventsPage /> },
                   { path: PATHS.prayerRequests.slice(1), element: <PrayerRequestsPage /> },
                   {
                     path: `${PATHS.prayerRequests.slice(1)}/:id`,

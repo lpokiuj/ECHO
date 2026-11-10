@@ -183,6 +183,39 @@ export const SERVICE_ERROR_BODIES = {
   },
 }
 
+// Event objects copied from ../../docs/api/events.md (admin routes). The list is newest start first.
+export const EVENT_EXAMPLE = {
+  id: '6f1c2b9e-0c58-4a8e-9d3f-2f7a1c0b5e11',
+  title: 'Youth Night',
+  startsAt: '2031-05-01T10:00:00.000Z',
+  location: 'Main hall',
+  description: 'An evening together',
+  createdBy: 'a3ff8b91-dc3a-4175-af7b-1ac7c5b58bdb',
+  createdAt: '2026-11-10T09:00:00.000Z',
+  updatedAt: '2026-11-10T09:00:00.000Z',
+}
+// The same shape with a start in the past relative to the tests' fake "now" (2026-11-01).
+export const EVENT_PAST_EXAMPLE = {
+  ...EVENT_EXAMPLE,
+  id: '0b8e4d7a-5c2f-4f0e-8a61-9d3c7e1f2a44',
+  title: 'Old Night',
+  startsAt: '2026-03-01T10:00:00.000Z',
+}
+export const EVENTS_EXAMPLE = [EVENT_EXAMPLE, EVENT_PAST_EXAMPLE]
+export const EVENT_ERROR_BODIES = {
+  notFound: { message: 'Event not found', error: 'Not Found', statusCode: 404 },
+  titleTooLong: {
+    message: ['title must be shorter than or equal to 120 characters'],
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+  emptyPatch: {
+    message: 'Provide at least one field to update',
+    error: 'Bad Request',
+    statusCode: 400,
+  },
+}
+
 // Bodies copied verbatim from ../../docs/api/assignments.md.
 export const CANDIDATES_EXAMPLE = [
   {

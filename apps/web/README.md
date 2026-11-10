@@ -51,12 +51,12 @@ Run from `apps/web`, or from the root with `npm run <script> -w @echo/web`.
 - Browser tests are in `e2e/`. Install the browser once with `npx playwright install chromium`.
   They need the backend running on echo_dev and the `E2E_*` variables above.
 - **The `e2e-` prefix rule.** Everything a browser test creates is named with the prefix `e2e-`:
-  user emails (`e2e-<random>@echo.local`), team names, service titles, the `name` of a prayer
+  user emails (`e2e-<random>@echo.local`), team names, service titles, event titles, the `name` of a prayer
   request and the `fullName` of a volunteer application. Never create test data
   without it, and never give seeded data that prefix.
 - **Cleanup.** A Playwright global setup (`e2e/global-setup.ts`) runs before every run. It logs
   in as the E2E admin and deletes, through the API and in this order, every `e2e-` service
-  (matched by title), team (by name) and user (by email), after first deleting every `e2e-`
+  (matched by title), team (by name) and user (by email), after first deleting every `e2e-` event (by `title`),
   prayer request (matched by `name`) and volunteer application (by `fullName`). A prayer request
   without a name cannot be matched, so tests always send an `e2e-` name. Teams go before users because the
   team delete also removes the assignments and absence records that would otherwise block
@@ -107,6 +107,15 @@ refreshed after every change or delete and on window focus).
 **Delete is permanent** (hard delete, no undo). It lives on the detail view and always opens a
 confirmation dialog ("Hapus permanen? Data tidak bisa dikembalikan."). The API has no GET by id, so
 the detail is found in the list.
+
+## Events (Acara)
+
+Events shown in the Acara section of the public site, managed at `/events` (under
+`/volunteer-portal/`). Visible to **ADMIN and PEMBINA only**; other roles get no nav entry and a
+direct URL redirects them home. The list (`GET /admin/events`, newest start first, past events
+badged "Sudah lewat") has a create and edit dialog (title, date, time in WIB, location,
+description; a past date is allowed) and a delete button. **Delete is permanent** (hard delete) and
+always opens a confirmation dialog ("Hapus permanen? Data tidak bisa dikembalikan.").
 
 ## Structure
 

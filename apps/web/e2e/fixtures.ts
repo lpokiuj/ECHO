@@ -153,6 +153,34 @@ export async function createStartingSoonService(
   return service
 }
 
+export interface CreatedEvent {
+  id: string
+  title: string
+  startsAt: string
+  location: string
+  description: string
+}
+
+/** Creates an `e2e-` event as admin (POST /admin/events), `daysAhead` from now (negative: past). */
+export async function createE2eEvent(
+  request: APIRequestContext,
+  daysAhead = 30,
+): Promise<CreatedEvent> {
+  const suffix = randomSuffix()
+  return adminCall<CreatedEvent>(
+    request,
+    'post',
+    '/admin/events',
+    {
+      title: `e2e-${suffix}`,
+      startsAt: wibInstant(daysAhead, 10),
+      location: `e2e-lokasi-${suffix}`,
+      description: `e2e-deskripsi-${suffix}`,
+    },
+    [201],
+  )
+}
+
 /**
  * Real public POSTs are rate limited (5 per 10 minutes per IP per endpoint, in memory, not
  * resettable): call each of these AT MOST ONCE per full run (submissions.spec does). The name
@@ -166,7 +194,8 @@ async function publicPost(
   if (!String(data.name ?? data.fullName).startsWith('e2e-'))
     throw new Error('Public e2e submissions must be named with the e2e- prefix')
   const response = await request.post(`${baseUrl}/api${path}`, { data })
-  if (response.status() !== 201) throw new Error(`POST ${path} failed with status ${response.status()}`)
+  if (response.status() !== 201)
+    throw new Error(`POST ${path} failed with status ${response.status()}`)
 }
 
 /** Sends one prayer request through the public API; returns its `e2e-` name and content. */

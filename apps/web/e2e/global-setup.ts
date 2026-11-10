@@ -109,6 +109,12 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     prayer: await deleteAll('/admin/prayer-requests', prayerRequests, token),
     volunteer: await deleteAll('/admin/volunteer-applications', applications, token),
   }
+  // Events (hard delete) relate to nothing else; matched by `title` with the prefix.
+  const eventIds = idsWithPrefix(
+    await getList<Item & { title: string }>('/admin/events', token),
+    (e) => e.title,
+  )
+  const events = await deleteAll('/admin/events', eventIds, token)
 
   // Order matters for the rest: services first (soft delete), then teams (the database cascades their
   // assignments and absences, which frees leaders and absence takers), then users.
@@ -145,18 +151,19 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   const failed = [
     ...submissions.prayer.failures,
     ...submissions.volunteer.failures,
+    ...events.failures,
     ...results.services.failures,
     ...results.teams.failures,
     ...userResult.failures,
   ]
-  const summary = `e2e cleanup: prayer requests ${submissions.prayer.deleted}, volunteer applications ${submissions.volunteer.deleted}, services ${results.services.deleted}, teams ${results.teams.deleted}, users ${userResult.deleted} deleted in ${Date.now() - started} ms`
+  const summary = `e2e cleanup: prayer requests ${submissions.prayer.deleted}, volunteer applications ${submissions.volunteer.deleted}, events ${events.deleted}, services ${results.services.deleted}, teams ${results.teams.deleted}, users ${userResult.deleted} deleted in ${Date.now() - started} ms`
   console.log(summary)
   if (failed.length > 0) {
     const byStatus = new Map<number, number>()
     for (const status of failed) byStatus.set(status, (byStatus.get(status) ?? 0) + 1)
     const detail = [...byStatus].map(([status, count]) => `${count} x ${status}`).join(', ')
     throw new Error(
-      `e2e cleanup failed: prayer requests ${submissions.prayer.failures.length}, volunteer applications ${submissions.volunteer.failures.length}, services ${results.services.failures.length}, teams ${results.teams.failures.length}, users ${userResult.failures.length} not deleted (${detail})`,
+      `e2e cleanup failed: prayer requests ${submissions.prayer.failures.length}, volunteer applications ${submissions.volunteer.failures.length}, events ${events.failures.length}, services ${results.services.failures.length}, teams ${results.teams.failures.length}, users ${userResult.failures.length} not deleted (${detail})`,
     )
   }
 
