@@ -242,3 +242,26 @@
 - The new migration is run on echo_dev with `npm run migration:run` (allowed by the plan: echo_dev changes only through the migration
   script), after tests pass on the test DB, so the running dev backend and later web e2e match the schema. No db:reset.
 - Reverse: `npm run migration:revert`.
+
+## D-033 (events, user request 2026-11-10): lift "events API is out of scope"
+- Question: the user asked for a backend for Acara. PUBLIC_PLAN.md says events are static and an events API is out of scope.
+- Choice: do it as three extra features E1 (API), E2 (portal), E3 (public site), spec in EVENTS_ADDENDUM.md. Managed by ADMIN and PEMBINA, hard delete,
+  camelCase keys, public `GET /public/events` returns upcoming only. `e2e-` title prefix and global-setup cleanup. PUBLIC_PLAN.md is unchanged except three Status lines.
+- Reason: the user asked for it explicitly; the plan's own Fixed decisions say the swap is meant to be possible via `getEvents()`.
+- Reverse: drop the three features; the static content file stays in git history.
+
+## D-034 (E1, plan review, mine): events API choices
+- Admin list `GET /admin/events` returns ALL events (past too), newest start first (a management screen wants recent on top); the public list stays ascending and upcoming only.
+- POST accepts a past `startsAt` (backdating allowed; PATCH of other fields on past events always works). `startsAt` needs an explicit offset (same HAS_OFFSET rule as services).
+- `description` varchar(2000), no index on `starts_at`, no seed events, events NOT added to the user-delete blocking list (`created_by` is SET NULL).
+- Reverse: change the order clause; add a past-date check; add an index in a later migration.
+
+## D-035 (E2, plan review, mine): portal events UI choices
+- Route `/events` (nav "Acara", after services), ADMIN/PEMBINA via RequireRole with redirectTo home; list with create/edit dialog and delete confirm in the list (no detail route).
+- Dates in WIB (+07:00) through the existing helpers, text time input like services, no future check, past badge "Sudah lewat", edit sends changed fields only. Order as the API returns (newest first).
+- e2e: global setup deletes `e2e-` events (title prefix); 1 extra login (MEMBER); max 4 screenshots. Reverse: edit routes/nav, switch dialog to a page.
+
+## D-036 (E3, plan review, mine): public events switch
+- `getEvents()` calls `GET /public/events` through the API client; `content/events.ts` is deleted, type moves to `api/types.ts`; the ESLint restriction on `@/content/events` is removed with it. `upcomingEvents` stays as a safety filter.
+- Tests that only validated the static list are REPLACED by equivalent API-path tests (each listed by B); pure-function tests with injected clock keep their fixed literals. Guard test: only that `content/events.ts` does not exist.
+- Real-backend specs that do not care about events see whatever echo_dev holds; e2e event assertions go by unique `e2e-` title and the test deletes its event. Placeholder location/description text, no facts. Reverse: restore the static file from git history.

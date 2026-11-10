@@ -205,3 +205,32 @@ B: 1 agent (plan, then implement; resumed once). Decision D-032. B's last fix (I
 ## User request (2026-11-10)
 - The user wanted to sleep and asked to stop or wait for the next milestone. Stopped after the F5 commit. P2 and F6 not started.
 - The user asked why this log was messy; this tidy-up is the answer. It is uncommitted (the user did not ask for a commit).
+
+## Events (user request 2026-11-10): E1, E2, E3 (D-033, D-034; spec in EVENTS_ADDENDUM.md)
+- `npm run db:reset -w @echo/api` ran once for E1: "Reset done: echo_dev", "Seed done."
+
+## E1: Events API (not committed yet; fix rounds 0)
+B: 1 agent (plan, then implement; resumed once). Plan answers: D-034.
+- Test selection: only apps/api and docs changed, so api lint, unit and e2e. No web/public tests.
+- Scope: apps/api (src/events, migration AddEvents, entities.ts, app.module.ts, 3 new e2e specs, PLAN.md) and docs/api. No package or lockfile change. Greps clean. PASS.
+- Mine: lint clean; e2e 21 files, 446 tests passed (was 387; +59). Live dev backend answers `GET /public/events` 200 `[]` (also through the public site proxy), so the migration is on echo_dev.
+- Docs JSON examples are not from a live server (B says so in the doc).
+
+## E2: Portal events management (not committed yet; fix rounds 0)
+B: 1 agent (plan, then implement; resumed once). Decision D-035. `db:reset` ran once for E2.
+- Test selection: only apps/web changed, so web `npm run check` plus full web e2e (nav, router, global setup changed).
+- Scope: apps/web only (features/events, events.spec, client/types/router/nav/messages/handlers, global-setup, fixtures, README/PLAN/CLAUDE). No package or lockfile change; PUBLIC_PLAN.md untouched by B. Greps clean. PASS.
+- Existing-test diffs read: nav-items.test and auth.test additive (events id, nav count 3 to 4, one link assertion); routes.spec adds the events target (plus a prettier reflow of one entry). No test deleted or weakened.
+- Mine: `npm run check -w @echo/web` 360 tests (was 335). events.spec 7/7. Full web e2e 109 passed in 6.1 min (was 102); logins 45, max 2 per account.
+- Screenshot viewed: delete dialog 360 (permanent wording, event title and date, fits). B viewed list 360, list 1280, form 360.
+- Gaps: no dedicated test that the global setup removes an `e2e-` event (exercised across runs); `createE2eEvent` is unused until E3; no empty-state action button (header button instead).
+
+## E3: Public site reads events from the API (not committed yet; fix rounds 0)
+B: 1 agent (plan, then implement; resumed once). Decision D-036. `db:reset` ran once for E3.
+- Test selection: only apps/public changed, so public `npm run check` plus public e2e.
+- Scope: apps/public only (api client/types, lib/events, events-mocks, fixtures, global-setup, specs, unit tests, eslint config, README/CLAUDE.md); `content/events.ts` deleted. No package or lockfile change. Greps clean. PASS.
+- Rule slip: B ran `git rm --cached` on content/events.ts, so the deletion is STAGED ("D "), not just removed from disk. Harmless (nothing committed); I did not unstage it (git reset/restore are forbidden for me). A normal commit of the whole change picks it up.
+- Replaced tests (static-list only), all listed by B and approved in D-036: events.test (2 getEvents tests -> 4), useEvents.test (loading test replaced, others moved to MSW, +2), content.test (static events block removed), sections.spec (2 Acara tests -> 4 per viewport), responsive.spec wait line. Nothing else weakened.
+- Mine: `npm run check -w @echo/public` 132 tests (was 127). Full public e2e 97 passed in 1.7 min (was 93), 1 admin login, no new real POSTs; cleanup "events 0". B saw one polish.spec skip-link flake under load; it did not recur in my run.
+- Screenshot viewed: Acara 360 (card with e2e- title, WIB date and time, placeholder location and description). Fine.
+- Time bomb removed: no static event data left; the 2030 literals remain only in pure injected-clock tests and dates.test.

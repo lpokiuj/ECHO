@@ -342,6 +342,9 @@ Scope: apps/public, plus the root README.md.
 - [x] F5 Volunteer registration form
 - [x] P2 Portal submissions inbox
 - [x] F6 Public polish
+- [x] E1 Events API (spec: .orchestrator/public/EVENTS_ADDENDUM.md)
+- [x] E2 Portal events management
+- [x] E3 Public site reads events from the API
 
 ## Approved dependencies
 - apps/api: `@nestjs/throttler`. Anything already in apps/api.
