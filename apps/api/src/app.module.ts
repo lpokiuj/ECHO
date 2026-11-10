@@ -7,6 +7,7 @@ import { AttendanceModule } from './attendance/attendance.module.js';
 import { AssignmentsModule } from './assignments/assignments.module.js';
 import { AvailabilityModule } from './availability/availability.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { EventsModule } from './events/events.module.js';
 import { HealthModule } from './health/health.module.js';
 import { PrayerRequestsModule } from './prayer-requests/prayer-requests.module.js';
 import { PublicModule } from './public/public.module.js';
@@ -25,6 +26,7 @@ import { VolunteerApplicationsModule } from './volunteer-applications/volunteer-
     AuthModule,
     AvailabilityModule,
     AttendanceModule,
+    EventsModule,
     HealthModule,
     PrayerRequestsModule,
     PublicModule,

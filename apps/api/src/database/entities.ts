@@ -1,6 +1,7 @@
 import { ServiceAbsence } from '../attendance/entities/service-absence.entity.js';
 import { ServiceAssignment } from '../assignments/entities/service-assignment.entity.js';
 import { ServiceUnavailability } from '../availability/entities/service-unavailability.entity.js';
+import { Event } from '../events/entities/event.entity.js';
 import { Service } from '../services/entities/service.entity.js';
 import { TeamMember } from '../teams/entities/team-member.entity.js';
 import { Team } from '../teams/entities/team.entity.js';
@@ -23,4 +24,5 @@ export const ENTITIES = [
   PrayerRequest,
   VolunteerApplication,
   VolunteerApplicationBidang,
+  Event,
 ];

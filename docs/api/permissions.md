@@ -47,8 +47,13 @@ regardless of role.
 | 32 | `PATCH /admin/volunteer-applications/:id` | 401 | 403 | 403 | ok | ok |
 | 33 | `DELETE /admin/volunteer-applications/:id` | 401 | 403 | 403 | ok | ok |
 | 34 | `GET /admin/submissions/counts` | 401 | 403 | 403 | ok | ok |
+| 35 | `GET /public/events` | ok | ok | ok | ok | ok |
+| 36 | `GET /admin/events` | 401 | 403 | 403 | ok | ok |
+| 37 | `POST /admin/events` | 401 | 403 | 403 | ok | ok |
+| 38 | `PATCH /admin/events/:id` | 401 | 403 | 403 | ok | ok |
+| 39 | `DELETE /admin/events/:id` | 401 | 403 | 403 | ok | ok |
 
-"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19, 23-24 and 28-34 (a leader of
+"Leader" here means a leader of any team: leaders have no extra rights on routes 1-19, 23-24 and 28-39 (a leader of
 a team still gets 403 on `GET /teams/:id/members` for their own team; e2e `test/teams.e2e-spec.ts`
 "returns 403 for the leader of that very team"). PEMBINA can never be a leader.
 
@@ -91,6 +96,9 @@ token and ignore one; see [public.md](public.md).
 Rows 28-34 (the admin submission routes, e2e only: `test/admin-*.e2e-spec.ts`) bring it to 42.
 They are **ADMIN and PEMBINA only**; a leader (Ketua Bidang) has no extra rights there and gets 403
 like a MEMBER; see [admin-submissions.md](admin-submissions.md).
+Rows 35-39 (the events routes, e2e only: `test/admin-events*.e2e-spec.ts`, `test/public-events.e2e-spec.ts`)
+bring it to 47. Row 35 needs no token; rows 36-39 are ADMIN and PEMBINA only, a leader gets 403;
+see [events.md](events.md).
 
 ## Cells not verified
 None of the cells above is unverified. Not covered by this matrix: behaviour after the

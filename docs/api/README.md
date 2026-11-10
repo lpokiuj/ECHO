@@ -18,12 +18,13 @@ against a live server, it is marked **(code)** or **(e2e)**. Examples marked
 | [availability.md](availability.md) | `PUT/DELETE /services/:id/unavailability`, `GET /me/unavailability` |
 | [attendance.md](attendance.md) | Absent-taker, absences, miss counts |
 | [schedule.md](schedule.md) | `GET /services` (full schedule), `GET /me/schedule` |
-| [public.md](public.md) | Public site, no login: `GET /public/bidang`, `POST /public/prayer-requests`, `POST /public/volunteer-applications` |
+| [public.md](public.md) | Public site, no login: `GET /public/bidang`, `GET /public/events`, `POST /public/prayer-requests`, `POST /public/volunteer-applications` |
+| [events.md](events.md) | Events (Acara): `GET /public/events`, and ADMIN and PEMBINA list, create, edit and hard-delete under `/admin/events` |
 | [admin-submissions.md](admin-submissions.md) | ADMIN and PEMBINA: list, handle (status, note) and hard-delete prayer requests and volunteer applications, plus the NEW counts |
 | [flows.md](flows.md) | Exact call order for each screen, plus **Gotchas** |
 | [permissions.md](permissions.md) | Endpoint x role matrix |
 
-42 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`, then 3 public routes, then 7 admin submission routes; see `permissions.md`).
+47 routes in total (22 before availability and attendance added 8, then `DELETE /users/:id` and `DELETE /teams/:id`, then 3 public routes, then 7 admin submission routes, then 1 public and 4 admin event routes; see `permissions.md`).
 
 ## Run the API locally
 
@@ -79,8 +80,9 @@ list returns the whole array). There is no `/api` prefix.
 Authorization: Bearer <accessToken>
 ```
 The scheme is case-sensitive: `bearer <token>` gives 401. Everything is protected except
-`GET /health`, `POST /auth/login` and the three public routes in [public.md](public.md)
-(`GET /public/bidang`, `POST /public/prayer-requests`, `POST /public/volunteer-applications`).
+`GET /health`, `POST /auth/login` and the four public routes in [public.md](public.md)
+(`GET /public/bidang`, `GET /public/events`, `POST /public/prayer-requests`,
+`POST /public/volunteer-applications`).
 
 ### Token renewal: `X-Access-Token`
 - The token lifetime is an **idle window of 15 minutes** (`JWT_EXPIRES_IN`, default `15m`).
@@ -110,7 +112,7 @@ route returns:
 {"statusCode":403,"error":"Forbidden","code":"PASSWORD_CHANGE_REQUIRED","message":"You must change your password first"}
 ```
 Exempt routes: `POST /auth/change-password`, `GET /me` (and the public `GET /health`,
-`POST /auth/login` and the three `/public/...` routes). This check runs **before** role checks, so such a user gets this error even
+`POST /auth/login` and the four `/public/...` routes). This check runs **before** role checks, so such a user gets this error even
 on admin routes.
 
 ### Error body shape
@@ -155,7 +157,7 @@ runs first, see [assignments.md](assignments.md)). Unknown (well-formed) ids are
 
 ### Lists and pagination
 No pagination anywhere. Orders: `/users` by name; `/teams` by name; team members by name;
-`/services` by `startsAt` then `title`; `/me/schedule` by `startsAt` then `title`; candidates by
+`/services` by `startsAt` then `title`; `GET /admin/events` by `startsAt` descending, `GET /public/events` by `startsAt` ascending (upcoming only); `/me/schedule` by `startsAt` then `title`; candidates by
 name.
 
 ### Enums

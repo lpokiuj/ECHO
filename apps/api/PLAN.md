@@ -73,6 +73,7 @@ A leader of team B can:
 - `volunteer_applications(id uuid, full_name, whatsapp, email null, availability null, message null, consent_at, status enum NEW|CONTACTED|ACCEPTED|DECLINED, admin_note null, handled_by null, handled_at null, created_at)`; `handled_by` FK to `users` ON DELETE SET NULL
 - `volunteer_application_bidang(application_id, bidang_id)` PK both; FKs to `volunteer_applications` and `teams`, both ON DELETE CASCADE
 - (`status`, `admin_note`, `handled_by`, `handled_at` are for the later admin feature B2; nothing writes them yet.)
+- `events(id uuid, title varchar(120), starts_at timestamptz, location varchar(200), description varchar(2000), created_by null, created_at, updated_at)`; `created_by` FK to `users` ON DELETE SET NULL
 
 ## API (draft)
 
@@ -112,6 +113,10 @@ Attendance
 
 Public (no token)
 - `GET /public/bidang` (`[{id, name}]` only), `POST /public/prayer-requests`, `POST /public/volunteer-applications` (both 201 `{ ok: true }`)
+- `GET /public/events` (upcoming only, `startsAt` ascending, `id,title,startsAt,location,description`)
+
+Events (ADMIN and PEMBINA only; MEMBER and team leaders 403)
+- `GET /admin/events` (all, `startsAt` descending), `POST /admin/events`, `PATCH /admin/events/:id` (partial; empty body 400), `DELETE /admin/events/:id` (204, hard delete)
 
 Admin submissions (ADMIN and PEMBINA only; MEMBER and team leaders 403)
 - `GET /admin/prayer-requests?status=`, `PATCH /admin/prayer-requests/:id` body `{ status?, adminNote? }`, `DELETE /admin/prayer-requests/:id` (204)
@@ -174,6 +179,7 @@ Admin submissions (ADMIN and PEMBINA only; MEMBER and team leaders 403)
 | Attendance check order | Path-uuid pipes (400) run first, then the taker/leader/ADMIN check (403), then 404, `CANNOT_MARK_SELF`, 409, and `INVALID_USERS` from the database write. Designation uses `TeamLeaderGuard` (403 first). | Taker identity needs the service id, so it is checked in the service, but before any 404 |
 | Public submissions | Public routes need no token and no captcha. Both POSTs require `consent: true` (server sets `consent_at`), have a hidden `website` honeypot (filled: same 201, nothing stored; validation runs first), answer only `{ ok: true }`, and are rate limited with `@nestjs/throttler` to 5 per 10 minutes per IP, per endpoint (`ThrottlerGuard` + `@Throttle` on those two handlers only; no global guard; every request counts, including 400s and honeypot hits). The IP is `req.ip` with no `trust proxy`: behind a tunnel or proxy all visitors share one bucket (known risk, trusting proxy IPs is out of scope). Unknown `bidangIds` are a plain 400, enforced by the FK inside the insert transaction (nothing stored). `bidangIds` max 20, deduped. `contact` is required when `wantsFollowUp` is true. Texts are trimmed; emails stored lowercase. Request keys are camelCase. | Public site without accounts; spam protection kept simple |
 | Admin submissions | Readable and handleable by ADMIN and PEMBINA only (`@Roles(ADMIN, PEMBINA)`; MEMBER and team leaders get 403, RolesGuard ignores leadership). Lists are newest first, no pagination, optional `?status=` (unknown, empty or repeated value is 400). Items are camelCase (`adminNote`); `handledBy` is `{id, name}` or null (null after the handler user is deleted). `PATCH { status?, adminNote? }`: an empty body is 400; any successful PATCH (status, note, both, a no-op, a reset to NEW) sets `handled_by` and `handled_at`; `adminNote` is trimmed, max 1000, and `null` or blank clears it; `status: null` is 400; the response is the updated item. PATCH is one `UPDATE ... RETURNING` (CTE joined to the handler and bidang names) and DELETE is one `DELETE ... RETURNING` (404 if none), so neither is check-then-write; column names in the SQL come from a fixed whitelist and values are bound parameters. DELETE is a hard delete (204; no soft-delete flag; the bidang join rows go by FK cascade); no bulk delete. Counts come from one query: the NEW rows per type, as numbers. `adminNote` is internal and never appears on a public route. Controllers live in the prayer-requests and volunteer-applications modules; the counts route is in `admin-submissions`. | Feature B2 of the public-site work; prayer requests are sensitive, so they are really deleted |
+| Events (E1) | Portal-managed Acara. `@Roles(ADMIN, PEMBINA)` on `/admin/events` (MEMBER and team leaders 403, no token 401). Required fields: `title` (1-120), `startsAt` (ISO 8601 with an explicit offset, same rule as services), `location` (1-200), `description` (1-2000); text is trimmed, whitespace-only is 400, unknown keys are dropped. A past `startsAt` is allowed on POST and PATCH (no future check, unlike services). `GET /admin/events` returns all events, newest start first (`startsAt` DESC, then id), as `{id,title,startsAt,location,description,createdBy,createdAt,updatedAt}`. `PATCH` is partial, an empty body is 400 (checked before the 404), and sets `updatedAt`. `DELETE` is a hard delete (204; 404 unknown id; malformed uuid 400). `created_by` is nullable with ON DELETE SET NULL, so deleting a user keeps their events and events are NOT in the `USER_HAS_CREATED_RECORDS` blocking list. `GET /public/events` needs no token and has no throttle; it returns only events with `startsAt >= now`, `startsAt` ascending (then id), with the five fields only (no `createdBy`, timestamps). No index on `starts_at`. The seed adds no events. Entity, controllers and service live in `src/events/`. | Feature E1 of the public-site work (D-033); the Acara section gets a real backend |
 
 ## Out of scope (Later)
 - Email or WhatsApp notifications, including a notice when a service time changes (v2)
@@ -216,3 +222,4 @@ starts. If a feature has none, ask the user for them before implementing.
 - [x] 8. Schedule views
 - [x] 9. Availability
 - [x] 10. Attendance
+- [x] E1. Events API (spec: ../../.orchestrator/public/EVENTS_ADDENDUM.md)

@@ -1,6 +1,6 @@
 # Public site endpoints (no login)
 
-Three routes for the public website. **No token is needed**; a token, if sent, is ignored. They never
+Four routes for the public website. **No token is needed**; a token, if sent, is ignored. They never
 return a `PASSWORD_CHANGE_REQUIRED` and never carry `X-Access-Token`. Conventions:
 [README.md](README.md). All request keys are camelCase. Verified by e2e tests
 (`test/public-*.e2e-spec.ts`).
@@ -12,6 +12,11 @@ The list of bidang (teams) for the volunteer form. **200**, ordered by name, not
 ```
 Only `id` and `name`: no members, leaders or emails. Empty list is `[]`. Example not verified
 against a live server.
+
+## GET /public/events
+Upcoming events for the Acara section. **200**, `startsAt >= now` only, sorted by `startsAt`
+ascending, only `id`, `title`, `startsAt`, `location`, `description`; not rate limited. Details and
+the admin routes that manage events: [events.md](events.md).
 
 ## POST /public/prayer-requests
 | Field | Type | Required | Rules |

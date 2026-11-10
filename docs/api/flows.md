@@ -119,6 +119,8 @@ other teams stay.
    [public.md](public.md)) -> `201 {"ok":true}`. Send `consent: true`; keep the hidden `website`
    field empty. `400` -> show field errors; `429` -> "try again later" (5 per 10 minutes per IP
    per endpoint; behind a tunnel everyone shares one IP, so it can trigger for unrelated visitors).
+3. Acara: `GET /public/events` -> upcoming events, soonest first (see [events.md](events.md)).
+   Admin screens manage them under `/admin/events` (ADMIN and PEMBINA; delete is permanent).
 
 ## Gotchas
 
