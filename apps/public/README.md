@@ -49,6 +49,12 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 
 ## Where to edit
 
+- **Title, meta and Open Graph**: the page titles are `site.titles` (set per route by
+  `useDocumentTitle`; home is plain `ECHO`). The static tags in `index.html` (title, description,
+  `theme-color`, `og:*`, `twitter:card`) cannot import from `site.ts`, so their values live in
+  `site.meta` and `src/content/meta.test.ts` fails if they drift apart. `public/og-image.svg` is a
+  placeholder: in production replace it with a 1200x630 PNG and an absolute URL (scrapers such as
+  WhatsApp and Facebook ignore SVG and relative paths).
 - **Text**: everything visitors read is in `src/content/site.ts` (navigation, section titles,
   footer, contact and social placeholders, error messages). Placeholders say "akan diisi": replace
   them with real content. Components never contain copy.
@@ -128,6 +134,7 @@ Run from `apps/public`, or from the root with `npm run <script> -w @echo/public`
 - `src/pages/`: route components. `src/features/<feature>/`: feature UI and hooks (`home/`: hero,
   Ibadah, Lokasi, Tentang, FAQ, Kontak, Persembahan; `prayer/`: the /doa form; `volunteer/`: the /relawan form)
 - `src/components/`: shared UI. `src/components/ui/`: shadcn/ui
+- `public/`: static files (`favicon.svg`, placeholder `og-image.svg`)
 - `src/lib/`, `src/hooks/`, `src/routes/`, `src/test/`
 
 The laptop POC script (`scripts/poc-up.sh`) serves only the portal; the public site is not part of it.

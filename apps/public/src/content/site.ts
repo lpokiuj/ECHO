@@ -17,6 +17,16 @@ export const site = {
     error: 'Terjadi kesalahan',
   },
 
+  // Mirrored by the static tags in index.html (src/content/meta.test.ts keeps them identical).
+  // Placeholders: replace with the real description when the church provides it.
+  meta: {
+    description: 'Situs Echo Youth GLC. Deskripsi singkat akan diisi.',
+    ogImage: '/og-image.svg',
+    ogImageAlt: 'Logo ECHO (gambar sementara)',
+    locale: 'id_ID',
+    themeColor: '#0f766e',
+  },
+
   a11y: {
     skipToContent: 'Lewati ke konten utama',
     openMenu: 'Buka menu',

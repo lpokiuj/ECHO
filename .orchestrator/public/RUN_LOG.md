@@ -16,8 +16,8 @@ into "History of stops". The previous, session-by-session version is in git hist
 | F3 Home: Acara, Tentang, Pertama Kali, Kontak, Persembahan | done | 194d5ad |
 | F4 Prayer request form | done | be0ffac |
 | F5 Volunteer registration form | done | 0bfcb62 |
-| P2 Portal submissions inbox | done | (this commit) |
-| F6 Public polish | NOT started | |
+| P2 Portal submissions inbox | done | 7b7dc86 |
+| F6 Public polish | done | (this commit) |
 
 Current state (2026-11-10): HEAD 0bfcb62, branch `public-site-build`. Stopped at the user's request ("I want to sleep") after the F5 commit. No `db:reset` has run for P2.
 Next: P2 (run `npm run db:reset -w @echo/api` once, right before its first B, per D-022; the user allowed that exact command via /permissions).
@@ -176,6 +176,31 @@ B: 1 agent (plan, then implement; resumed once). Decision D-031. B first reporte
 - Real public POSTs: B 4 (two runs), me 1 per endpoint for the spec plus 1 per endpoint in the full run, all inside the limit.
 - Screenshots viewed (3 of B's 6): list 360, delete dialog 360, detail 1280. Fine. B wrote 16 first (over the limit of 6, then fixed); the extra files are gitignored.
 - Not done by design: GET-by-id (optional note for docs/backend-requests.md, not added: outside scope).
+
+## F6: Public polish (fix rounds 0)
+B: 1 agent (plan, then implement; resumed once). Decision D-032. B's last fix (IFRAME exempt in the focus sweep) was unrun at hand-back (its e2e budget); my full run verified it.
+- Test selection: only apps/public and the root README.md changed, so public `npm run check` plus public e2e. No apps/web or apps/api tests (final report runs everything).
+- Scope: apps/public (index.html, site.ts, README, CLAUDE.md, responsive.spec, new polish.spec, new meta.test, new public/og-image.svg) and root README.md. No package, lockfile or other root file change. PASS.
+- Greps: no `any`, `@ts-ignore`, `.only(`, `.skip(`, fixme. The only IFRAME mention is the focus-sweep exemption (the Maps iframe draws its own focus; test-only, reasonable). PASS.
+- Existing-test diff read: `responsive.spec.ts` only changes which screenshots are saved (6 of 12); every assertion kept and runs for all 12 combinations. `tokens.test.ts` and `content.test.ts` untouched
+  (B read them first; neither scans index.html or public/). No test deleted. PASS.
+- `npm run check -w @echo/public` (mine): 127 tests (was 124). Full public e2e (mine): 93 passed in 1.6 min (was 79; +14 polish tests), 1 admin login, real POSTs: the two `[real]` tests only.
+- Acceptance: 404 page (`/tidak-ada`, `/a/b/c`, title, layout, back link); title and meta/OG tags present and synced with `site.meta` (unit and e2e, og image returns 200); skip link (Tab, Enter, next Tab lands in main) at 360 and 1280 and on 404;
+  focus visible on 15 Tab stops and on the burger and sheet close; reduced motion (computed scroll-behavior `auto` with emulation, `smooth` without); axe clean on all 4 routes at 360, 768, 1280, plus menu open (360, 768) and `/doa` and
+  `/relawan` validation errors; no overflow and 44px targets at all 12 combinations. Root README: layout table, "Running locally" (start order, command and URL of each, env files by name, claims checked: both `.env.example` files and
+  `apps/public/.env.development` exist), production route map marked not yet configured with the proxy-IP rate limit caveat, root scripts note (root `build/lint/test/check` do not cover apps/public; verified in package.json). PASS.
+- Screenshots viewed (4 of 6): home 360, home 768, relawan 360 (bidang options loaded), 404 360. Fine. The Maps area is blank because the request is mocked.
+- Gaps: `ErrorPage` has no e2e or axe check (hard to trigger; no skip link by decision); og:image is a relative SVG that scrapers ignore. `prayer.spec`, `sections.spec` and `volunteer.spec` fail `prettier --check` (B reports it
+  was already so; `check` does not run prettier, so it is not a gate).
+
+## HARD STOP before F6 (2026-11-10), RESOLVED
+- P2 is committed (7b7dc86). Starting F6, the per-feature `npm run db:reset -w @echo/api` (D-022) was DENIED by the auto-mode classifier, reason "Irreversible Local Destruction"
+  (same kind of block as History item 9). I did not try any other route (no script, SQL or docker). No B has been started for F6.
+- State: branch `public-site-build`, HEAD 7b7dc86, working tree has only this uncommitted RUN_LOG edit. F6 not started.
+- Resume: either allow that exact command again (add a Bash permission rule for `npm run db:reset -w @echo/api`) and tell me to continue, or tell me to skip the reset for F6.
+
+- Resolved: the user allowed the reset at the start of each feature ("i allow you to reset when starting a new feature"). Retried the same command once: "Reset done: echo_dev", "Seed done."
+- B-F6 (planning only): Sonnet, feature F6, scope apps/public plus root README.md, started. Brief: no new real public POSTs (D-028).
 
 ## User request (2026-11-10)
 - The user wanted to sleep and asked to stop or wait for the next milestone. Stopped after the F5 commit. P2 and F6 not started.

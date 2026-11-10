@@ -341,7 +341,7 @@ Scope: apps/public, plus the root README.md.
 - [x] F4 Prayer request form
 - [x] F5 Volunteer registration form
 - [x] P2 Portal submissions inbox
-- [ ] F6 Public polish
+- [x] F6 Public polish
 
 ## Approved dependencies
 - apps/api: `@nestjs/throttler`. Anything already in apps/api.

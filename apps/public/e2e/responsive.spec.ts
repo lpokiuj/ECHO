@@ -5,6 +5,17 @@ import { mockGoogleMaps } from './maps-mock.ts'
 import { guardPrayerPosts } from './prayer-mocks.ts'
 import { guardVolunteerPosts } from './volunteer-mocks.ts'
 
+// Only these combinations are saved as screenshots for review; every combination still runs all
+// the assertions below (overflow, touch targets, axe).
+const REVIEW_SHOTS = new Set([
+  'home-360',
+  'home-768',
+  'home-1280',
+  'relawan-360',
+  'doa-768',
+  '404-360',
+])
+
 const pages = [
   { name: 'home', path: '/', heading: site.hero.title },
   { name: 'doa', path: '/doa', heading: site.pages.prayer.title },
@@ -60,7 +71,9 @@ for (const width of [360, 768, 1280]) {
           }
         }
       }
-      await page.screenshot({ path: `.screens/${name}-${width}.png`, fullPage: true })
+      if (REVIEW_SHOTS.has(`${name}-${width}`)) {
+        await page.screenshot({ path: `.screens/${name}-${width}.png`, fullPage: true })
+      }
 
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth > document.documentElement.clientWidth,

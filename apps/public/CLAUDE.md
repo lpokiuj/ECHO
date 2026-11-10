@@ -26,6 +26,11 @@ It mirrors `apps/web` (same config, same theme tokens); read `../web/CLAUDE.md` 
   `BidangPicker` (checkbox group), `VolunteerForm`, `VolunteerSuccess`)
 - `src/components/`: shared UI (Logo, header, footer, layout). `src/components/ui/`: shadcn/ui
 - `src/hooks/`, `src/routes/` (router, `PATHS`), `src/test/` (Vitest setup, render helper, MSW handlers)
+- Title and meta: `site.titles` (per route) and `site.meta` (description, og image, locale, theme
+  colour). `index.html` holds the same values as static tags; `src/content/meta.test.ts` keeps them
+  identical (edit both). `public/og-image.svg` is a placeholder. The skip link is in `SiteLayout`;
+  `e2e/polish.spec.ts` covers skip link, 404, meta, reduced motion, focus and extra axe states
+  without any POST. `responsive.spec.ts` saves screenshots only for a fixed review list.
 
 ## Rules
 

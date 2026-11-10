@@ -130,6 +130,14 @@
   user's request (services stay soft).
 - Reverse: a migration restoring the old FKs, and restoring the two tests.
 
+## D-032 (F6, plan review, mine): accepted B's recommendations
+- Meta text lives in `site.meta` (`src/content/site.ts`); `index.html` carries static tags (no JS needed) kept in sync by a new `meta.test.ts`. Home title stays `ECHO` (an existing test pins it,
+  not edited). og:image is a placeholder `public/og-image.svg` (relative path, no og:url); most scrapers ignore SVG and need an absolute PNG, so this is a final-report item. No skip link or header
+  on `ErrorPage`. The root package.json is out of scope, so no `dev:public` root script: the root README says `npm run dev -w @echo/public` (suggestion goes in the final report).
+  Screenshot saving in `responsive.spec.ts` is limited to a fixed review list of 6 (assertions for all 12 combinations stay; failures save their own image). No new real public POST.
+- Conditions: B reads `tokens.test.ts` and `content.test.ts` before writing hex values or URLs in index.html and the SVG, and stops and asks if either test would need weakening.
+- Reverse: edit `site.meta`/`index.html`, delete `og-image.svg`.
+
 ## D-031 (P2, plan review, mine): accepted B's recommendations
 - Detail is its own route, derived from the unfiltered list (the contract has no GET-by-id). Routes: `/prayer-requests`, `/prayer-requests/:id`, `/volunteer-applications`,
   `/volunteer-applications/:id` (English slugs like the existing ones; the plan implies pages and a detail view, not the slugs). Other roles are redirected to home through a new
